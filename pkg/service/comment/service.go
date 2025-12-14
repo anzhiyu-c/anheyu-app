@@ -248,6 +248,7 @@ func (s *Service) Create(ctx context.Context, req *dto.CreateRequest, ip, ua str
 		}
 	}
 	status := model.StatusPublished
+	// 1. 本地违禁词检测
 	forbiddenWords := s.settingSvc.Get(constant.KeyCommentForbiddenWords.String())
 	if forbiddenWords != "" {
 		for _, word := range strings.Split(forbiddenWords, ",") {
@@ -256,6 +257,12 @@ func (s *Service) Create(ctx context.Context, req *dto.CreateRequest, ip, ua str
 				status = model.StatusPending
 				break
 			}
+		}
+	}
+	// 2. AI敏感词检测（如果启用且本地检测未命中）
+	if status == model.StatusPublished && s.settingSvc.Get(constant.KeyCommentAIDetectEnable.String()) == "true" {
+		if isViolation := s.checkAIDetect(req.Content); isViolation {
+			status = model.StatusPending
 		}
 	}
 	var isAdmin bool
@@ -1171,4 +1178,95 @@ func httpGetQQInfo(apiURL, apiKey, qqNumber string) (*QQInfoResponse, error) {
 		Nickname: apiResp.Data.Nick,
 		Avatar:   avatarURL,
 	}, nil
+}
+
+// aiDetectData AI敏感词检测API的data字段结构
+type aiDetectData struct {
+	Categories  []string `json:"categories"`
+	Explanation string   `json:"explanation"`
+	IsViolation bool     `json:"is_violation"`
+	Keywords    []string `json:"keywords"`
+	RiskLevel   string   `json:"risk_level"`
+}
+
+// checkAIDetect 调用AI敏感词检测API检查文本内容
+// 返回 true 表示检测到违规内容，false 表示正常
+func (s *Service) checkAIDetect(content string) bool {
+	apiURL := s.settingSvc.Get(constant.KeyCommentAIDetectAPIURL.String())
+	if apiURL == "" {
+		return false
+	}
+
+	// 构建请求URL（该API不需要对msg进行URL编码）
+	apiKey := s.settingSvc.Get(constant.KeyCommentAIDetectAPIKey.String())
+	reqURL := fmt.Sprintf("%s?msg=%s", apiURL, content)
+	// 如果配置了API密钥，添加到URL参数
+	if apiKey != "" {
+		reqURL = fmt.Sprintf("%s&key=%s", reqURL, apiKey)
+	}
+	log.Printf("AI敏感词检测: 请求URL: %s, 密钥已配置: %v", reqURL, apiKey != "")
+
+	// 创建HTTP请求
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		log.Printf("AI敏感词检测: 创建请求失败: %v", err)
+		return false
+	}
+	req.Header.Set("User-Agent", "anheyu-app/1.0.0")
+	// 同时在请求头中添加密钥（兼容不同API）
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+
+	// 发送请求
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("AI敏感词检测: 请求失败: %v", err)
+		return false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("AI敏感词检测: API返回状态码: %d", resp.StatusCode)
+		return false
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("AI敏感词检测: 读取响应失败: %v", err)
+		return false
+	}
+	log.Printf("AI敏感词检测: API返回值: %s", string(body))
+
+	// 使用 json.RawMessage 处理 data 字段可能是字符串或对象的情况
+	var rawResp struct {
+		Code int             `json:"code"`
+		Msg  string          `json:"msg"`
+		Data json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(body, &rawResp); err != nil {
+		log.Printf("AI敏感词检测: 解析响应失败: %v", err)
+		return false
+	}
+
+	if rawResp.Code != 200 {
+		log.Printf("AI敏感词检测: API返回错误: code=%d, msg=%s, body=%s", rawResp.Code, rawResp.Msg, string(body))
+		return false
+	}
+
+	// 尝试将 data 解析为对象
+	var data aiDetectData
+	if err := json.Unmarshal(rawResp.Data, &data); err != nil {
+		// data 可能是字符串（错误信息），记录日志并返回
+		log.Printf("AI敏感词检测: data字段解析失败（可能是字符串）: %s", string(rawResp.Data))
+		return false
+	}
+
+	if data.IsViolation {
+		log.Printf("AI敏感词检测: 检测到违规内容, 风险等级: %s, 关键词: %v, 说明: %s",
+			data.RiskLevel, data.Keywords, data.Explanation)
+	}
+
+	return data.IsViolation
 }
