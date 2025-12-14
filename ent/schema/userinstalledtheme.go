@@ -18,6 +18,8 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/schema/mixin"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -26,6 +28,14 @@ import (
 // UserInstalledTheme holds the schema definition for the UserInstalledTheme entity.
 type UserInstalledTheme struct {
 	ent.Schema
+}
+
+// Annotations of the UserInstalledTheme.
+func (UserInstalledTheme) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("用户已安装主题表"),
+	}
 }
 
 // Mixin of the UserInstalledTheme.

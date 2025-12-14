@@ -7,6 +7,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -15,6 +17,14 @@ import (
 // File holds the schema definition for the File entity.
 type File struct {
 	ent.Schema
+}
+
+// Annotations of the File.
+func (File) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("文件表，存储逻辑文件和目录信息"),
+	}
 }
 
 // Mixin of the File.

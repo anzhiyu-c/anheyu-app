@@ -11,7 +11,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/linktag"
 )
 
-// LinkTag is the model entity for the LinkTag schema.
+// 友链标签表
 type LinkTag struct {
 	config `json:"-"`
 	// ID of the ent.

@@ -14,7 +14,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/fileentity"
 )
 
-// FileEntity is the model entity for the FileEntity schema.
+// 文件版本关联表，关联逻辑文件和存储实体
 type FileEntity struct {
 	config `json:"-"`
 	// ID of the ent.

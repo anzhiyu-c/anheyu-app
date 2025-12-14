@@ -10,6 +10,8 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -17,6 +19,14 @@ import (
 // Link holds the schema definition for the Link entity.
 type Link struct {
 	ent.Schema
+}
+
+// Annotations of the Link.
+func (Link) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("友情链接表"),
+	}
 }
 
 // Fields of the Link.

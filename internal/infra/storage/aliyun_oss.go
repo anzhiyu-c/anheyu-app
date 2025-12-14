@@ -2,8 +2,70 @@
  * @Description: 阿里云OSS存储提供者实现
  * @Author: 安知鱼
  * @Date: 2025-09-28 18:00:00
- * @LastEditTime: 2025-09-28 18:00:00
+ * @LastEditTime: 2025-12-02 18:22:36
  * @LastEditors: 安知鱼
+ *
+ * 【重要：路径转换规则说明】
+ *
+ * 本存储提供者中的方法接收两种类型的路径参数，必须正确区分：
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ 类型1: virtualPath（完整虚拟路径）                                           │
+ * │                                                                             │
+ * │ 格式: /挂载点/子目录/文件名                                                   │
+ * │ 示例: /oss/aaa/123.jpg                                                      │
+ * │                                                                             │
+ * │ 使用此参数的方法:                                                            │
+ * │   - Upload()                                                                │
+ * │   - List()                                                                  │
+ * │   - CreateDirectory()                                                       │
+ * │   - DeleteDirectory()                                                       │
+ * │   - Rename()                                                                │
+ * │   - CreatePresignedUploadURL()                                              │
+ * │                                                                             │
+ * │ 转换逻辑: 调用 buildObjectKey() 进行转换                                      │
+ * │   1. 从 virtualPath 中减去 policy.VirtualPath（挂载点）得到相对路径            │
+ * │      相对路径 = "/oss/aaa/123.jpg" - "/oss" = "/aaa/123.jpg"                 │
+ * │   2. 将相对路径与 policy.BasePath（云存储基础路径）拼接                         │
+ * │      对象键 = "test" + "/aaa/123.jpg" = "test/aaa/123.jpg"                   │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ 类型2: source（完整对象键）                                                  │
+ * │                                                                             │
+ * │ 格式: 云存储上的实际路径（已包含 BasePath）                                    │
+ * │ 示例: test/aaa/123.jpg                                                      │
+ * │                                                                             │
+ * │ 使用此参数的方法:                                                            │
+ * │   - Get()                                                                   │
+ * │   - Delete()                                                                │
+ * │   - DeleteSingle()                                                          │
+ * │   - Stream()                                                                │
+ * │   - GetDownloadURL()                                                        │
+ * │   - IsExist() / Exists()                                                    │
+ * │   - GetThumbnail()                                                          │
+ * │                                                                             │
+ * │ 处理逻辑: 直接使用，不需要任何转换                                             │
+ * │   source 是从数据库 file_storage_entities.source 字段读取的值，                │
+ * │   在文件上传时已经由 Upload() 方法生成并存储。                                 │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * 【存储策略配置说明】
+ *
+ * policy.VirtualPath: 策略在虚拟文件系统中的挂载点（如 "/oss"）
+ * policy.BasePath:    策略在云存储上的基础目录（如 "/test"）
+ *
+ * 【数据库存储说明】
+ *
+ * files 表:
+ *   - name 字段存储相对于挂载点的路径（不含挂载点本身）
+ *   - 例如: 文件 "/oss/aaa/123.jpg" 的 name 字段值为 "123.jpg"（文件名）
+ *
+ * file_storage_entities 表:
+ *   - source 字段存储云存储上的完整对象键
+ *   - 例如: "test/aaa/123.jpg"
+ *
+ * 【警告】修改路径转换逻辑前请仔细阅读以上说明！
  */
 package storage
 
@@ -13,6 +75,7 @@ import (
 	"io"
 	"log"
 	"mime"
+	"net/http"
 	"net/url"
 	"path/filepath"
 	"strconv"
@@ -79,33 +142,51 @@ func (p *AliOSSProvider) getOSSClient(policy *model.StoragePolicy) (*oss.Client,
 }
 
 // buildObjectKey 构建OSS对象键
+// virtualPath 是完整的虚拟路径（如 "/oss" 或 "/oss/subdir"）
+// 需要先从 virtualPath 中减去策略的 VirtualPath（挂载点），得到相对路径，再与 BasePath 拼接
 func (p *AliOSSProvider) buildObjectKey(policy *model.StoragePolicy, virtualPath string) string {
-	// 基础前缀路径处理
-	basePath := strings.TrimSuffix(policy.BasePath, "/")
-	if basePath != "" && !strings.HasPrefix(basePath, "/") {
-		basePath = "/" + basePath
-	}
+	// 计算相对于策略挂载点的相对路径
+	// 例如: virtualPath="/oss/subdir", policy.VirtualPath="/oss" -> relativePath="subdir"
+	relativePath := strings.TrimPrefix(virtualPath, policy.VirtualPath)
+	relativePath = strings.TrimPrefix(relativePath, "/")
 
-	// 虚拟路径处理：移除开头的斜杠
-	virtualPath = strings.TrimPrefix(virtualPath, "/")
+	// 基础前缀路径处理（从策略的 BasePath 获取）
+	basePath := strings.TrimPrefix(strings.TrimSuffix(policy.BasePath, "/"), "/")
 
 	var objectKey string
-	if basePath == "" || basePath == "/" {
-		objectKey = virtualPath
+	if basePath == "" {
+		objectKey = relativePath
 	} else {
-		objectKey = strings.TrimPrefix(basePath, "/") + "/" + virtualPath
+		if relativePath == "" {
+			objectKey = basePath
+		} else {
+			objectKey = basePath + "/" + relativePath
+		}
 	}
 
 	// 确保不以斜杠开头（OSS对象键不应该以/开头）
 	objectKey = strings.TrimPrefix(objectKey, "/")
 
-	log.Printf("[阿里云OSS] 路径转换 - basePath: %s, virtualPath: %s -> objectKey: %s", basePath, virtualPath, objectKey)
+	log.Printf("[阿里云OSS] 路径转换 - basePath: %s, virtualPath: %s, policyVirtualPath: %s -> relativePath: %s -> objectKey: %s",
+		policy.BasePath, virtualPath, policy.VirtualPath, relativePath, objectKey)
 	return objectKey
 }
 
 // Upload 上传文件到阿里云OSS
+//
+// 【路径转换规则】
+// virtualPath 是完整的虚拟路径，格式为: /挂载点/子目录/文件名
+// 例如: virtualPath = "/oss/aaa/123.jpg"
+//
+// 转换步骤:
+//  1. 从 virtualPath 中减去 policy.VirtualPath（挂载点），得到相对路径
+//     相对路径 = "/oss/aaa/123.jpg" - "/oss" = "/aaa/123.jpg"
+//  2. 将相对路径与 policy.BasePath（云存储基础路径）拼接
+//     对象键 = "/test" + "/aaa/123.jpg" = "test/aaa/123.jpg"
+//
+// 数据库 files 表的 name 字段存储的是相对于挂载点的路径（不含挂载点）
 func (p *AliOSSProvider) Upload(ctx context.Context, file io.Reader, policy *model.StoragePolicy, virtualPath string) (*UploadResult, error) {
-	log.Printf("[阿里云OSS] 开始上传文件: virtualPath=%s, BasePath=%s", virtualPath, policy.BasePath)
+	log.Printf("[阿里云OSS] 开始上传文件: virtualPath=%s, BasePath=%s, VirtualPath=%s", virtualPath, policy.BasePath, policy.VirtualPath)
 
 	_, bucket, err := p.getOSSClient(policy)
 	if err != nil {
@@ -113,19 +194,10 @@ func (p *AliOSSProvider) Upload(ctx context.Context, file io.Reader, policy *mod
 		return nil, err
 	}
 
-	// 构建对象键
-	// virtualPath 可能是文件名（如"abc.jpg"）或完整路径（如"/comment_image_cos/abc.jpg"）
-	basePath := strings.TrimPrefix(strings.TrimSuffix(policy.BasePath, "/"), "/")
-	filename := filepath.Base(virtualPath)
+	// 使用 buildObjectKey 进行路径转换，确保保留完整的子目录结构
+	objectKey := p.buildObjectKey(policy, virtualPath)
 
-	var objectKey string
-	if basePath == "" {
-		objectKey = filename
-	} else {
-		objectKey = basePath + "/" + filename
-	}
-
-	log.Printf("[阿里云OSS] 上传对象: objectKey=%s (basePath=%s, filename=%s)", objectKey, basePath, filename)
+	log.Printf("[阿里云OSS] 上传对象: objectKey=%s", objectKey)
 
 	// 上传文件
 	err = bucket.PutObject(objectKey, file)
@@ -523,10 +595,95 @@ func (p *AliOSSProvider) IsExist(ctx context.Context, policy *model.StoragePolic
 	return exist, nil
 }
 
-// GetThumbnail 获取缩略图（阿里云OSS不直接支持）
+// GetThumbnail 阿里云OSS的图片处理（IMG）服务支持实时图片处理，可以生成缩略图
+// 如果用户在阿里云控制台开通了图片处理服务，此功能将自动可用
 func (p *AliOSSProvider) GetThumbnail(ctx context.Context, policy *model.StoragePolicy, source string, size string) (*ThumbnailResult, error) {
-	// 阿里云OSS本身不提供缩略图生成服务，返回不支持
-	return nil, ErrFeatureNotSupported
+
+	// 将描述性尺寸参数转换为像素尺寸
+	var width, height int
+	switch strings.ToLower(size) {
+	case "small":
+		width, height = 200, 200
+	case "medium":
+		width, height = 400, 400
+	case "large":
+		width, height = 800, 800
+	default:
+		// 如果是其他格式，默认使用 medium 尺寸
+		log.Printf("[阿里云OSS] 无法解析缩略图尺寸 '%s'，使用默认 medium 尺寸", size)
+		width, height = 400, 400
+	}
+
+	// 构建阿里云OSS图片处理参数
+	// 阿里云OSS图片处理格式: image/resize,m_fill,w_400,h_400
+	// m_fill: 固定宽高，裁剪并缩放
+	imageProcess := fmt.Sprintf("image/resize,m_fill,w_%d,h_%d", width, height)
+
+	var thumbnailURL string
+
+	// 如果是私有存储桶，需要生成预签名URL
+	if policy.IsPrivate {
+		_, bucket, err := p.getOSSClient(policy)
+		if err != nil {
+			log.Printf("[阿里云OSS] 创建客户端失败: %v", err)
+			return nil, err
+		}
+
+		// 设置过期时间为 10 分钟（用于下载缩略图）
+		expiresIn := int64(600) // 10分钟
+
+		// 生成带图片处理参数的预签名URL
+		signedURL, err := bucket.SignURL(source, oss.HTTPGet, expiresIn, oss.Process(imageProcess))
+		if err != nil {
+			log.Printf("[阿里云OSS] 生成预签名URL失败: %v", err)
+			return nil, fmt.Errorf("生成阿里云OSS预签名URL失败: %w", err)
+		}
+
+		thumbnailURL = signedURL
+		log.Printf("[阿里云OSS] 生成私有存储桶缩略图预签名URL")
+	} else {
+		// 公有存储桶，直接构建URL
+		serverURL := strings.TrimSuffix(policy.Server, "/")
+		thumbnailURL = fmt.Sprintf("%s/%s?x-oss-process=%s", serverURL, source, imageProcess)
+		log.Printf("[阿里云OSS] 生成公有存储桶缩略图URL")
+	}
+
+	log.Printf("[阿里云OSS] 缩略图URL: %s", thumbnailURL)
+
+	// 下载缩略图数据
+	resp, err := http.Get(thumbnailURL)
+	if err != nil {
+		return nil, fmt.Errorf("获取缩略图数据失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 检查HTTP响应状态
+	if resp.StatusCode != http.StatusOK {
+		// 如果返回 404 或其他错误，可能是图片处理服务未开通或文件不支持缩略图
+		if resp.StatusCode == http.StatusNotFound {
+			log.Printf("[阿里云OSS] 缩略图生成失败: 文件不存在或图片处理服务未开通 (HTTP %d)", resp.StatusCode)
+			return nil, ErrFeatureNotSupported
+		}
+		if resp.StatusCode == http.StatusBadRequest {
+			log.Printf("[阿里云OSS] 缩略图生成失败: 图片处理参数错误或文件格式不支持 (HTTP %d)", resp.StatusCode)
+			return nil, ErrFeatureNotSupported
+		}
+		if resp.StatusCode == http.StatusForbidden {
+			log.Printf("[阿里云OSS] 缩略图访问被拒绝: 可能是图片处理服务未授权或配置问题 (HTTP %d)", resp.StatusCode)
+			return nil, ErrFeatureNotSupported
+		}
+		return nil, fmt.Errorf("获取缩略图失败: HTTP状态码 %d", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("读取缩略图数据失败: %w", err)
+	}
+
+	return &ThumbnailResult{
+		ContentType: "image/jpeg", // 阿里云OSS图片处理默认输出JPEG
+		Data:        data,
+	}, nil
 }
 
 // Exists 检查文件是否存在于阿里云OSS中（带policy参数的版本）
@@ -616,8 +773,18 @@ func appendOSSImageParams(baseURL, params, separator string) string {
 
 // CreatePresignedUploadURL 为客户端直传创建一个预签名的上传URL
 // 客户端可以使用此URL直接PUT文件到阿里云OSS，无需经过服务器中转
+//
+// 【路径转换规则】
+// virtualPath 是完整的虚拟路径，格式为: /挂载点/子目录/文件名
+// 例如: virtualPath = "/oss/aaa/123.jpg"
+//
+// 转换步骤（与 Upload 方法相同）:
+//  1. 从 virtualPath 中减去 policy.VirtualPath（挂载点），得到相对路径
+//     相对路径 = "/oss/aaa/123.jpg" - "/oss" = "/aaa/123.jpg"
+//  2. 将相对路径与 policy.BasePath（云存储基础路径）拼接
+//     对象键 = "/test" + "/aaa/123.jpg" = "test/aaa/123.jpg"
 func (p *AliOSSProvider) CreatePresignedUploadURL(ctx context.Context, policy *model.StoragePolicy, virtualPath string) (*PresignedUploadResult, error) {
-	log.Printf("[阿里云OSS] 创建预签名上传URL - virtualPath: %s", virtualPath)
+	log.Printf("[阿里云OSS] 创建预签名上传URL - virtualPath: %s, VirtualPath: %s, BasePath: %s", virtualPath, policy.VirtualPath, policy.BasePath)
 
 	_, bucket, err := p.getOSSClient(policy)
 	if err != nil {
@@ -625,35 +792,78 @@ func (p *AliOSSProvider) CreatePresignedUploadURL(ctx context.Context, policy *m
 		return nil, err
 	}
 
-	// 构建对象键 - 使用与 Upload 方法相同的逻辑
-	// virtualPath 是完整的虚拟路径（如 "/article_image_cos/logo.png"），需要提取文件名后与 basePath 拼接
-	basePath := strings.TrimPrefix(strings.TrimSuffix(policy.BasePath, "/"), "/")
-	filename := filepath.Base(virtualPath)
+	// 使用 buildObjectKey 进行路径转换，确保保留完整的子目录结构
+	objectKey := p.buildObjectKey(policy, virtualPath)
 
-	var objectKey string
-	if basePath == "" {
-		objectKey = filename
-	} else {
-		objectKey = basePath + "/" + filename
-	}
-
-	log.Printf("[阿里云OSS] 生成预签名URL - objectKey: %s (basePath: %s, filename: %s)", objectKey, basePath, filename)
+	log.Printf("[阿里云OSS] 生成预签名URL - objectKey: %s", objectKey)
 
 	// 设置预签名URL的过期时间为1小时（3600秒）
 	expiresIn := int64(3600)
 	expirationDateTime := time.Now().Add(time.Duration(expiresIn) * time.Second)
 
-	// 生成预签名PUT URL
-	signedURL, err := bucket.SignURL(objectKey, oss.HTTPPut, expiresIn)
+	// 根据文件扩展名推断 Content-Type
+	// 使用 mime 包来推断，如果无法推断则使用 application/octet-stream
+	ext := strings.ToLower(filepath.Ext(objectKey))
+	contentType := mime.TypeByExtension(ext)
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+
+	// 生成预签名PUT URL，包含 Content-Type 以确保签名匹配
+	// 注意：客户端上传时必须使用相同的 Content-Type，否则会返回 403
+	signedURL, err := bucket.SignURL(objectKey, oss.HTTPPut, expiresIn, oss.ContentType(contentType))
 	if err != nil {
 		log.Printf("[阿里云OSS] 生成预签名上传URL失败: %v", err)
 		return nil, fmt.Errorf("生成阿里云OSS预签名上传URL失败: %w", err)
 	}
 
-	log.Printf("[阿里云OSS] 预签名上传URL生成成功，过期时间: %s", expirationDateTime.Format(time.RFC3339))
+	log.Printf("[阿里云OSS] 预签名上传URL生成成功，Content-Type: %s，过期时间: %s", contentType, expirationDateTime.Format(time.RFC3339))
 
 	return &PresignedUploadResult{
 		UploadURL:          signedURL,
 		ExpirationDateTime: expirationDateTime,
+		ContentType:        contentType,
 	}, nil
+}
+
+// SetupCORS 为阿里云OSS存储桶配置跨域策略
+// 配置允许所有来源访问，支持GET, POST, PUT, DELETE, HEAD方法
+func (p *AliOSSProvider) SetupCORS(ctx context.Context, policy *model.StoragePolicy) error {
+	client, _, err := p.getOSSClient(policy)
+	if err != nil {
+		return fmt.Errorf("创建阿里云OSS客户端失败: %w", err)
+	}
+
+	// 定义CORS规则
+	corsRule := oss.CORSRule{
+		AllowedOrigin: []string{"*"},
+		AllowedMethod: []string{"GET", "POST", "PUT", "DELETE", "HEAD"},
+		AllowedHeader: []string{"*"},
+		ExposeHeader:  []string{"ETag"},
+		MaxAgeSeconds: 3600,
+	}
+
+	// 使用client的方法配置CORS，需要传入规则数组
+	err = client.SetBucketCORS(policy.BucketName, []oss.CORSRule{corsRule})
+	if err != nil {
+		return fmt.Errorf("配置阿里云OSS跨域策略失败: %w", err)
+	}
+
+	log.Printf("[阿里云OSS] 成功配置CORS规则")
+	return nil
+}
+
+// GetCORSConfig 获取阿里云OSS存储桶的跨域配置
+func (p *AliOSSProvider) GetCORSConfig(ctx context.Context, policy *model.StoragePolicy) ([]oss.CORSRule, error) {
+	client, _, err := p.getOSSClient(policy)
+	if err != nil {
+		return nil, fmt.Errorf("创建阿里云OSS客户端失败: %w", err)
+	}
+
+	result, err := client.GetBucketCORS(policy.BucketName)
+	if err != nil {
+		return nil, fmt.Errorf("获取阿里云OSS跨域配置失败: %w", err)
+	}
+
+	return result.CORSRules, nil
 }

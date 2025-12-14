@@ -13,7 +13,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
 )
 
-// StoragePolicy is the model entity for the StoragePolicy schema.
+// 存储策略表
 type StoragePolicy struct {
 	config `json:"-"`
 	// ID of the ent.
@@ -24,7 +24,7 @@ type StoragePolicy struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// 策略名称，必须唯一
+	// 策略名称，在未删除的策略中必须唯一
 	Name string `json:"name,omitempty"`
 	// 存储类型, 如 local, onedrive
 	Type string `json:"type,omitempty"`

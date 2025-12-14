@@ -2,13 +2,68 @@
  * @Description: AWS S3存储提供者实现（使用aws-sdk-go-v2）
  * @Author: 安知鱼
  * @Date: 2025-09-28 19:00:00
- * @LastEditTime: 2025-09-28 19:30:00
+ * @LastEditTime: 2025-12-02 18:30:00
  * @LastEditors: 安知鱼
+ *
+ * 【重要：路径转换规则说明】
+ *
+ * 本存储提供者中的方法接收两种类型的路径参数，必须正确区分：
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ 类型1: virtualPath（完整虚拟路径）                                           │
+ * │                                                                             │
+ * │ 格式: /挂载点/子目录/文件名                                                   │
+ * │ 示例: /s3/aaa/123.jpg                                                       │
+ * │                                                                             │
+ * │ 使用此参数的方法:                                                            │
+ * │   - Upload()                                                                │
+ * │   - List()                                                                  │
+ * │   - CreateDirectory()                                                       │
+ * │   - DeleteDirectory()                                                       │
+ * │   - Rename()                                                                │
+ * │   - CreatePresignedUploadURL()                                              │
+ * │                                                                             │
+ * │ 转换逻辑: 调用 buildObjectKey() 进行转换                                      │
+ * │   1. 从 virtualPath 中减去 policy.VirtualPath（挂载点）得到相对路径            │
+ * │      相对路径 = "/s3/aaa/123.jpg" - "/s3" = "/aaa/123.jpg"                   │
+ * │   2. 将相对路径与 policy.BasePath（云存储基础路径）拼接                         │
+ * │      对象键 = "test" + "/aaa/123.jpg" = "test/aaa/123.jpg"                   │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ 类型2: source（完整对象键）                                                  │
+ * │                                                                             │
+ * │ 格式: 云存储上的实际路径（已包含 BasePath）                                    │
+ * │ 示例: test/aaa/123.jpg                                                      │
+ * │                                                                             │
+ * │ 使用此参数的方法:                                                            │
+ * │   - Get()                                                                   │
+ * │   - Delete()                                                                │
+ * │   - DeleteSingle()                                                          │
+ * │   - Stream()                                                                │
+ * │   - GetDownloadURL()                                                        │
+ * │   - IsExist() / Exists()                                                    │
+ * │   - GetThumbnail()                                                          │
+ * │                                                                             │
+ * │ 处理逻辑: 直接使用，不需要任何转换                                             │
+ * │   source 是从数据库 file_storage_entities.source 字段读取的值，                │
+ * │   在文件上传时已经由 Upload() 方法生成并存储。                                 │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * 【存储策略配置说明】
+ *
+ * policy.VirtualPath: 策略在虚拟文件系统中的挂载点（如 "/s3"）
+ * policy.BasePath:    策略在云存储上的基础目录（如 "/test"）
+ *
+ * 【警告】修改路径转换逻辑前请仔细阅读以上说明！
  */
 package storage
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -120,33 +175,51 @@ func (p *AWSS3Provider) getS3Client(ctx context.Context, policy *model.StoragePo
 }
 
 // buildObjectKey 构建S3对象键
+// virtualPath 是完整的虚拟路径（如 "/s3" 或 "/s3/subdir"）
+// 需要先从 virtualPath 中减去策略的 VirtualPath（挂载点），得到相对路径，再与 BasePath 拼接
 func (p *AWSS3Provider) buildObjectKey(policy *model.StoragePolicy, virtualPath string) string {
-	// 基础前缀路径处理
-	basePath := strings.TrimSuffix(policy.BasePath, "/")
-	if basePath != "" && !strings.HasPrefix(basePath, "/") {
-		basePath = "/" + basePath
-	}
+	// 计算相对于策略挂载点的相对路径
+	// 例如: virtualPath="/s3/subdir", policy.VirtualPath="/s3" -> relativePath="subdir"
+	relativePath := strings.TrimPrefix(virtualPath, policy.VirtualPath)
+	relativePath = strings.TrimPrefix(relativePath, "/")
 
-	// 虚拟路径处理：移除开头的斜杠
-	virtualPath = strings.TrimPrefix(virtualPath, "/")
+	// 基础前缀路径处理（从策略的 BasePath 获取）
+	basePath := strings.TrimPrefix(strings.TrimSuffix(policy.BasePath, "/"), "/")
 
 	var objectKey string
-	if basePath == "" || basePath == "/" {
-		objectKey = virtualPath
+	if basePath == "" {
+		objectKey = relativePath
 	} else {
-		objectKey = strings.TrimPrefix(basePath, "/") + "/" + virtualPath
+		if relativePath == "" {
+			objectKey = basePath
+		} else {
+			objectKey = basePath + "/" + relativePath
+		}
 	}
 
 	// 确保不以斜杠开头（S3对象键不应该以/开头）
 	objectKey = strings.TrimPrefix(objectKey, "/")
 
-	log.Printf("[AWS S3] 路径转换 - basePath: %s, virtualPath: %s -> objectKey: %s", basePath, virtualPath, objectKey)
+	log.Printf("[AWS S3] 路径转换 - basePath: %s, virtualPath: %s, policyVirtualPath: %s -> relativePath: %s -> objectKey: %s",
+		policy.BasePath, virtualPath, policy.VirtualPath, relativePath, objectKey)
 	return objectKey
 }
 
 // Upload 上传文件到AWS S3
+//
+// 【路径转换规则】
+// virtualPath 是完整的虚拟路径，格式为: /挂载点/子目录/文件名
+// 例如: virtualPath = "/s3/aaa/123.jpg"
+//
+// 转换步骤:
+//  1. 从 virtualPath 中减去 policy.VirtualPath（挂载点），得到相对路径
+//     相对路径 = "/s3/aaa/123.jpg" - "/s3" = "/aaa/123.jpg"
+//  2. 将相对路径与 policy.BasePath（云存储基础路径）拼接
+//     对象键 = "/test" + "/aaa/123.jpg" = "test/aaa/123.jpg"
+//
+// 数据库 files 表的 name 字段存储的是相对于挂载点的路径（不含挂载点）
 func (p *AWSS3Provider) Upload(ctx context.Context, file io.Reader, policy *model.StoragePolicy, virtualPath string) (*UploadResult, error) {
-	log.Printf("[AWS S3] 开始上传文件: virtualPath=%s", virtualPath)
+	log.Printf("[AWS S3] 开始上传文件: virtualPath=%s, BasePath=%s, VirtualPath=%s", virtualPath, policy.BasePath, policy.VirtualPath)
 
 	client, err := p.getS3Client(ctx, policy)
 	if err != nil {
@@ -154,19 +227,45 @@ func (p *AWSS3Provider) Upload(ctx context.Context, file io.Reader, policy *mode
 		return nil, err
 	}
 
+	// 使用 buildObjectKey 进行路径转换，确保保留完整的子目录结构
 	objectKey := p.buildObjectKey(policy, virtualPath)
-	if objectKey == "" {
-		objectKey = filepath.Base(virtualPath)
-		log.Printf("[AWS S3] objectKey为空，使用文件名: %s", objectKey)
-	}
 
 	log.Printf("[AWS S3] 上传对象: objectKey=%s", objectKey)
 
-	// 上传文件
+	// 将文件内容读入内存，以便获取准确的 ContentLength
+	// 这对于第三方 S3 兼容服务（如 Ceph RGW、MinIO）尤为重要
+	// 因为它们可能对 Content-SHA256 验证更严格
+	fileContent, err := io.ReadAll(file)
+	if err != nil {
+		log.Printf("[AWS S3] 读取文件内容失败: %v", err)
+		return nil, fmt.Errorf("读取文件内容失败: %w", err)
+	}
+	contentLength := int64(len(fileContent))
+
+	log.Printf("[AWS S3] 文件大小: %d bytes", contentLength)
+
+	// 检测 MIME 类型
+	detectedMimeType := mime.TypeByExtension(filepath.Ext(virtualPath))
+	if detectedMimeType == "" {
+		detectedMimeType = "application/octet-stream"
+	}
+
+	// 计算 SHA256 校验和（对于第三方 S3 兼容服务如 Ceph RGW 尤为重要）
+	// 这可以避免 XAmzContentSHA256Mismatch 错误
+	hash := sha256.Sum256(fileContent)
+	checksumSHA256 := base64.StdEncoding.EncodeToString(hash[:])
+
+	log.Printf("[AWS S3] 计算SHA256校验和: %s", checksumSHA256)
+
+	// 上传文件，使用 bytes.NewReader 确保内容可被正确读取和重试
+	// 显式设置 ContentLength 和 ChecksumSHA256 以避免第三方 S3 服务的兼容性问题
 	_, err = client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(policy.BucketName),
-		Key:    aws.String(objectKey),
-		Body:   file,
+		Bucket:         aws.String(policy.BucketName),
+		Key:            aws.String(objectKey),
+		Body:           bytes.NewReader(fileContent),
+		ContentLength:  aws.Int64(contentLength),
+		ContentType:    aws.String(detectedMimeType),
+		ChecksumSHA256: aws.String(checksumSHA256),
 	})
 	if err != nil {
 		log.Printf("[AWS S3] 上传失败: %v", err)
@@ -494,10 +593,12 @@ func (p *AWSS3Provider) CreateDirectory(ctx context.Context, policy *model.Stora
 	}
 
 	// S3通过创建一个以"/"结尾的空对象来模拟目录
+	// 显式设置 ContentLength 为 0，确保第三方 S3 兼容服务的兼容性
 	_, err = client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(policy.BucketName),
-		Key:    aws.String(objectKey),
-		Body:   strings.NewReader(""),
+		Bucket:        aws.String(policy.BucketName),
+		Key:           aws.String(objectKey),
+		Body:          bytes.NewReader([]byte{}),
+		ContentLength: aws.Int64(0),
 	})
 	if err != nil {
 		return fmt.Errorf("在AWS S3中创建目录失败: %w", err)
@@ -623,8 +724,18 @@ func (p *AWSS3Provider) Exists(ctx context.Context, policy *model.StoragePolicy,
 
 // CreatePresignedUploadURL 为客户端直传创建一个预签名的上传URL
 // 客户端可以使用此URL直接PUT文件到AWS S3，无需经过服务器中转
+//
+// 【路径转换规则】
+// virtualPath 是完整的虚拟路径，格式为: /挂载点/子目录/文件名
+// 例如: virtualPath = "/s3/aaa/123.jpg"
+//
+// 转换步骤（与 Upload 方法相同）:
+//  1. 从 virtualPath 中减去 policy.VirtualPath（挂载点），得到相对路径
+//     相对路径 = "/s3/aaa/123.jpg" - "/s3" = "/aaa/123.jpg"
+//  2. 将相对路径与 policy.BasePath（云存储基础路径）拼接
+//     对象键 = "/test" + "/aaa/123.jpg" = "test/aaa/123.jpg"
 func (p *AWSS3Provider) CreatePresignedUploadURL(ctx context.Context, policy *model.StoragePolicy, virtualPath string) (*PresignedUploadResult, error) {
-	log.Printf("[AWS S3] 创建预签名上传URL - virtualPath: %s", virtualPath)
+	log.Printf("[AWS S3] 创建预签名上传URL - virtualPath: %s, VirtualPath: %s, BasePath: %s", virtualPath, policy.VirtualPath, policy.BasePath)
 
 	client, err := p.getS3Client(ctx, policy)
 	if err != nil {
@@ -632,19 +743,10 @@ func (p *AWSS3Provider) CreatePresignedUploadURL(ctx context.Context, policy *mo
 		return nil, err
 	}
 
-	// 构建对象键 - 使用与 Upload 方法相同的逻辑
-	// virtualPath 是完整的虚拟路径（如 "/article_image_cos/logo.png"），需要提取文件名后与 basePath 拼接
-	basePath := strings.TrimPrefix(strings.TrimSuffix(policy.BasePath, "/"), "/")
-	filename := filepath.Base(virtualPath)
+	// 使用 buildObjectKey 进行路径转换，确保保留完整的子目录结构
+	objectKey := p.buildObjectKey(policy, virtualPath)
 
-	var objectKey string
-	if basePath == "" {
-		objectKey = filename
-	} else {
-		objectKey = basePath + "/" + filename
-	}
-
-	log.Printf("[AWS S3] 生成预签名URL - objectKey: %s (basePath: %s, filename: %s)", objectKey, basePath, filename)
+	log.Printf("[AWS S3] 生成预签名URL - objectKey: %s", objectKey)
 
 	// 设置预签名URL的过期时间为1小时
 	expireTime := time.Hour
@@ -669,5 +771,6 @@ func (p *AWSS3Provider) CreatePresignedUploadURL(ctx context.Context, policy *mo
 	return &PresignedUploadResult{
 		UploadURL:          presignResult.URL,
 		ExpirationDateTime: expirationDateTime,
+		ContentType:        "", // AWS S3不需要指定Content-Type
 	}, nil
 }

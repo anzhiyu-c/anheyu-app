@@ -12,7 +12,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/visitorstat"
 )
 
-// VisitorStat is the model entity for the VisitorStat schema.
+// 每日访问统计表
 type VisitorStat struct {
 	config `json:"-"`
 	// ID of the ent.

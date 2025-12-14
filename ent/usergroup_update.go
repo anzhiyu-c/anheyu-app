@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/anzhiyu-c/anheyu-app/ent/predicate"
 	"github.com/anzhiyu-c/anheyu-app/ent/user"
@@ -142,6 +143,24 @@ func (_u *UserGroupUpdate) AddSpeedLimit(v int64) *UserGroupUpdate {
 // SetSettings sets the "settings" field.
 func (_u *UserGroupUpdate) SetSettings(v *model.GroupSettings) *UserGroupUpdate {
 	_u.mutation.SetSettings(v)
+	return _u
+}
+
+// SetStoragePolicyIds sets the "storage_policy_ids" field.
+func (_u *UserGroupUpdate) SetStoragePolicyIds(v []uint) *UserGroupUpdate {
+	_u.mutation.SetStoragePolicyIds(v)
+	return _u
+}
+
+// AppendStoragePolicyIds appends value to the "storage_policy_ids" field.
+func (_u *UserGroupUpdate) AppendStoragePolicyIds(v []uint) *UserGroupUpdate {
+	_u.mutation.AppendStoragePolicyIds(v)
+	return _u
+}
+
+// ClearStoragePolicyIds clears the value of the "storage_policy_ids" field.
+func (_u *UserGroupUpdate) ClearStoragePolicyIds() *UserGroupUpdate {
+	_u.mutation.ClearStoragePolicyIds()
 	return _u
 }
 
@@ -296,6 +315,17 @@ func (_u *UserGroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Settings(); ok {
 		_spec.SetField(usergroup.FieldSettings, field.TypeOther, value)
+	}
+	if value, ok := _u.mutation.StoragePolicyIds(); ok {
+		_spec.SetField(usergroup.FieldStoragePolicyIds, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedStoragePolicyIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, usergroup.FieldStoragePolicyIds, value)
+		})
+	}
+	if _u.mutation.StoragePolicyIdsCleared() {
+		_spec.ClearField(usergroup.FieldStoragePolicyIds, field.TypeJSON)
 	}
 	if _u.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -475,6 +505,24 @@ func (_u *UserGroupUpdateOne) AddSpeedLimit(v int64) *UserGroupUpdateOne {
 // SetSettings sets the "settings" field.
 func (_u *UserGroupUpdateOne) SetSettings(v *model.GroupSettings) *UserGroupUpdateOne {
 	_u.mutation.SetSettings(v)
+	return _u
+}
+
+// SetStoragePolicyIds sets the "storage_policy_ids" field.
+func (_u *UserGroupUpdateOne) SetStoragePolicyIds(v []uint) *UserGroupUpdateOne {
+	_u.mutation.SetStoragePolicyIds(v)
+	return _u
+}
+
+// AppendStoragePolicyIds appends value to the "storage_policy_ids" field.
+func (_u *UserGroupUpdateOne) AppendStoragePolicyIds(v []uint) *UserGroupUpdateOne {
+	_u.mutation.AppendStoragePolicyIds(v)
+	return _u
+}
+
+// ClearStoragePolicyIds clears the value of the "storage_policy_ids" field.
+func (_u *UserGroupUpdateOne) ClearStoragePolicyIds() *UserGroupUpdateOne {
+	_u.mutation.ClearStoragePolicyIds()
 	return _u
 }
 
@@ -659,6 +707,17 @@ func (_u *UserGroupUpdateOne) sqlSave(ctx context.Context) (_node *UserGroup, er
 	}
 	if value, ok := _u.mutation.Settings(); ok {
 		_spec.SetField(usergroup.FieldSettings, field.TypeOther, value)
+	}
+	if value, ok := _u.mutation.StoragePolicyIds(); ok {
+		_spec.SetField(usergroup.FieldStoragePolicyIds, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedStoragePolicyIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, usergroup.FieldStoragePolicyIds, value)
+		})
+	}
+	if _u.mutation.StoragePolicyIdsCleared() {
+		_spec.ClearField(usergroup.FieldStoragePolicyIds, field.TypeJSON)
 	}
 	if _u.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{

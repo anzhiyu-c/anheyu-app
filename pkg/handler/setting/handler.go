@@ -11,7 +11,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/anzhiyu-c/anheyu-app/internal/pkg/auth"
 	"github.com/anzhiyu-c/anheyu-app/pkg/handler/setting/dto"
+	"github.com/anzhiyu-c/anheyu-app/pkg/idgen"
 	"github.com/anzhiyu-c/anheyu-app/pkg/response"
 	"github.com/anzhiyu-c/anheyu-app/pkg/service/cdn"
 	"github.com/anzhiyu-c/anheyu-app/pkg/service/config"
@@ -91,7 +93,7 @@ type GetSettingsByKeysReq struct {
 
 // GetSettingsByKeys 处理根据一组键名批量获取配置的请求
 // @Summary      批量获取配置
-// @Description  根据键名列表批量获取配置项（需要管理员权限）
+// @Description  根据键名列表批量获取配置项（管理员可获取所有配置，普通用户只能获取公开配置）
 // @Tags         站点设置
 // @Security     BearerAuth
 // @Accept       json
@@ -107,7 +109,39 @@ func (h *SettingHandler) GetSettingsByKeys(c *gin.Context) {
 		return
 	}
 
-	settings := h.settingSvc.GetByKeys(req.Keys)
+	// 检查是否为管理员
+	isAdmin := false
+	claimsValue, exists := c.Get(auth.ClaimsKey)
+	if exists {
+		if claims, ok := claimsValue.(*auth.CustomClaims); ok {
+			userGroupID, entityType, err := idgen.DecodePublicID(claims.UserGroupID)
+			if err == nil && entityType == idgen.EntityTypeUserGroup && userGroupID == 1 {
+				isAdmin = true
+			}
+		}
+	}
+
+	var settings map[string]interface{}
+	if isAdmin {
+		// 管理员可以获取所有配置
+		settings = h.settingSvc.GetByKeys(req.Keys)
+	} else {
+		// 普通用户只能获取公开配置
+		// 先过滤出公开的键
+		publicKeys := make([]string, 0)
+		for _, key := range req.Keys {
+			if h.settingSvc.IsPublicSetting(key) {
+				publicKeys = append(publicKeys, key)
+			}
+		}
+		// 只获取公开配置
+		if len(publicKeys) > 0 {
+			settings = h.settingSvc.GetByKeys(publicKeys)
+		} else {
+			settings = make(map[string]interface{})
+		}
+	}
+
 	response.Success(c, settings, "获取配置成功")
 }
 

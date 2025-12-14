@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
 )
 
-// UserGroup is the model entity for the UserGroup schema.
+// 用户组表
 type UserGroup struct {
 	config `json:"-"`
 	// ID of the ent.
@@ -36,6 +37,8 @@ type UserGroup struct {
 	SpeedLimit int64 `json:"speed_limit,omitempty"`
 	// 用户组的特定JSON配置
 	Settings *model.GroupSettings `json:"settings,omitempty"`
+	// 该用户组可使用的存储策略ID列表
+	StoragePolicyIds []uint `json:"storage_policy_ids,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserGroupQuery when eager-loading is set.
 	Edges        UserGroupEdges `json:"edges"`
@@ -65,6 +68,8 @@ func (*UserGroup) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case usergroup.FieldStoragePolicyIds:
+			values[i] = new([]byte)
 		case usergroup.FieldPermissions:
 			values[i] = new(model.Boolset)
 		case usergroup.FieldSettings:
@@ -151,6 +156,14 @@ func (_m *UserGroup) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.Settings = value
 			}
+		case usergroup.FieldStoragePolicyIds:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field storage_policy_ids", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.StoragePolicyIds); err != nil {
+					return fmt.Errorf("unmarshal field storage_policy_ids: %w", err)
+				}
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -220,6 +233,9 @@ func (_m *UserGroup) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("settings=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Settings))
+	builder.WriteString(", ")
+	builder.WriteString("storage_policy_ids=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StoragePolicyIds))
 	builder.WriteByte(')')
 	return builder.String()
 }

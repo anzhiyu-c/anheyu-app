@@ -68,6 +68,7 @@ func (r *entUserGroupRepository) Save(ctx context.Context, group *model.UserGrou
 			SetMaxStorage(group.MaxStorage).
 			SetSpeedLimit(group.SpeedLimit).
 			SetSettings(&group.Settings).
+			SetStoragePolicyIds(group.StoragePolicyIDs).
 			Save(ctx)
 		if err != nil {
 			return err
@@ -88,6 +89,7 @@ func (r *entUserGroupRepository) Save(ctx context.Context, group *model.UserGrou
 		SetMaxStorage(group.MaxStorage).
 		SetSpeedLimit(group.SpeedLimit).
 		SetSettings(&group.Settings).
+		SetStoragePolicyIds(group.StoragePolicyIDs).
 		Save(ctx)
 	if err != nil {
 		return err
@@ -111,14 +113,15 @@ func toDomainUserGroup(g *ent.UserGroup) *model.UserGroup {
 		return nil
 	}
 	return &model.UserGroup{
-		ID:          g.ID,
-		CreatedAt:   g.CreatedAt,
-		UpdatedAt:   g.UpdatedAt,
-		Name:        g.Name,
-		Description: g.Description,
-		Permissions: g.Permissions,
-		MaxStorage:  g.MaxStorage,
-		SpeedLimit:  g.SpeedLimit,
-		Settings:    *g.Settings,
+		ID:               g.ID,
+		CreatedAt:        g.CreatedAt,
+		UpdatedAt:        g.UpdatedAt,
+		Name:             g.Name,
+		Description:      g.Description,
+		Permissions:      g.Permissions,
+		MaxStorage:       g.MaxStorage,
+		SpeedLimit:       g.SpeedLimit,
+		Settings:         *g.Settings,
+		StoragePolicyIDs: g.StoragePolicyIds,
 	}
 }

@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/anzhiyu-c/anheyu-app/ent"
+	"github.com/anzhiyu-c/anheyu-app/ent/migrate"
 	"github.com/anzhiyu-c/anheyu-app/pkg/config"
 
 	"entgo.io/ent/dialect"
@@ -137,11 +138,24 @@ func NewEntClient(db *sql.DB, cfg *config.Config) (*ent.Client, error) {
 	// 使用所有收集到的选项创建客户端
 	client := ent.NewClient(entOptions...)
 
-	// 在开发/启动阶段自动同步数据库结构
-	if err := client.Schema.Create(context.Background()); err != nil {
-		return nil, fmt.Errorf("创建/更新数据库 schema 失败 (Ent): %w", err)
+	// 在启动时自动迁移数据库结构
+	log.Println("⚡ 开始数据库表结构迁移...")
+	if err := client.Schema.Create(context.Background(),
+		migrate.WithDropIndex(true),  // 允许删除旧索引（包括唯一约束）
+		migrate.WithDropColumn(true), // 允许删除旧列
+	); err != nil {
+		return nil, fmt.Errorf("数据库迁移失败: %w", err)
+	}
+	log.Println("✅ 数据库表结构迁移成功")
+
+	// 执行 SQL 数据迁移（处理现有数据和索引）
+	migrationSvc := NewMigrationService(db, driverName)
+	if err := migrationSvc.RunMigrations(context.Background()); err != nil {
+		log.Printf("⚠️ 警告：SQL 数据迁移失败: %v", err)
+		// 不中断启动流程，但记录错误
+		// 因为 Ent Schema 迁移已经完成，字段可能已经存在
 	}
 
-	log.Println("✅ Ent 客户端初始化成功，并已同步数据库 schema！")
+	log.Println("✅ Ent 客户端初始化成功！")
 	return client, nil
 }

@@ -25,6 +25,7 @@ type LinkRepository interface {
 	GetRandomPublic(ctx context.Context, num int) ([]*model.LinkDTO, error)
 	// 为导入功能添加的方法
 	ExistsByURL(ctx context.Context, url string) (bool, error)
+	GetByURL(ctx context.Context, url string) (*model.LinkDTO, error)
 	// 为友链健康检查添加的方法
 	GetAllApprovedLinks(ctx context.Context) ([]*model.LinkDTO, error)
 	GetAllInvalidLinks(ctx context.Context) ([]*model.LinkDTO, error)

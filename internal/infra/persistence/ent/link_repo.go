@@ -286,6 +286,16 @@ func (r *linkRepo) ListAllApplications(ctx context.Context, req *model.ListPubli
 		query = query.Where(link.HasCategoryWith(linkcategory.ID(*req.CategoryID)))
 	}
 
+	// 状态筛选
+	if req.Status != nil {
+		query = query.Where(link.StatusEQ(link.Status(*req.Status)))
+	}
+
+	// 名称搜索
+	if req.Name != nil && *req.Name != "" {
+		query = query.Where(link.NameContains(*req.Name))
+	}
+
 	total, err := query.Count(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -399,6 +409,22 @@ func (r *linkRepo) ExistsByURL(ctx context.Context, url string) (bool, error) {
 		Where(link.URLEQ(url)).
 		Exist(ctx)
 	return exists, err
+}
+
+// GetByURL 根据 URL 获取友链信息
+func (r *linkRepo) GetByURL(ctx context.Context, url string) (*model.LinkDTO, error) {
+	entLink, err := r.client.Link.Query().
+		WithCategory().
+		WithTags().
+		Where(link.URLEQ(url)).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return mapEntLinkToDTO(entLink), nil
 }
 
 // GetAllApprovedLinks 获取所有已审核通过的友链

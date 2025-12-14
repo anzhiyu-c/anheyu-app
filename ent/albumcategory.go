@@ -11,7 +11,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/albumcategory"
 )
 
-// AlbumCategory is the model entity for the AlbumCategory schema.
+// 相册分类表
 type AlbumCategory struct {
 	config `json:"-"`
 	// ID of the ent.

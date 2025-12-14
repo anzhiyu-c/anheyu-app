@@ -8,16 +8,27 @@
 package schema
 
 import (
-	"github.com/anzhiyu-c/anheyu-app/ent/schema/mixin"
 	"time"
 
+	"github.com/anzhiyu-c/anheyu-app/ent/schema/mixin"
+
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 )
 
 // Setting holds the schema definition for the Setting entity.
 type Setting struct {
 	ent.Schema
+}
+
+// Annotations of the Setting.
+func (Setting) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("系统设置表"),
+	}
 }
 
 func (Setting) Mixin() []ent.Mixin {

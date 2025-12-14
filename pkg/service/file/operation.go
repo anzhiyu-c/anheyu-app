@@ -22,6 +22,12 @@ import (
 
 // UploadFileByPolicyFlag 根据策略标志（如 article_image）上传文件。
 func (s *serviceImpl) UploadFileByPolicyFlag(ctx context.Context, viewerID uint, fileReader io.Reader, policyFlag, filename string) (*model.FileItem, error) {
+	return s.UploadFileByPolicyFlagWithGroup(ctx, viewerID, 0, fileReader, policyFlag, filename)
+}
+
+// UploadFileByPolicyFlagWithGroup 根据策略标志上传文件，并检查用户组权限。
+// userGroupID 为 0 表示不检查用户组权限（仅适用于系统内部调用）。
+func (s *serviceImpl) UploadFileByPolicyFlagWithGroup(ctx context.Context, viewerID, userGroupID uint, fileReader io.Reader, policyFlag, filename string) (*model.FileItem, error) {
 	var createdFileItem *model.FileItem
 	var createdFile *model.File // 将 newFile 提升到事务外部作用域
 	const systemOwnerID uint = 1
@@ -38,6 +44,38 @@ func (s *serviceImpl) UploadFileByPolicyFlag(ctx context.Context, viewerID uint,
 	if policy.NodeID == nil {
 		// 策略存在，但没有和虚拟文件系统中的任何文件夹关联起来
 		return nil, fmt.Errorf("标志为 '%s' 的存储策略未关联到任何目录节点", policyFlag)
+	}
+
+	// 1.5 检查用户组权限
+	// userGroupID == 0 表示系统内部调用，不检查权限
+	// userGroupID == 1 表示管理员组，始终允许
+	if userGroupID > 0 && userGroupID != 1 {
+		// 获取用户组信息，检查其允许使用的存储策略列表
+		userGroup, err := s.userGroupRepo.FindByID(ctx, userGroupID)
+		if err != nil {
+			return nil, fmt.Errorf("获取用户组信息失败: %w", err)
+		}
+		if userGroup == nil {
+			return nil, fmt.Errorf("用户组不存在")
+		}
+
+		// 检查用户组是否有权限使用此存储策略
+		if len(userGroup.StoragePolicyIDs) > 0 {
+			// 检查当前策略ID是否在用户组允许的策略列表中
+			allowed := false
+			for _, policyID := range userGroup.StoragePolicyIDs {
+				if policyID == policy.ID {
+					allowed = true
+					break
+				}
+			}
+			if !allowed {
+				return nil, fmt.Errorf("您所在的用户组无权使用此存储策略上传文件")
+			}
+		} else {
+			// 如果用户组没有配置允许的存储策略，则只有管理员可以使用
+			return nil, fmt.Errorf("此存储策略仅管理员可用")
+		}
 	}
 
 	// 2. 将文件内容完整读入内存，以便在事务中安全使用
@@ -70,14 +108,15 @@ func (s *serviceImpl) UploadFileByPolicyFlag(ctx context.Context, viewerID uint,
 		}
 
 		// 6. 确定存储驱动和上传路径
-		// 注意：这里只传递文件名，basePath会在存储提供者的buildObjectKey中添加
 		provider, err := s.GetProviderForPolicy(policy)
 		if err != nil {
 			return err
 		}
 
-		// 7. 执行物理上传（只传递文件名，不包含虚拟路径前缀）
-		uploadResult, err := provider.Upload(ctx, bytes.NewReader(content), policy, filename)
+		// 7. 构建完整的虚拟路径并执行物理上传
+		// buildObjectKey 需要完整的虚拟路径（如 /s3/article_images/123.jpg）来正确计算对象键
+		fullVirtualPath := filepath.ToSlash(filepath.Join(parentVirtualPath, filename))
+		uploadResult, err := provider.Upload(ctx, bytes.NewReader(content), policy, fullVirtualPath)
 		if err != nil {
 			return fmt.Errorf("存储驱动上传失败: %w", err)
 		}

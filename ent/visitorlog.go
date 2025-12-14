@@ -12,7 +12,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/visitorlog"
 )
 
-// VisitorLog is the model entity for the VisitorLog schema.
+// 访问日志表
 type VisitorLog struct {
 	config `json:"-"`
 	// ID of the ent.

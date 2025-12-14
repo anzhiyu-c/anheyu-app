@@ -15,7 +15,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/usernotificationconfig"
 )
 
-// UserNotificationConfig is the model entity for the UserNotificationConfig schema.
+// 用户通知配置表
 type UserNotificationConfig struct {
 	config `json:"-"`
 	// ID of the ent.

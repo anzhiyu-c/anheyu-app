@@ -72,6 +72,7 @@ func (r *articleRepo) toModel(a *ent.Article) *model.Article {
 
 	return &model.Article{
 		ID:                   publicID,
+		OwnerID:              a.OwnerID,
 		CreatedAt:            a.CreatedAt,
 		UpdatedAt:            a.UpdatedAt,
 		Title:                a.Title,
@@ -98,6 +99,16 @@ func (r *articleRepo) toModel(a *ent.Article) *model.Article {
 		CopyrightAuthorHref:  a.CopyrightAuthorHref,
 		CopyrightURL:         a.CopyrightURL,
 		Keywords:             a.Keywords,
+		// 审核相关字段
+		ReviewStatus:  string(a.ReviewStatus),
+		ReviewComment: a.ReviewComment,
+		ReviewedAt:    a.ReviewedAt,
+		ReviewedBy:    a.ReviewedBy,
+		// 下架相关字段
+		IsTakedown:     a.IsTakedown,
+		TakedownReason: a.TakedownReason,
+		TakedownAt:     a.TakedownAt,
+		TakedownBy:     a.TakedownBy,
 	}
 }
 
@@ -320,6 +331,12 @@ func (r *articleRepo) GetBySlugOrID(ctx context.Context, slugOrID string) (*mode
 			wherePredicate,
 			article.DeletedAtIsNil(),
 			article.StatusEQ(article.StatusPUBLISHED),
+			article.IsTakedownEQ(false), // 过滤下架文章
+			// 只显示审核通过或无需审核的文章
+			article.Or(
+				article.ReviewStatusEQ(article.ReviewStatusAPPROVED),
+				article.ReviewStatusEQ(article.ReviewStatusNONE),
+			),
 		).
 		WithPostTags().
 		WithPostCategories().
@@ -333,6 +350,46 @@ func (r *articleRepo) GetBySlugOrID(ctx context.Context, slugOrID string) (*mode
 	log.Printf("[GetBySlugOrID] 查询成功: 数据库ID=%d, Title=%s", entity.ID, entity.Title)
 	result := r.toModel(entity)
 	log.Printf("[GetBySlugOrID] 转换后的公共ID: %s", result.ID)
+	return result, nil
+}
+
+// GetBySlugOrIDForPreview 通过 abbrlink 或公共 ID 获取一篇文章，不过滤状态，用于预览功能
+func (r *articleRepo) GetBySlugOrIDForPreview(ctx context.Context, slugOrID string) (*model.Article, error) {
+	log.Printf("[GetBySlugOrIDForPreview] 开始查询文章(预览模式): slugOrID=%s", slugOrID)
+
+	// 尝试将 slugOrID 解码为数据库 ID
+	dbID, _, err := idgen.DecodePublicID(slugOrID)
+
+	var wherePredicate predicate.Article
+	if err == nil {
+		// 如果解码成功，则查询条件为 ID 或 abbrlink 匹配
+		log.Printf("[GetBySlugOrIDForPreview] 解码成功，使用ID或abbrlink查询: dbID=%d", dbID)
+		wherePredicate = article.Or(article.ID(dbID), article.AbbrlinkEQ(slugOrID))
+	} else {
+		// 如果解码失败，则查询条件仅为 abbrlink 匹配
+		log.Printf("[GetBySlugOrIDForPreview] 解码失败，仅使用abbrlink查询: %v", err)
+		wherePredicate = article.AbbrlinkEQ(slugOrID)
+	}
+
+	// 预览模式：不过滤文章状态，只过滤已删除的文章
+	entity, err := r.db.Article.Query().
+		Where(
+			wherePredicate,
+			article.DeletedAtIsNil(),
+		).
+		WithPostTags().
+		WithPostCategories().
+		Only(ctx)
+
+	if err != nil {
+		log.Printf("[GetBySlugOrIDForPreview] 查询失败: %v", err)
+		return nil, err
+	}
+
+	log.Printf("[GetBySlugOrIDForPreview] 查询成功: 数据库ID=%d, Title=%s, Status=%s, ReviewStatus=%s",
+		entity.ID, entity.Title, entity.Status, entity.ReviewStatus)
+	result := r.toModel(entity)
+	log.Printf("[GetBySlugOrIDForPreview] 转换后的公共ID: %s", result.ID)
 	return result, nil
 }
 
@@ -418,8 +475,15 @@ func (r *articleRepo) Create(ctx context.Context, params *model.CreateArticlePar
 		topImgURL = params.CoverURL
 	}
 
+	// 确保 OwnerID 有默认值
+	ownerID := params.OwnerID
+	if ownerID == 0 {
+		ownerID = 1 // 默认为管理员
+	}
+
 	creator := r.db.Article.Create().
 		SetTitle(params.Title).
+		SetOwnerID(ownerID). // 保存文章作者ID
 		SetContentMd(params.ContentMd).
 		SetContentHTML(params.ContentHTML).
 		SetCoverURL(params.CoverURL).
@@ -450,6 +514,12 @@ func (r *articleRepo) Create(ctx context.Context, params *model.CreateArticlePar
 	} else {
 		creator.SetStatus(article.StatusDRAFT)
 	}
+
+	// 设置审核状态（多人共创功能）
+	if params.ReviewStatus != "" {
+		creator.SetReviewStatus(article.ReviewStatus(params.ReviewStatus))
+	}
+	// 如果没有设置 ReviewStatus，默认值为 NONE（由 schema 定义）
 
 	// 支持自定义发布时间
 	if params.CustomPublishedAt != nil {
@@ -570,6 +640,9 @@ func (r *articleRepo) Update(ctx context.Context, publicID string, req *model.Up
 	if req.Keywords != nil {
 		updater.SetKeywords(*req.Keywords)
 	}
+	if req.ReviewStatus != nil {
+		updater.SetReviewStatus(article.ReviewStatus(*req.ReviewStatus))
+	}
 	if computed != nil {
 		if computed.WordCount > 0 || (req.ContentMd != nil && *req.ContentMd == "") {
 			updater.SetWordCount(computed.WordCount)
@@ -629,10 +702,16 @@ func (r *articleRepo) Update(ctx context.Context, publicID string, req *model.Up
 
 // ListPublic 获取公开的文章列表
 func (r *articleRepo) ListPublic(ctx context.Context, options *model.ListPublicArticlesOptions) ([]*model.Article, int, error) {
-	// 基础查询条件：已发布且未删除
+	// 基础查询条件：已发布、未删除、未下架、且审核通过（或无需审核）
 	baseQuery := r.db.Article.Query().Where(
 		article.StatusEQ(article.StatusPUBLISHED),
 		article.DeletedAtIsNil(),
+		article.IsTakedownEQ(false), // 过滤下架文章
+		// 只显示审核通过或无需审核的文章
+		article.Or(
+			article.ReviewStatusEQ(article.ReviewStatusAPPROVED),
+			article.ReviewStatusEQ(article.ReviewStatusNONE),
+		),
 	)
 
 	// 只在普通列表（没有指定分类、标签、年份、月份）时应用 show_on_home 过滤
@@ -703,6 +782,10 @@ func (r *articleRepo) List(ctx context.Context, options *model.ListArticlesOptio
 	if options.Status != "" {
 		query = query.Where(article.StatusEQ(article.Status(options.Status)))
 	}
+	// 按作者ID过滤（多人共创功能：普通用户只能查看自己的文章）
+	if options.AuthorID != nil {
+		query = query.Where(article.OwnerIDEQ(*options.AuthorID))
+	}
 	total, err := query.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -726,6 +809,12 @@ func (r *articleRepo) List(ctx context.Context, options *model.ListArticlesOptio
 			article.FieldShowOnHome, article.FieldHomeSort, article.FieldPinSort, article.FieldTopImgURL,
 			article.FieldSummaries, article.FieldAbbrlink, article.FieldCopyright,
 			article.FieldCopyrightAuthor, article.FieldCopyrightAuthorHref, article.FieldCopyrightURL,
+			article.FieldReviewStatus,   // 审核状态（多人共创功能）
+			article.FieldOwnerID,        // 发布者ID（多人共创功能）
+			article.FieldIsTakedown,     // 下架状态（PRO版管理员功能）
+			article.FieldTakedownReason, // 下架原因
+			article.FieldTakedownAt,     // 下架时间
+			article.FieldTakedownBy,     // 下架操作人
 		).All(ctx)
 	} else {
 		entities, err = q.All(ctx)
@@ -745,6 +834,12 @@ func (r *articleRepo) ListHome(ctx context.Context) ([]*model.Article, error) {
 			article.HomeSortGT(0),
 			article.StatusEQ(article.StatusPUBLISHED),
 			article.DeletedAtIsNil(),
+			article.IsTakedownEQ(false), // 过滤下架文章
+			// 只显示审核通过或无需审核的文章
+			article.Or(
+				article.ReviewStatusEQ(article.ReviewStatusAPPROVED),
+				article.ReviewStatusEQ(article.ReviewStatusNONE),
+			),
 		).
 		Order(ent.Asc(article.FieldHomeSort)).
 		Limit(6).
@@ -780,6 +875,7 @@ func (r *articleRepo) GetRandom(ctx context.Context) (*model.Article, error) {
 		Where(
 			article.StatusEQ(article.StatusPUBLISHED),
 			article.DeletedAtIsNil(),
+			article.IsTakedownEQ(false), // 过滤下架文章
 		).
 		IDs(ctx)
 	if err != nil {

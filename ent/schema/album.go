@@ -13,6 +13,8 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/schema/mixin"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -20,6 +22,14 @@ import (
 // Album holds the schema definition for the Album entity.
 type Album struct {
 	ent.Schema
+}
+
+// Annotations of the Album.
+func (Album) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("相册图片表"),
+	}
 }
 
 // Mixin of the Album.

@@ -12,7 +12,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/tag"
 )
 
-// Tag is the model entity for the Tag schema.
+// 通用标签表
 type Tag struct {
 	config `json:"-"`
 	// ID of the ent.

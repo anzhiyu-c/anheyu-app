@@ -13,12 +13,22 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/schema/mixin"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 )
 
 // Page holds the schema definition for the Page entity.
 type Page struct {
 	ent.Schema
+}
+
+// Annotations of the Page.
+func (Page) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("自定义页面表"),
+	}
 }
 
 func (Page) Mixin() []ent.Mixin {

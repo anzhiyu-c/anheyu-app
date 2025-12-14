@@ -12,7 +12,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/linkcategory"
 )
 
-// Link is the model entity for the Link schema.
+// 友情链接表
 type Link struct {
 	config `json:"-"`
 	// ID of the ent.

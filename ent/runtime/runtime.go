@@ -139,64 +139,72 @@ func init() {
 	article.Hooks[0] = articleMixinHooks0[0]
 	articleFields := schema.Article{}.Fields()
 	_ = articleFields
+	// articleDescOwnerID is the schema descriptor for owner_id field.
+	articleDescOwnerID := articleFields[1].Descriptor()
+	// article.DefaultOwnerID holds the default value on creation for the owner_id field.
+	article.DefaultOwnerID = articleDescOwnerID.Default.(uint)
 	// articleDescCreatedAt is the schema descriptor for created_at field.
-	articleDescCreatedAt := articleFields[1].Descriptor()
+	articleDescCreatedAt := articleFields[2].Descriptor()
 	// article.DefaultCreatedAt holds the default value on creation for the created_at field.
 	article.DefaultCreatedAt = articleDescCreatedAt.Default.(func() time.Time)
 	// articleDescUpdatedAt is the schema descriptor for updated_at field.
-	articleDescUpdatedAt := articleFields[2].Descriptor()
+	articleDescUpdatedAt := articleFields[3].Descriptor()
 	// article.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	article.DefaultUpdatedAt = articleDescUpdatedAt.Default.(func() time.Time)
 	// articleDescTitle is the schema descriptor for title field.
-	articleDescTitle := articleFields[3].Descriptor()
+	articleDescTitle := articleFields[4].Descriptor()
 	// article.TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	article.TitleValidator = articleDescTitle.Validators[0].(func(string) error)
 	// articleDescViewCount is the schema descriptor for view_count field.
-	articleDescViewCount := articleFields[8].Descriptor()
+	articleDescViewCount := articleFields[9].Descriptor()
 	// article.DefaultViewCount holds the default value on creation for the view_count field.
 	article.DefaultViewCount = articleDescViewCount.Default.(int)
 	// article.ViewCountValidator is a validator for the "view_count" field. It is called by the builders before save.
 	article.ViewCountValidator = articleDescViewCount.Validators[0].(func(int) error)
 	// articleDescWordCount is the schema descriptor for word_count field.
-	articleDescWordCount := articleFields[9].Descriptor()
+	articleDescWordCount := articleFields[10].Descriptor()
 	// article.DefaultWordCount holds the default value on creation for the word_count field.
 	article.DefaultWordCount = articleDescWordCount.Default.(int)
 	// article.WordCountValidator is a validator for the "word_count" field. It is called by the builders before save.
 	article.WordCountValidator = articleDescWordCount.Validators[0].(func(int) error)
 	// articleDescReadingTime is the schema descriptor for reading_time field.
-	articleDescReadingTime := articleFields[10].Descriptor()
+	articleDescReadingTime := articleFields[11].Descriptor()
 	// article.DefaultReadingTime holds the default value on creation for the reading_time field.
 	article.DefaultReadingTime = articleDescReadingTime.Default.(int)
 	// article.ReadingTimeValidator is a validator for the "reading_time" field. It is called by the builders before save.
 	article.ReadingTimeValidator = articleDescReadingTime.Validators[0].(func(int) error)
 	// articleDescPrimaryColor is the schema descriptor for primary_color field.
-	articleDescPrimaryColor := articleFields[12].Descriptor()
+	articleDescPrimaryColor := articleFields[13].Descriptor()
 	// article.DefaultPrimaryColor holds the default value on creation for the primary_color field.
 	article.DefaultPrimaryColor = articleDescPrimaryColor.Default.(string)
 	// articleDescIsPrimaryColorManual is the schema descriptor for is_primary_color_manual field.
-	articleDescIsPrimaryColorManual := articleFields[13].Descriptor()
+	articleDescIsPrimaryColorManual := articleFields[14].Descriptor()
 	// article.DefaultIsPrimaryColorManual holds the default value on creation for the is_primary_color_manual field.
 	article.DefaultIsPrimaryColorManual = articleDescIsPrimaryColorManual.Default.(bool)
 	// articleDescShowOnHome is the schema descriptor for show_on_home field.
-	articleDescShowOnHome := articleFields[14].Descriptor()
+	articleDescShowOnHome := articleFields[15].Descriptor()
 	// article.DefaultShowOnHome holds the default value on creation for the show_on_home field.
 	article.DefaultShowOnHome = articleDescShowOnHome.Default.(bool)
 	// articleDescHomeSort is the schema descriptor for home_sort field.
-	articleDescHomeSort := articleFields[15].Descriptor()
+	articleDescHomeSort := articleFields[16].Descriptor()
 	// article.DefaultHomeSort holds the default value on creation for the home_sort field.
 	article.DefaultHomeSort = articleDescHomeSort.Default.(int)
 	// article.HomeSortValidator is a validator for the "home_sort" field. It is called by the builders before save.
 	article.HomeSortValidator = articleDescHomeSort.Validators[0].(func(int) error)
 	// articleDescPinSort is the schema descriptor for pin_sort field.
-	articleDescPinSort := articleFields[16].Descriptor()
+	articleDescPinSort := articleFields[17].Descriptor()
 	// article.DefaultPinSort holds the default value on creation for the pin_sort field.
 	article.DefaultPinSort = articleDescPinSort.Default.(int)
 	// article.PinSortValidator is a validator for the "pin_sort" field. It is called by the builders before save.
 	article.PinSortValidator = articleDescPinSort.Validators[0].(func(int) error)
 	// articleDescCopyright is the schema descriptor for copyright field.
-	articleDescCopyright := articleFields[20].Descriptor()
+	articleDescCopyright := articleFields[21].Descriptor()
 	// article.DefaultCopyright holds the default value on creation for the copyright field.
 	article.DefaultCopyright = articleDescCopyright.Default.(bool)
+	// articleDescIsTakedown is the schema descriptor for is_takedown field.
+	articleDescIsTakedown := articleFields[30].Descriptor()
+	// article.DefaultIsTakedown holds the default value on creation for the is_takedown field.
+	article.DefaultIsTakedown = articleDescIsTakedown.Default.(bool)
 	commentMixin := schema.Comment{}.Mixin()
 	commentMixinHooks0 := commentMixin[0].Hooks()
 	comment.Hooks[0] = commentMixinHooks0[0]

@@ -86,6 +86,7 @@ type Response struct {
 	PinnedAt       *time.Time  `json:"pinned_at,omitempty"`
 	Nickname       string      `json:"nickname"`
 	EmailMD5       string      `json:"email_md5"`
+	QQNumber       *string     `json:"qq_number,omitempty"`  // QQ号（如果邮箱是QQ邮箱格式，用于前端显示QQ头像）
 	AvatarURL      *string     `json:"avatar_url,omitempty"` // 用户自定义头像URL（如果有关联用户且用户上传了头像）
 	Website        *string     `json:"website,omitempty"`
 	ContentHTML    string      `json:"content_html"`

@@ -414,30 +414,136 @@ func (s *service) ImportLinks(ctx context.Context, req *model.ImportLinksRequest
 		}
 	}
 
+	// 用于追踪本次导入已处理的 URL，支持合并同一 URL 不同分类的记录
+	processedURLs := make(map[string]*model.LinkDTO)
+
 	// 逐个处理导入的友链
 	for _, linkItem := range req.Links {
-		// 1. 重复检查
-		if req.SkipDuplicates {
-			exists, err := s.linkRepo.ExistsByURL(ctx, linkItem.URL)
+		// 1. 检查是否是本次导入中已处理过的 URL（同一 URL 不同分类的情况）
+		if existingLink, alreadyProcessed := processedURLs[linkItem.URL]; alreadyProcessed {
+			// 本次导入中已经处理过这个 URL，需要更新分类
+			// 先处理新的分类
+			var newCategoryID int
+			if linkItem.CategoryName != "" {
+				if cachedCategory, exists := categoryCache[linkItem.CategoryName]; exists {
+					newCategoryID = cachedCategory.ID
+				} else {
+					category, err := s.linkCategoryRepo.GetByName(ctx, linkItem.CategoryName)
+					if err != nil {
+						if req.CreateCategories {
+							createReq := &model.CreateLinkCategoryRequest{
+								Name:        linkItem.CategoryName,
+								Style:       "list",
+								Description: fmt.Sprintf("导入时自动创建的分类：%s", linkItem.CategoryName),
+							}
+							newCategory, err := s.linkCategoryRepo.Create(ctx, createReq)
+							if err != nil {
+								response.Failed++
+								response.FailedList = append(response.FailedList, model.ImportLinkFailure{
+									Link:   linkItem,
+									Reason: fmt.Errorf("创建分类失败: %w", err).Error(),
+								})
+								continue
+							}
+							newCategoryID = newCategory.ID
+							categoryCache[linkItem.CategoryName] = newCategory
+						} else {
+							newCategoryID = defaultCategoryID
+						}
+					} else {
+						newCategoryID = category.ID
+						categoryCache[linkItem.CategoryName] = category
+					}
+				}
+			} else {
+				newCategoryID = defaultCategoryID
+			}
+
+			// 更新已存在友链的分类
+			updateReq := &model.AdminUpdateLinkRequest{
+				CategoryID: newCategoryID,
+			}
+			updatedLink, err := s.linkRepo.Update(ctx, existingLink.ID, updateReq)
 			if err != nil {
 				response.Failed++
 				response.FailedList = append(response.FailedList, model.ImportLinkFailure{
 					Link:   linkItem,
-					Reason: fmt.Errorf("检查重复链接失败: %w", err).Error(),
+					Reason: fmt.Errorf("更新友链分类失败: %w", err).Error(),
 				})
 				continue
 			}
-			if exists {
-				response.Skipped++
-				response.SkippedList = append(response.SkippedList, model.ImportLinkSkipped{
-					Link:   linkItem,
-					Reason: "友链URL已存在",
-				})
+
+			// 更新成功，记录到成功列表（作为更新操作）
+			response.Success++
+			response.SuccessList = append(response.SuccessList, updatedLink)
+			processedURLs[linkItem.URL] = updatedLink
+			continue
+		}
+
+		// 2. 重复检查（检查数据库中是否已存在）
+		if req.SkipDuplicates {
+			existingLink, err := s.linkRepo.GetByURL(ctx, linkItem.URL)
+			if err == nil && existingLink != nil {
+				// 数据库中已存在该 URL，更新其分类而不是跳过
+				var newCategoryID int
+				if linkItem.CategoryName != "" {
+					if cachedCategory, exists := categoryCache[linkItem.CategoryName]; exists {
+						newCategoryID = cachedCategory.ID
+					} else {
+						category, err := s.linkCategoryRepo.GetByName(ctx, linkItem.CategoryName)
+						if err != nil {
+							if req.CreateCategories {
+								createReq := &model.CreateLinkCategoryRequest{
+									Name:        linkItem.CategoryName,
+									Style:       "list",
+									Description: fmt.Sprintf("导入时自动创建的分类：%s", linkItem.CategoryName),
+								}
+								newCategory, err := s.linkCategoryRepo.Create(ctx, createReq)
+								if err != nil {
+									response.Failed++
+									response.FailedList = append(response.FailedList, model.ImportLinkFailure{
+										Link:   linkItem,
+										Reason: fmt.Errorf("创建分类失败: %w", err).Error(),
+									})
+									continue
+								}
+								newCategoryID = newCategory.ID
+								categoryCache[linkItem.CategoryName] = newCategory
+							} else {
+								newCategoryID = defaultCategoryID
+							}
+						} else {
+							newCategoryID = category.ID
+							categoryCache[linkItem.CategoryName] = category
+						}
+					}
+				} else {
+					newCategoryID = defaultCategoryID
+				}
+
+				// 更新已存在友链的分类
+				updateReq := &model.AdminUpdateLinkRequest{
+					CategoryID: newCategoryID,
+				}
+				updatedLink, err := s.linkRepo.Update(ctx, existingLink.ID, updateReq)
+				if err != nil {
+					response.Failed++
+					response.FailedList = append(response.FailedList, model.ImportLinkFailure{
+						Link:   linkItem,
+						Reason: fmt.Errorf("更新友链分类失败: %w", err).Error(),
+					})
+					continue
+				}
+
+				// 更新成功
+				response.Success++
+				response.SuccessList = append(response.SuccessList, updatedLink)
+				processedURLs[linkItem.URL] = updatedLink
 				continue
 			}
 		}
 
-		// 2. 处理分类
+		// 4. 处理分类（新创建友链的情况）
 		var categoryID int
 		if linkItem.CategoryName != "" {
 			// 先从缓存查找
@@ -480,7 +586,7 @@ func (s *service) ImportLinks(ctx context.Context, req *model.ImportLinksRequest
 			categoryID = defaultCategoryID
 		}
 
-		// 3. 处理标签（可选）
+		// 5. 处理标签（可选）
 		var tagID *int
 		if linkItem.TagName != "" {
 			// 先从缓存查找
@@ -517,13 +623,13 @@ func (s *service) ImportLinks(ctx context.Context, req *model.ImportLinksRequest
 			}
 		}
 
-		// 4. 设置默认状态
+		// 6. 设置默认状态
 		status := linkItem.Status
 		if status == "" {
 			status = "PENDING" // 默认为待审核状态
 		}
 
-		// 5. 创建友链
+		// 7. 创建友链
 		adminCreateReq := &model.AdminCreateLinkRequest{
 			Name:        linkItem.Name,
 			URL:         linkItem.URL,
@@ -546,9 +652,10 @@ func (s *service) ImportLinks(ctx context.Context, req *model.ImportLinksRequest
 			continue
 		}
 
-		// 成功创建
+		// 成功创建，记录到已处理映射
 		response.Success++
 		response.SuccessList = append(response.SuccessList, createdLink)
+		processedURLs[linkItem.URL] = createdLink
 	}
 
 	// 如果有成功创建的友链，派发清理任务

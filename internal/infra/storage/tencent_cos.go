@@ -2,8 +2,59 @@
  * @Description: 腾讯云COS存储提供者实现
  * @Author: 安知鱼
  * @Date: 2025-09-28 12:00:00
- * @LastEditTime: 2025-10-20 15:28:16
+ * @LastEditTime: 2025-12-02 18:30:00
  * @LastEditors: 安知鱼
+ *
+ * 【重要：路径转换规则说明】
+ *
+ * 本存储提供者中的方法接收两种类型的路径参数，必须正确区分：
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ 类型1: virtualPath（完整虚拟路径）                                           │
+ * │                                                                             │
+ * │ 格式: /挂载点/子目录/文件名                                                   │
+ * │ 示例: /cos/aaa/123.jpg                                                      │
+ * │                                                                             │
+ * │ 使用此参数的方法:                                                            │
+ * │   - Upload()                                                                │
+ * │   - List()                                                                  │
+ * │   - CreateDirectory()                                                       │
+ * │   - DeleteDirectory()                                                       │
+ * │   - Rename()                                                                │
+ * │   - CreatePresignedUploadURL()                                              │
+ * │                                                                             │
+ * │ 转换逻辑: 调用 buildObjectKey() 进行转换                                      │
+ * │   1. 从 virtualPath 中减去 policy.VirtualPath（挂载点）得到相对路径            │
+ * │      相对路径 = "/cos/aaa/123.jpg" - "/cos" = "/aaa/123.jpg"                 │
+ * │   2. 将相对路径与 policy.BasePath（云存储基础路径）拼接                         │
+ * │      对象键 = "test" + "/aaa/123.jpg" = "test/aaa/123.jpg"                   │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ 类型2: source（完整对象键）                                                  │
+ * │                                                                             │
+ * │ 格式: 云存储上的实际路径（已包含 BasePath）                                    │
+ * │ 示例: test/aaa/123.jpg                                                      │
+ * │                                                                             │
+ * │ 使用此参数的方法:                                                            │
+ * │   - Get()                                                                   │
+ * │   - Delete()                                                                │
+ * │   - Stream()                                                                │
+ * │   - GetDownloadURL()                                                        │
+ * │   - IsExist() / IsExistWithPolicy()                                         │
+ * │   - GetThumbnail()                                                          │
+ * │                                                                             │
+ * │ 处理逻辑: 直接使用，不需要任何转换                                             │
+ * │   source 是从数据库 file_storage_entities.source 字段读取的值，                │
+ * │   在文件上传时已经由 Upload() 方法生成并存储。                                 │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * 【存储策略配置说明】
+ *
+ * policy.VirtualPath: 策略在虚拟文件系统中的挂载点（如 "/cos"）
+ * policy.BasePath:    策略在云存储上的基础目录（如 "/test"）
+ *
+ * 【警告】修改路径转换逻辑前请仔细阅读以上说明！
  */
 package storage
 
@@ -80,33 +131,51 @@ func (p *TencentCOSProvider) getCOSClient(policy *model.StoragePolicy) (*cos.Cli
 }
 
 // buildObjectKey 构建对象存储路径
+// virtualPath 是完整的虚拟路径（如 "/cos" 或 "/cos/subdir"）
+// 需要先从 virtualPath 中减去策略的 VirtualPath（挂载点），得到相对路径，再与 BasePath 拼接
 func (p *TencentCOSProvider) buildObjectKey(policy *model.StoragePolicy, virtualPath string) string {
-	// 基础前缀路径处理
-	basePath := strings.TrimSuffix(policy.BasePath, "/")
-	if basePath != "" && !strings.HasPrefix(basePath, "/") {
-		basePath = "/" + basePath
-	}
+	// 计算相对于策略挂载点的相对路径
+	// 例如: virtualPath="/cos/subdir", policy.VirtualPath="/cos" -> relativePath="subdir"
+	relativePath := strings.TrimPrefix(virtualPath, policy.VirtualPath)
+	relativePath = strings.TrimPrefix(relativePath, "/")
 
-	// 虚拟路径处理：移除开头的斜杠
-	virtualPath = strings.TrimPrefix(virtualPath, "/")
+	// 基础前缀路径处理（从策略的 BasePath 获取）
+	basePath := strings.TrimPrefix(strings.TrimSuffix(policy.BasePath, "/"), "/")
 
 	var objectKey string
-	if basePath == "" || basePath == "/" {
-		objectKey = virtualPath
+	if basePath == "" {
+		objectKey = relativePath
 	} else {
-		objectKey = strings.TrimPrefix(basePath, "/") + "/" + virtualPath
+		if relativePath == "" {
+			objectKey = basePath
+		} else {
+			objectKey = basePath + "/" + relativePath
+		}
 	}
 
 	// 确保不以斜杠开头
 	objectKey = strings.TrimPrefix(objectKey, "/")
 
-	log.Printf("[腾讯云COS] 路径转换 - basePath: %s, virtualPath: %s -> objectKey: %s", basePath, virtualPath, objectKey)
+	log.Printf("[腾讯云COS] 路径转换 - basePath: %s, virtualPath: %s, policyVirtualPath: %s -> relativePath: %s -> objectKey: %s",
+		policy.BasePath, virtualPath, policy.VirtualPath, relativePath, objectKey)
 	return objectKey
 }
 
 // Upload 上传文件到腾讯云COS
+//
+// 【路径转换规则】
+// virtualPath 是完整的虚拟路径，格式为: /挂载点/子目录/文件名
+// 例如: virtualPath = "/cos/aaa/123.jpg"
+//
+// 转换步骤:
+//  1. 从 virtualPath 中减去 policy.VirtualPath（挂载点），得到相对路径
+//     相对路径 = "/cos/aaa/123.jpg" - "/cos" = "/aaa/123.jpg"
+//  2. 将相对路径与 policy.BasePath（云存储基础路径）拼接
+//     对象键 = "/test" + "/aaa/123.jpg" = "test/aaa/123.jpg"
+//
+// 数据库 files 表的 name 字段存储的是相对于挂载点的路径（不含挂载点）
 func (p *TencentCOSProvider) Upload(ctx context.Context, file io.Reader, policy *model.StoragePolicy, virtualPath string) (*UploadResult, error) {
-	log.Printf("[腾讯云COS] 开始上传文件: virtualPath=%s, BasePath=%s", virtualPath, policy.BasePath)
+	log.Printf("[腾讯云COS] 开始上传文件: virtualPath=%s, BasePath=%s, VirtualPath=%s", virtualPath, policy.BasePath, policy.VirtualPath)
 
 	client, err := p.getCOSClient(policy)
 	if err != nil {
@@ -114,19 +183,10 @@ func (p *TencentCOSProvider) Upload(ctx context.Context, file io.Reader, policy 
 		return nil, err
 	}
 
-	// 构建对象键
-	// virtualPath 可能是文件名（如"abc.jpg"）或完整路径（如"/comment_image_cos/abc.jpg"）
-	basePath := strings.TrimPrefix(strings.TrimSuffix(policy.BasePath, "/"), "/")
-	filename := filepath.Base(virtualPath)
+	// 使用 buildObjectKey 进行路径转换，确保保留完整的子目录结构
+	objectKey := p.buildObjectKey(policy, virtualPath)
 
-	var objectKey string
-	if basePath == "" {
-		objectKey = filename
-	} else {
-		objectKey = basePath + "/" + filename
-	}
-
-	log.Printf("[腾讯云COS] 上传对象: objectKey=%s (basePath=%s, filename=%s)", objectKey, basePath, filename)
+	log.Printf("[腾讯云COS] 上传对象: objectKey=%s", objectKey)
 
 	// 上传文件
 	_, err = client.Object.Put(ctx, objectKey, file, nil)
@@ -383,17 +443,22 @@ func (p *TencentCOSProvider) GetDownloadURL(ctx context.Context, policy *model.S
 	}
 	log.Printf("[腾讯云COS] 使用对象键: %s", objectKey)
 
+	// 打印完整的 Settings 用于调试
+	log.Printf("[腾讯云COS] 完整Settings: %+v", policy.Settings)
+
 	// 检查是否配置了CDN域名
 	cdnDomain := ""
 	if val, ok := policy.Settings["cdn_domain"].(string); ok && val != "" {
 		// 处理CDN域名的尾随斜杠
 		cdnDomain = strings.TrimSuffix(val, "/")
 	}
+	log.Printf("[腾讯云COS] cdn_domain 原始值: %v (类型: %T)", policy.Settings["cdn_domain"], policy.Settings["cdn_domain"])
 
 	sourceAuth := false
 	if val, ok := policy.Settings["source_auth"].(bool); ok {
 		sourceAuth = val
 	}
+	log.Printf("[腾讯云COS] source_auth 原始值: %v (类型: %T)", policy.Settings["source_auth"], policy.Settings["source_auth"])
 
 	// 获取样式分隔符配置
 	styleSeparator := ""
@@ -434,14 +499,39 @@ func (p *TencentCOSProvider) GetDownloadURL(ctx context.Context, policy *model.S
 		finalURL := presignedURL.String()
 
 		// 添加图片处理参数
-		// 注意：对于预签名URL，直接在末尾追加参数即可，腾讯云数据万象支持这种方式
 		if options.QueryParams != "" {
 			params := strings.TrimSpace(options.QueryParams)
-			params = strings.TrimPrefix(params, "?")
 			if params != "" {
-				// 预签名URL已经包含查询参数，使用 & 连接
-				finalURL += "&" + params
-				log.Printf("[腾讯云COS] 在预签名URL后追加图片处理参数")
+				// 检查是否是样式分隔符（以 /、!、|、- 开头）
+				styleSeparatorChars := []string{"/", "!", "|", "-"}
+				isStyleSeparator := false
+				for _, sep := range styleSeparatorChars {
+					if strings.HasPrefix(params, sep) {
+						isStyleSeparator = true
+						break
+					}
+				}
+
+				if isStyleSeparator {
+					// 样式分隔符需要插入到URL路径部分，在查询参数之前
+					// 将URL分为基础URL和查询参数两部分
+					if idx := strings.Index(finalURL, "?"); idx > 0 {
+						baseURL := finalURL[:idx]
+						queryParams := finalURL[idx:]
+						finalURL = baseURL + params + queryParams
+						log.Printf("[腾讯云COS] 在预签名URL中插入样式分隔符: %s", params)
+					} else {
+						// 没有查询参数（理论上不应该发生在预签名URL中）
+						finalURL += params
+					}
+				} else {
+					// 传统查询参数，使用 & 连接
+					params = strings.TrimPrefix(params, "?")
+					if params != "" {
+						finalURL += "&" + params
+						log.Printf("[腾讯云COS] 在预签名URL后追加查询参数")
+					}
+				}
 			}
 		}
 
@@ -512,8 +602,21 @@ func (p *TencentCOSProvider) Rename(ctx context.Context, policy *model.StoragePo
 
 // Stream 将腾讯云COS文件内容流式传输到写入器
 func (p *TencentCOSProvider) Stream(ctx context.Context, policy *model.StoragePolicy, source string, writer io.Writer) error {
+	// 获取样式分隔符配置
+	styleSeparator := ""
+	if val, ok := policy.Settings["style_separator"].(string); ok && val != "" {
+		styleSeparator = val
+	}
+
 	// 生成合适的下载URL（根据权限设置）
-	downloadURL, err := p.GetDownloadURL(ctx, policy, source, DownloadURLOptions{ExpiresIn: 3600})
+	// 如果配置了样式分隔符，将其作为查询参数传递
+	options := DownloadURLOptions{ExpiresIn: 3600}
+	if styleSeparator != "" {
+		options.QueryParams = styleSeparator
+		log.Printf("[腾讯云COS] Stream方法应用样式分隔符: %s", styleSeparator)
+	}
+
+	downloadURL, err := p.GetDownloadURL(ctx, policy, source, options)
 	if err != nil {
 		return err
 	}
@@ -521,6 +624,7 @@ func (p *TencentCOSProvider) Stream(ctx context.Context, policy *model.StoragePo
 	if w, ok := writer.(http.ResponseWriter); ok {
 		w.Header().Set("Location", downloadURL)
 		w.WriteHeader(http.StatusFound)
+		log.Printf("[腾讯云COS] Stream方法重定向到: %s", downloadURL)
 		return nil
 	}
 
@@ -571,25 +675,95 @@ func (p *TencentCOSProvider) IsExistWithPolicy(ctx context.Context, policy *mode
 // 如果用户在腾讯云控制台开通了数据万象服务，此功能将自动可用
 func (p *TencentCOSProvider) GetThumbnail(ctx context.Context, policy *model.StoragePolicy, source string, size string) (*ThumbnailResult, error) {
 
-	// 解析尺寸参数
-	width, height := parseThumbnailSize(size)
-	if width <= 0 || height <= 0 {
-		return nil, fmt.Errorf("无效的缩略图尺寸: %s", size)
+	// 将描述性尺寸参数转换为像素尺寸
+	var width, height int
+	switch strings.ToLower(size) {
+	case "small":
+		width, height = 200, 200
+	case "medium":
+		width, height = 400, 400
+	case "large":
+		width, height = 800, 800
+	default:
+		// 尝试解析像素格式（如 "300x200"）
+		width, height = parseThumbnailSize(size)
+		if width <= 0 || height <= 0 {
+			// 如果解析失败，默认使用 medium 尺寸
+			log.Printf("[腾讯云COS] 无法解析缩略图尺寸 '%s'，使用默认 medium 尺寸", size)
+			width, height = 400, 400
+		}
 	}
 
-	// source 已经是完整的对象键
-	// 构建数据万象处理URL
-	serverURL := strings.TrimSuffix(policy.Server, "/")
-	thumbnailURL := fmt.Sprintf("%s/%s?imageMogr2/thumbnail/%dx%d",
-		serverURL, source, width, height)
+	// 构建数据万象处理参数
+	imageProcess := fmt.Sprintf("imageMogr2/thumbnail/%dx%d", width, height)
 
-	// 获取缩略图数据（这里简化为返回URL，实际使用中可能需要下载数据）
-	// 由于ThumbnailResult需要Data字段，我们需要下载缩略图数据
+	var thumbnailURL string
+
+	// 如果是私有存储桶，需要生成预签名URL
+	if policy.IsPrivate {
+		client, err := p.getCOSClient(policy)
+		if err != nil {
+			log.Printf("[腾讯云COS] 创建客户端失败: %v", err)
+			return nil, err
+		}
+
+		// 从策略中获取密钥信息用于签名
+		secretID := policy.AccessKey
+		secretKey := policy.SecretKey
+
+		// 设置过期时间为 10 分钟（用于下载缩略图）
+		expiresIn := 600 // 10分钟
+
+		// 生成带图片处理参数的预签名URL
+		presignedURL, err := client.Object.GetPresignedURL(ctx, http.MethodGet, source,
+			secretID, secretKey, time.Duration(expiresIn)*time.Second, nil)
+		if err != nil {
+			log.Printf("[腾讯云COS] 生成预签名URL失败: %v", err)
+			return nil, fmt.Errorf("生成腾讯云COS预签名URL失败: %w", err)
+		}
+
+		// 将图片处理参数添加到预签名URL中
+		// 需要在查询参数之前插入
+		baseURL := presignedURL.String()
+		if idx := strings.Index(baseURL, "?"); idx > 0 {
+			// 将URL分为基础URL和查询参数两部分
+			urlBase := baseURL[:idx]
+			queryParams := baseURL[idx:]
+			thumbnailURL = urlBase + "?" + imageProcess + "&" + strings.TrimPrefix(queryParams, "?")
+		} else {
+			thumbnailURL = baseURL + "?" + imageProcess
+		}
+
+		log.Printf("[腾讯云COS] 生成私有存储桶缩略图预签名URL")
+	} else {
+		// 公有存储桶，直接构建URL
+		serverURL := strings.TrimSuffix(policy.Server, "/")
+		thumbnailURL = fmt.Sprintf("%s/%s?%s", serverURL, source, imageProcess)
+		log.Printf("[腾讯云COS] 生成公有存储桶缩略图URL")
+	}
+
+	log.Printf("[腾讯云COS] 缩略图URL: %s", thumbnailURL)
+
+	// 下载缩略图数据
 	resp, err := http.Get(thumbnailURL)
 	if err != nil {
 		return nil, fmt.Errorf("获取缩略图数据失败: %w", err)
 	}
 	defer resp.Body.Close()
+
+	// 检查HTTP响应状态
+	if resp.StatusCode != http.StatusOK {
+		// 如果返回 404 或其他错误，可能是数据万象服务未开通或文件不支持缩略图
+		if resp.StatusCode == http.StatusNotFound {
+			log.Printf("[腾讯云COS] 缩略图生成失败: 文件不存在或数据万象服务未开通 (HTTP %d)", resp.StatusCode)
+			return nil, ErrFeatureNotSupported
+		}
+		if resp.StatusCode == http.StatusForbidden {
+			log.Printf("[腾讯云COS] 缩略图访问被拒绝: 可能是数据万象服务未授权或配置问题 (HTTP %d)", resp.StatusCode)
+			return nil, ErrFeatureNotSupported
+		}
+		return nil, fmt.Errorf("获取缩略图失败: HTTP状态码 %d", resp.StatusCode)
+	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -707,8 +881,18 @@ func appendImageParams(baseURL, params, separator string) string {
 
 // CreatePresignedUploadURL 为客户端直传创建一个预签名的上传URL
 // 客户端可以使用此URL直接PUT文件到腾讯云COS，无需经过服务器中转
+//
+// 【路径转换规则】
+// virtualPath 是完整的虚拟路径，格式为: /挂载点/子目录/文件名
+// 例如: virtualPath = "/cos/aaa/123.jpg"
+//
+// 转换步骤（与 Upload 方法相同）:
+//  1. 从 virtualPath 中减去 policy.VirtualPath（挂载点），得到相对路径
+//     相对路径 = "/cos/aaa/123.jpg" - "/cos" = "/aaa/123.jpg"
+//  2. 将相对路径与 policy.BasePath（云存储基础路径）拼接
+//     对象键 = "/test" + "/aaa/123.jpg" = "test/aaa/123.jpg"
 func (p *TencentCOSProvider) CreatePresignedUploadURL(ctx context.Context, policy *model.StoragePolicy, virtualPath string) (*PresignedUploadResult, error) {
-	log.Printf("[腾讯云COS] 创建预签名上传URL - virtualPath: %s", virtualPath)
+	log.Printf("[腾讯云COS] 创建预签名上传URL - virtualPath: %s, VirtualPath: %s, BasePath: %s", virtualPath, policy.VirtualPath, policy.BasePath)
 
 	client, err := p.getCOSClient(policy)
 	if err != nil {
@@ -716,19 +900,10 @@ func (p *TencentCOSProvider) CreatePresignedUploadURL(ctx context.Context, polic
 		return nil, err
 	}
 
-	// 构建对象键 - 使用与 Upload 方法相同的逻辑
-	// virtualPath 是完整的虚拟路径（如 "/article_image_cos/logo.png"），需要提取文件名后与 basePath 拼接
-	basePath := strings.TrimPrefix(strings.TrimSuffix(policy.BasePath, "/"), "/")
-	filename := filepath.Base(virtualPath)
+	// 使用 buildObjectKey 进行路径转换，确保保留完整的子目录结构
+	objectKey := p.buildObjectKey(policy, virtualPath)
 
-	var objectKey string
-	if basePath == "" {
-		objectKey = filename
-	} else {
-		objectKey = basePath + "/" + filename
-	}
-
-	log.Printf("[腾讯云COS] 生成预签名URL - objectKey: %s (basePath: %s, filename: %s)", objectKey, basePath, filename)
+	log.Printf("[腾讯云COS] 生成预签名URL - objectKey: %s", objectKey)
 
 	// 从策略中获取密钥信息用于签名
 	secretID := policy.AccessKey
@@ -751,5 +926,6 @@ func (p *TencentCOSProvider) CreatePresignedUploadURL(ctx context.Context, polic
 	return &PresignedUploadResult{
 		UploadURL:          presignedURL.String(),
 		ExpirationDateTime: expirationDateTime,
+		ContentType:        "", // 腾讯云COS不需要指定Content-Type
 	}, nil
 }

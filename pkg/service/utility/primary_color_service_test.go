@@ -45,6 +45,10 @@ func (m *MockSettingService) UpdateSettings(ctx context.Context, settings map[st
 func (m *MockSettingService) RegisterPublicSettings(keys []string) {
 }
 
+func (m *MockSettingService) IsPublicSetting(key string) bool {
+	return false
+}
+
 // TestURLCleaning 测试URL清理功能
 func TestURLCleaning(t *testing.T) {
 	tests := []struct {

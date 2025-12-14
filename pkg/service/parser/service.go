@@ -65,11 +65,11 @@ func NewService(settingSvc setting.SettingService, bus *event.EventBus) *Service
 
 	policy.AllowURLSchemes("anzhiyu")
 
-	policy.AllowElements("div", "ul", "i", "table", "thead", "tbody", "tr", "th", "td", "button", "a", "img", "span", "code", "pre", "h1", "h2", "h3", "h4", "h5", "h6", "font", "p", "details", "summary", "svg", "path", "circle", "input", "math", "semantics", "mrow", "mi", "mo", "msup", "mn", "annotation", "style", "g", "marker", "rect", "foreignObject", "li", "ol", "strong", "u", "em", "s", "sup", "sub", "blockquote", "figure", "video", "audio")
+	policy.AllowElements("div", "ul", "i", "table", "thead", "tbody", "tr", "th", "td", "button", "a", "img", "span", "code", "pre", "h1", "h2", "h3", "h4", "h5", "h6", "font", "p", "details", "summary", "svg", "path", "circle", "input", "math", "semantics", "mrow", "mi", "mo", "msup", "mn", "annotation", "style", "g", "marker", "rect", "foreignObject", "li", "ol", "strong", "u", "em", "s", "sup", "sub", "blockquote", "figure", "video", "audio", "iframe", "defs", "symbol", "line", "text", "tspan", "ellipse", "polygon")
 
-	policy.AllowAttrs("class").Matching(bluemonday.SpaceSeparatedTokens).OnElements("ul", "i", "code", "span", "img", "a", "button", "pre", "div", "table", "thead", "tbody", "tr", "th", "td", "h1", "h2", "h3", "h4", "h5", "h6", "font", "p", "details", "summary", "svg", "path", "circle", "input", "g", "rect", "li", "line", "text", "tspan", "blockquote", "video", "audio")
+	policy.AllowAttrs("class").Matching(bluemonday.SpaceSeparatedTokens).OnElements("ul", "i", "code", "span", "img", "a", "button", "pre", "div", "table", "thead", "tbody", "tr", "th", "td", "h1", "h2", "h3", "h4", "h5", "h6", "font", "p", "details", "summary", "svg", "path", "circle", "input", "g", "rect", "li", "line", "text", "tspan", "blockquote", "video", "audio", "marker", "ellipse", "polygon", "foreignObject")
 	policy.AllowAttrs("style").OnElements(
-		"div", "span", "p", "font", "th", "td", "rect", "blockquote", "img", "h1", "h2", "h3", "h4", "h5", "h6", "a", "strong", "b", "em", "i", "u", "s", "strike", "del", "pre", "code", "sub", "sup", "mark", "ul", "ol", "li", "table", "thead", "tbody", "tfoot", "tr", "section", "article", "header", "footer", "nav", "aside", "main", "hr", "figure", "figcaption", "svg", "path", "circle", "line", "g", "text", "summary", "details", "button", "video",
+		"div", "span", "p", "font", "th", "td", "rect", "blockquote", "img", "h1", "h2", "h3", "h4", "h5", "h6", "a", "strong", "b", "em", "i", "u", "s", "strike", "del", "pre", "code", "sub", "sup", "mark", "ul", "ol", "li", "table", "thead", "tbody", "tfoot", "tr", "section", "article", "header", "footer", "nav", "aside", "main", "hr", "figure", "figcaption", "svg", "path", "circle", "line", "g", "text", "summary", "details", "button", "video", "iframe", "ellipse", "polygon", "foreignObject", "marker",
 	)
 	// 图片相关属性
 	policy.AllowAttrs("src", "alt", "title", "width", "height").OnElements("img")
@@ -88,11 +88,13 @@ func NewService(settingSvc setting.SettingService, bus *event.EventBus) *Service
 	policy.AllowAttrs("rel").OnElements("a")
 	policy.AllowAttrs("rn-wrapper").OnElements("span")
 	policy.AllowAttrs("aria-hidden").OnElements("span")
-	policy.AllowAttrs("transform").OnElements("g", "rect")
-	policy.AllowAttrs("x1", "y1", "x2", "y2").OnElements("line")
-	policy.AllowAttrs("rx", "ry").OnElements("rect")
-	policy.AllowAttrs("x", "y", "text-anchor").OnElements("text")
+	policy.AllowAttrs("transform").OnElements("g", "rect", "path")
+	policy.AllowAttrs("x1", "y1", "x2", "y2", "stroke", "stroke-width", "name", "id", "style", "fill", "stroke-dasharray", "marker-end").OnElements("line")
+	policy.AllowAttrs("rx", "ry", "name", "stroke", "fill").OnElements("rect")
+	policy.AllowAttrs("x", "y", "text-anchor", "alignment-baseline", "dominant-baseline", "font-size", "font-weight").OnElements("text")
 	policy.AllowAttrs("x", "dy", "xml:space").OnElements("tspan")
+	// Mermaid SVG defs 和 symbol 元素
+	policy.AllowAttrs("height", "width", "id", "clip-rule", "fill-rule").OnElements("symbol")
 
 	policy.AllowAttrs("orient", "markerHeight", "markerWidth", "markerUnits", "refY", "refX", "viewBox", "class", "id").OnElements("marker")
 	policy.AllowAttrs("language").OnElements("code")
@@ -121,10 +123,14 @@ func NewService(settingSvc setting.SettingService, bus *event.EventBus) *Service
 	// 通用
 	policy.AllowAttrs("placeholder").OnElements("input")
 	policy.AllowAttrs("xmlns", "width", "height", "viewBox", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "preserveAspectRatio", "aria-roledescription", "role", "style", "xmlns:xlink", "id", "t").OnElements("svg")
-	policy.AllowAttrs("cx", "cy", "r").OnElements("circle")
-	policy.AllowAttrs("d", "style", "class", "marker-end", "fill", "p-id", "t").OnElements("path")
-	policy.AllowAttrs("height", "width", "x", "y", "style", "class").OnElements("rect")
-	policy.AllowAttrs("height", "width", "x", "y", "style").OnElements("foreignObject")
+	policy.AllowAttrs("cx", "cy", "r", "stroke", "fill", "stroke-width").OnElements("circle")
+	policy.AllowAttrs("d", "style", "class", "marker-end", "fill", "p-id", "t", "stroke", "stroke-width", "stroke-dasharray").OnElements("path")
+	policy.AllowAttrs("id").OnElements("g", "line", "defs")
+	policy.AllowAttrs("height", "width", "x", "y", "style", "class", "opacity").OnElements("rect")
+	policy.AllowAttrs("height", "width", "x", "y", "style", "xmlns").OnElements("foreignObject")
+	// Mermaid flowchart 椭圆和多边形元素
+	policy.AllowAttrs("cx", "cy", "rx", "ry", "stroke", "fill", "stroke-width").OnElements("ellipse")
+	policy.AllowAttrs("points", "stroke", "fill", "stroke-width").OnElements("polygon")
 	policy.AllowAttrs("data-processed").OnElements("span")
 
 	// 视频画廊相关属性
@@ -137,14 +143,17 @@ func NewService(settingSvc setting.SettingService, bus *event.EventBus) *Service
 	policy.AllowAttrs("data-music-id", "data-music-data", "data-music-name", "data-music-artist", "data-music-pic", "data-music-url", "data-initialized", "data-audio-loaded", "data-events-attached").OnElements("div", "audio")
 	policy.AllowAttrs("preload").OnElements("audio")
 
-	policy.AllowAttrs("id").OnElements("div", "h1", "h2", "h3", "h4", "h5", "h6", "button", "a", "img", "span", "code", "pre", "table", "thead", "tbody", "tr", "th", "td", "font", "details", "summary", "svg", "blockquote", "video")
+	// iframe 相关属性
+	policy.AllowAttrs("src", "width", "height", "scrolling", "seamless", "class", "id", "title", "frameborder", "allowfullscreen", "sandbox").OnElements("iframe")
+
+	policy.AllowAttrs("id").OnElements("div", "h1", "h2", "h3", "h4", "h5", "h6", "button", "a", "img", "span", "code", "pre", "table", "thead", "tbody", "tr", "th", "td", "font", "details", "summary", "svg", "blockquote", "video", "iframe")
 
 	svc := &Service{
 		settingSvc:   settingSvc,
 		mdParser:     mdParser,
 		policy:       policy,
 		httpClient:   &http.Client{Timeout: 10 * time.Second},
-		mermaidRegex: regexp.MustCompile(`(?s)<p data-line=".*?" class="md-editor-mermaid".*?</p>`),
+		mermaidRegex: regexp.MustCompile(`(?s)<p[^>]*class="md-editor-mermaid"[^>]*>.*?</p>`),
 	}
 
 	bus.Subscribe(event.Topic(setting.TopicSettingUpdated), svc.handleSettingUpdate)
@@ -268,17 +277,112 @@ func (s *Service) ToHTML(ctx context.Context, content string) (string, error) {
 	return finalHTML, nil
 }
 
+// extractMermaidBlocks 使用 HTML 解析器提取完整的 Mermaid 块（包括 action div）
+func extractMermaidBlocks(htmlContent string) (map[string]string, string) {
+	placeholders := make(map[string]string)
+	doc, err := html.Parse(strings.NewReader("<body>" + htmlContent + "</body>"))
+	if err != nil {
+		log.Printf("[extractMermaidBlocks] HTML 解析失败: %v", err)
+		return placeholders, htmlContent
+	}
+
+	var findMermaidNodes func(*html.Node) []*html.Node
+	findMermaidNodes = func(n *html.Node) []*html.Node {
+		var mermaidNodes []*html.Node
+		if n.Type == html.ElementNode && n.Data == "p" {
+			// 检查是否有 md-editor-mermaid class
+			for _, attr := range n.Attr {
+				if attr.Key == "class" && strings.Contains(attr.Val, "md-editor-mermaid") {
+					mermaidNodes = append(mermaidNodes, n)
+					break
+				}
+			}
+		}
+		// 递归查找子节点
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			mermaidNodes = append(mermaidNodes, findMermaidNodes(c)...)
+		}
+		return mermaidNodes
+	}
+
+	body := doc.FirstChild.LastChild // 获取 body 节点
+	mermaidNodes := findMermaidNodes(body)
+	if len(mermaidNodes) == 0 {
+		return placeholders, htmlContent
+	}
+
+	// 为每个 Mermaid 节点渲染完整 HTML 并创建占位符
+	result := htmlContent
+	for i := len(mermaidNodes) - 1; i >= 0; i-- {
+		node := mermaidNodes[i]
+		var buf bytes.Buffer
+		if err := html.Render(&buf, node); err != nil {
+			log.Printf("[extractMermaidBlocks] 渲染节点失败: %v", err)
+			continue
+		}
+		mermaidHTML := buf.String()
+		placeholder := "MERMAID_PLACEHOLDER_" + uuid.New().String()
+		placeholders[placeholder] = mermaidHTML
+
+		// 在原始 HTML 中查找并替换（从后往前替换，避免位置偏移）
+		// 使用正则表达式找到开始标签
+		startTagPattern := regexp.MustCompile(`<p[^>]*class="[^"]*md-editor-mermaid[^"]*"[^>]*>`)
+		matches := startTagPattern.FindAllStringIndex(result, -1)
+		if len(matches) > i {
+			startPos := matches[i][0]
+			// 从开始位置查找匹配的 </p>（计算嵌套深度）
+			depth := 0
+			endPos := -1
+			for j := startPos; j < len(result); j++ {
+				if j+1 < len(result) && result[j:j+2] == "<p" {
+					// 检查是否是开始标签（后面跟着空格或>）
+					if j+2 < len(result) && (result[j+2] == ' ' || result[j+2] == '>') {
+						depth++
+					}
+				} else if j+3 < len(result) && result[j:j+3] == "</p" {
+					// 检查是否是结束标签（后面跟着>）
+					if j+3 < len(result) && result[j+3] == '>' {
+						depth--
+						if depth == 0 {
+							endPos = j + 4
+							break
+						}
+					}
+				}
+			}
+			if endPos > startPos {
+				// 替换为占位符
+				result = result[:startPos] + placeholder + result[endPos:]
+			}
+		}
+	}
+
+	return placeholders, result
+}
+
 // SanitizeHTML 仅对传入的HTML字符串进行XSS安全过滤。
+// Mermaid 图表的 action 按钮会由前端动态添加，后端只需保留 SVG 内容。
 func (s *Service) SanitizeHTML(htmlContent string) string {
 	placeholders := make(map[string]string)
-	replacedContent := s.mermaidRegex.ReplaceAllStringFunc(htmlContent, func(match string) string {
-		placeholder := "MERMAID_PLACEHOLDER_" + uuid.New().String()
-		placeholders[placeholder] = match
-		return placeholder
-	})
 
-	safeHTML := s.policy.Sanitize(replacedContent)
+	// 检测 Mermaid 内容并提取保护
+	if strings.Contains(htmlContent, "md-editor-mermaid") {
+		var replacedContent string
+		placeholders, replacedContent = extractMermaidBlocks(htmlContent)
+		htmlContent = replacedContent
+	} else {
+		// 使用正则表达式方法（向后兼容）
+		htmlContent = s.mermaidRegex.ReplaceAllStringFunc(htmlContent, func(match string) string {
+			placeholder := "MERMAID_PLACEHOLDER_" + uuid.New().String()
+			placeholders[placeholder] = match
+			return placeholder
+		})
+	}
 
+	// 执行 XSS 过滤
+	safeHTML := s.policy.Sanitize(htmlContent)
+
+	// 将 Mermaid 块替换回来
 	finalHTML := safeHTML
 	for placeholder, originalMermaid := range placeholders {
 		finalHTML = strings.Replace(finalHTML, placeholder, originalMermaid, 1)

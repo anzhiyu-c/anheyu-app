@@ -144,8 +144,10 @@ func (h *Handler) ListPublicLinks(c *gin.Context) {
 // @Description  获取所有友链申请，包括待审核、已通过、已拒绝等状态，按申请时间倒序
 // @Tags         友情链接
 // @Produce      json
-// @Param        page      query  int  false  "页码"  default(1)
-// @Param        pageSize  query  int  false  "每页数量"  default(20)
+// @Param        page      query  int     false  "页码"  default(1)
+// @Param        pageSize  query  int     false  "每页数量"  default(20)
+// @Param        status    query  string  false  "状态筛选"  Enums(PENDING, APPROVED, REJECTED, INVALID)
+// @Param        name      query  string  false  "名称搜索（模糊匹配）"
 // @Success      200  {object}  response.Response{data=model.LinkListResponse}  "获取成功"
 // @Failure      400  {object}  response.Response  "参数无效"
 // @Failure      500  {object}  response.Response  "获取失败"

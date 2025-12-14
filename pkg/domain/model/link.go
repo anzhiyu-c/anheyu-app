@@ -117,10 +117,12 @@ type ListLinksRequest struct {
 	TagID       *int    `form:"tag_id"`
 }
 
-// ListPublicLinksRequest 是前台查询友链列表的请求结构，仅支持分页。
+// ListPublicLinksRequest 是前台查询友链列表的请求结构，支持分页和筛选。
 type ListPublicLinksRequest struct {
 	PaginationInput
-	CategoryID *int `form:"category_id"`
+	CategoryID *int    `form:"category_id"`
+	Status     *string `form:"status" binding:"omitempty,oneof=PENDING APPROVED REJECTED INVALID"`
+	Name       *string `form:"name"`
 }
 
 // LinkListResponse 是友链列表的统一 API 响应结构，包含分页信息。

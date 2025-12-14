@@ -12,7 +12,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/page"
 )
 
-// Page is the model entity for the Page schema.
+// 自定义页面表
 type Page struct {
 	config `json:"-"`
 	// ID of the ent.

@@ -13,13 +13,15 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/article"
 )
 
-// Article is the model entity for the Article schema.
+// 文章表
 type Article struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uint `json:"id,omitempty"`
 	// DeletedAt holds the value of the "deleted_at" field.
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+	// 文章作者ID，关联到users表
+	OwnerID uint `json:"owner_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -68,6 +70,22 @@ type Article struct {
 	CopyrightURL string `json:"copyright_url,omitempty"`
 	// 文章关键词，用于SEO优化
 	Keywords string `json:"keywords,omitempty"`
+	// 审核状态：NONE-无需审核, PENDING-待审核, APPROVED-已通过, REJECTED-已拒绝
+	ReviewStatus article.ReviewStatus `json:"review_status,omitempty"`
+	// 审核意见
+	ReviewComment string `json:"review_comment,omitempty"`
+	// 审核时间
+	ReviewedAt *time.Time `json:"reviewed_at,omitempty"`
+	// 审核人ID
+	ReviewedBy *uint `json:"reviewed_by,omitempty"`
+	// 是否已下架：下架后前台不显示，后台可见
+	IsTakedown bool `json:"is_takedown,omitempty"`
+	// 下架原因
+	TakedownReason string `json:"takedown_reason,omitempty"`
+	// 下架时间
+	TakedownAt *time.Time `json:"takedown_at,omitempty"`
+	// 下架操作人ID
+	TakedownBy *uint `json:"takedown_by,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ArticleQuery when eager-loading is set.
 	Edges        ArticleEdges `json:"edges"`
@@ -121,13 +139,13 @@ func (*Article) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case article.FieldSummaries:
 			values[i] = new([]byte)
-		case article.FieldIsPrimaryColorManual, article.FieldShowOnHome, article.FieldCopyright:
+		case article.FieldIsPrimaryColorManual, article.FieldShowOnHome, article.FieldCopyright, article.FieldIsTakedown:
 			values[i] = new(sql.NullBool)
-		case article.FieldID, article.FieldViewCount, article.FieldWordCount, article.FieldReadingTime, article.FieldHomeSort, article.FieldPinSort:
+		case article.FieldID, article.FieldOwnerID, article.FieldViewCount, article.FieldWordCount, article.FieldReadingTime, article.FieldHomeSort, article.FieldPinSort, article.FieldReviewedBy, article.FieldTakedownBy:
 			values[i] = new(sql.NullInt64)
-		case article.FieldTitle, article.FieldContentMd, article.FieldContentHTML, article.FieldCoverURL, article.FieldStatus, article.FieldIPLocation, article.FieldPrimaryColor, article.FieldTopImgURL, article.FieldAbbrlink, article.FieldCopyrightAuthor, article.FieldCopyrightAuthorHref, article.FieldCopyrightURL, article.FieldKeywords:
+		case article.FieldTitle, article.FieldContentMd, article.FieldContentHTML, article.FieldCoverURL, article.FieldStatus, article.FieldIPLocation, article.FieldPrimaryColor, article.FieldTopImgURL, article.FieldAbbrlink, article.FieldCopyrightAuthor, article.FieldCopyrightAuthorHref, article.FieldCopyrightURL, article.FieldKeywords, article.FieldReviewStatus, article.FieldReviewComment, article.FieldTakedownReason:
 			values[i] = new(sql.NullString)
-		case article.FieldDeletedAt, article.FieldCreatedAt, article.FieldUpdatedAt:
+		case article.FieldDeletedAt, article.FieldCreatedAt, article.FieldUpdatedAt, article.FieldReviewedAt, article.FieldTakedownAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -156,6 +174,12 @@ func (_m *Article) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DeletedAt = new(time.Time)
 				*_m.DeletedAt = value.Time
+			}
+		case article.FieldOwnerID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field owner_id", values[i])
+			} else if value.Valid {
+				_m.OwnerID = uint(value.Int64)
 			}
 		case article.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -304,6 +328,58 @@ func (_m *Article) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Keywords = value.String
 			}
+		case article.FieldReviewStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field review_status", values[i])
+			} else if value.Valid {
+				_m.ReviewStatus = article.ReviewStatus(value.String)
+			}
+		case article.FieldReviewComment:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field review_comment", values[i])
+			} else if value.Valid {
+				_m.ReviewComment = value.String
+			}
+		case article.FieldReviewedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field reviewed_at", values[i])
+			} else if value.Valid {
+				_m.ReviewedAt = new(time.Time)
+				*_m.ReviewedAt = value.Time
+			}
+		case article.FieldReviewedBy:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field reviewed_by", values[i])
+			} else if value.Valid {
+				_m.ReviewedBy = new(uint)
+				*_m.ReviewedBy = uint(value.Int64)
+			}
+		case article.FieldIsTakedown:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_takedown", values[i])
+			} else if value.Valid {
+				_m.IsTakedown = value.Bool
+			}
+		case article.FieldTakedownReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field takedown_reason", values[i])
+			} else if value.Valid {
+				_m.TakedownReason = value.String
+			}
+		case article.FieldTakedownAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field takedown_at", values[i])
+			} else if value.Valid {
+				_m.TakedownAt = new(time.Time)
+				*_m.TakedownAt = value.Time
+			}
+		case article.FieldTakedownBy:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field takedown_by", values[i])
+			} else if value.Valid {
+				_m.TakedownBy = new(uint)
+				*_m.TakedownBy = uint(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -359,6 +435,9 @@ func (_m *Article) String() string {
 		builder.WriteString("deleted_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("owner_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.OwnerID))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
@@ -433,6 +512,38 @@ func (_m *Article) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("keywords=")
 	builder.WriteString(_m.Keywords)
+	builder.WriteString(", ")
+	builder.WriteString("review_status=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ReviewStatus))
+	builder.WriteString(", ")
+	builder.WriteString("review_comment=")
+	builder.WriteString(_m.ReviewComment)
+	builder.WriteString(", ")
+	if v := _m.ReviewedAt; v != nil {
+		builder.WriteString("reviewed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.ReviewedBy; v != nil {
+		builder.WriteString("reviewed_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("is_takedown=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsTakedown))
+	builder.WriteString(", ")
+	builder.WriteString("takedown_reason=")
+	builder.WriteString(_m.TakedownReason)
+	builder.WriteString(", ")
+	if v := _m.TakedownAt; v != nil {
+		builder.WriteString("takedown_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.TakedownBy; v != nil {
+		builder.WriteString("takedown_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

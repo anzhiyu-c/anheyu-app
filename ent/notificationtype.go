@@ -13,7 +13,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/notificationtype"
 )
 
-// NotificationType is the model entity for the NotificationType schema.
+// 通知类型表
 type NotificationType struct {
 	config `json:"-"`
 	// ID of the ent.

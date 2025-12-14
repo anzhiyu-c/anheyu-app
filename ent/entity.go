@@ -13,7 +13,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
 )
 
-// Entity is the model entity for the Entity schema.
+// 存储实体表，存储物理文件信息
 type Entity struct {
 	config `json:"-"`
 	// ID of the ent.

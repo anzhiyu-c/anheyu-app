@@ -53,6 +53,27 @@ func (_u *ArticleUpdate) ClearDeletedAt() *ArticleUpdate {
 	return _u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_u *ArticleUpdate) SetOwnerID(v uint) *ArticleUpdate {
+	_u.mutation.ResetOwnerID()
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableOwnerID(v *uint) *ArticleUpdate {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
+// AddOwnerID adds value to the "owner_id" field.
+func (_u *ArticleUpdate) AddOwnerID(v int) *ArticleUpdate {
+	_u.mutation.AddOwnerID(v)
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *ArticleUpdate) SetCreatedAt(v time.Time) *ArticleUpdate {
 	_u.mutation.SetCreatedAt(v)
@@ -494,6 +515,168 @@ func (_u *ArticleUpdate) ClearKeywords() *ArticleUpdate {
 	return _u
 }
 
+// SetReviewStatus sets the "review_status" field.
+func (_u *ArticleUpdate) SetReviewStatus(v article.ReviewStatus) *ArticleUpdate {
+	_u.mutation.SetReviewStatus(v)
+	return _u
+}
+
+// SetNillableReviewStatus sets the "review_status" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableReviewStatus(v *article.ReviewStatus) *ArticleUpdate {
+	if v != nil {
+		_u.SetReviewStatus(*v)
+	}
+	return _u
+}
+
+// SetReviewComment sets the "review_comment" field.
+func (_u *ArticleUpdate) SetReviewComment(v string) *ArticleUpdate {
+	_u.mutation.SetReviewComment(v)
+	return _u
+}
+
+// SetNillableReviewComment sets the "review_comment" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableReviewComment(v *string) *ArticleUpdate {
+	if v != nil {
+		_u.SetReviewComment(*v)
+	}
+	return _u
+}
+
+// ClearReviewComment clears the value of the "review_comment" field.
+func (_u *ArticleUpdate) ClearReviewComment() *ArticleUpdate {
+	_u.mutation.ClearReviewComment()
+	return _u
+}
+
+// SetReviewedAt sets the "reviewed_at" field.
+func (_u *ArticleUpdate) SetReviewedAt(v time.Time) *ArticleUpdate {
+	_u.mutation.SetReviewedAt(v)
+	return _u
+}
+
+// SetNillableReviewedAt sets the "reviewed_at" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableReviewedAt(v *time.Time) *ArticleUpdate {
+	if v != nil {
+		_u.SetReviewedAt(*v)
+	}
+	return _u
+}
+
+// ClearReviewedAt clears the value of the "reviewed_at" field.
+func (_u *ArticleUpdate) ClearReviewedAt() *ArticleUpdate {
+	_u.mutation.ClearReviewedAt()
+	return _u
+}
+
+// SetReviewedBy sets the "reviewed_by" field.
+func (_u *ArticleUpdate) SetReviewedBy(v uint) *ArticleUpdate {
+	_u.mutation.ResetReviewedBy()
+	_u.mutation.SetReviewedBy(v)
+	return _u
+}
+
+// SetNillableReviewedBy sets the "reviewed_by" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableReviewedBy(v *uint) *ArticleUpdate {
+	if v != nil {
+		_u.SetReviewedBy(*v)
+	}
+	return _u
+}
+
+// AddReviewedBy adds value to the "reviewed_by" field.
+func (_u *ArticleUpdate) AddReviewedBy(v int) *ArticleUpdate {
+	_u.mutation.AddReviewedBy(v)
+	return _u
+}
+
+// ClearReviewedBy clears the value of the "reviewed_by" field.
+func (_u *ArticleUpdate) ClearReviewedBy() *ArticleUpdate {
+	_u.mutation.ClearReviewedBy()
+	return _u
+}
+
+// SetIsTakedown sets the "is_takedown" field.
+func (_u *ArticleUpdate) SetIsTakedown(v bool) *ArticleUpdate {
+	_u.mutation.SetIsTakedown(v)
+	return _u
+}
+
+// SetNillableIsTakedown sets the "is_takedown" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableIsTakedown(v *bool) *ArticleUpdate {
+	if v != nil {
+		_u.SetIsTakedown(*v)
+	}
+	return _u
+}
+
+// SetTakedownReason sets the "takedown_reason" field.
+func (_u *ArticleUpdate) SetTakedownReason(v string) *ArticleUpdate {
+	_u.mutation.SetTakedownReason(v)
+	return _u
+}
+
+// SetNillableTakedownReason sets the "takedown_reason" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableTakedownReason(v *string) *ArticleUpdate {
+	if v != nil {
+		_u.SetTakedownReason(*v)
+	}
+	return _u
+}
+
+// ClearTakedownReason clears the value of the "takedown_reason" field.
+func (_u *ArticleUpdate) ClearTakedownReason() *ArticleUpdate {
+	_u.mutation.ClearTakedownReason()
+	return _u
+}
+
+// SetTakedownAt sets the "takedown_at" field.
+func (_u *ArticleUpdate) SetTakedownAt(v time.Time) *ArticleUpdate {
+	_u.mutation.SetTakedownAt(v)
+	return _u
+}
+
+// SetNillableTakedownAt sets the "takedown_at" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableTakedownAt(v *time.Time) *ArticleUpdate {
+	if v != nil {
+		_u.SetTakedownAt(*v)
+	}
+	return _u
+}
+
+// ClearTakedownAt clears the value of the "takedown_at" field.
+func (_u *ArticleUpdate) ClearTakedownAt() *ArticleUpdate {
+	_u.mutation.ClearTakedownAt()
+	return _u
+}
+
+// SetTakedownBy sets the "takedown_by" field.
+func (_u *ArticleUpdate) SetTakedownBy(v uint) *ArticleUpdate {
+	_u.mutation.ResetTakedownBy()
+	_u.mutation.SetTakedownBy(v)
+	return _u
+}
+
+// SetNillableTakedownBy sets the "takedown_by" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableTakedownBy(v *uint) *ArticleUpdate {
+	if v != nil {
+		_u.SetTakedownBy(*v)
+	}
+	return _u
+}
+
+// AddTakedownBy adds value to the "takedown_by" field.
+func (_u *ArticleUpdate) AddTakedownBy(v int) *ArticleUpdate {
+	_u.mutation.AddTakedownBy(v)
+	return _u
+}
+
+// ClearTakedownBy clears the value of the "takedown_by" field.
+func (_u *ArticleUpdate) ClearTakedownBy() *ArticleUpdate {
+	_u.mutation.ClearTakedownBy()
+	return _u
+}
+
 // AddPostTagIDs adds the "post_tags" edge to the PostTag entity by IDs.
 func (_u *ArticleUpdate) AddPostTagIDs(ids ...uint) *ArticleUpdate {
 	_u.mutation.AddPostTagIDs(ids...)
@@ -671,6 +854,11 @@ func (_u *ArticleUpdate) check() error {
 			return &ValidationError{Name: "pin_sort", err: fmt.Errorf(`ent: validator failed for field "Article.pin_sort": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ReviewStatus(); ok {
+		if err := article.ReviewStatusValidator(v); err != nil {
+			return &ValidationError{Name: "review_status", err: fmt.Errorf(`ent: validator failed for field "Article.review_status": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -697,6 +885,12 @@ func (_u *ArticleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.DeletedAtCleared() {
 		_spec.ClearField(article.FieldDeletedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.OwnerID(); ok {
+		_spec.SetField(article.FieldOwnerID, field.TypeUint, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerID(); ok {
+		_spec.AddField(article.FieldOwnerID, field.TypeUint, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(article.FieldCreatedAt, field.TypeTime, value)
@@ -825,6 +1019,54 @@ func (_u *ArticleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.KeywordsCleared() {
 		_spec.ClearField(article.FieldKeywords, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReviewStatus(); ok {
+		_spec.SetField(article.FieldReviewStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ReviewComment(); ok {
+		_spec.SetField(article.FieldReviewComment, field.TypeString, value)
+	}
+	if _u.mutation.ReviewCommentCleared() {
+		_spec.ClearField(article.FieldReviewComment, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReviewedAt(); ok {
+		_spec.SetField(article.FieldReviewedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ReviewedAtCleared() {
+		_spec.ClearField(article.FieldReviewedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ReviewedBy(); ok {
+		_spec.SetField(article.FieldReviewedBy, field.TypeUint, value)
+	}
+	if value, ok := _u.mutation.AddedReviewedBy(); ok {
+		_spec.AddField(article.FieldReviewedBy, field.TypeUint, value)
+	}
+	if _u.mutation.ReviewedByCleared() {
+		_spec.ClearField(article.FieldReviewedBy, field.TypeUint)
+	}
+	if value, ok := _u.mutation.IsTakedown(); ok {
+		_spec.SetField(article.FieldIsTakedown, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TakedownReason(); ok {
+		_spec.SetField(article.FieldTakedownReason, field.TypeString, value)
+	}
+	if _u.mutation.TakedownReasonCleared() {
+		_spec.ClearField(article.FieldTakedownReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.TakedownAt(); ok {
+		_spec.SetField(article.FieldTakedownAt, field.TypeTime, value)
+	}
+	if _u.mutation.TakedownAtCleared() {
+		_spec.ClearField(article.FieldTakedownAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TakedownBy(); ok {
+		_spec.SetField(article.FieldTakedownBy, field.TypeUint, value)
+	}
+	if value, ok := _u.mutation.AddedTakedownBy(); ok {
+		_spec.AddField(article.FieldTakedownBy, field.TypeUint, value)
+	}
+	if _u.mutation.TakedownByCleared() {
+		_spec.ClearField(article.FieldTakedownBy, field.TypeUint)
 	}
 	if _u.mutation.PostTagsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1000,6 +1242,27 @@ func (_u *ArticleUpdateOne) SetNillableDeletedAt(v *time.Time) *ArticleUpdateOne
 // ClearDeletedAt clears the value of the "deleted_at" field.
 func (_u *ArticleUpdateOne) ClearDeletedAt() *ArticleUpdateOne {
 	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (_u *ArticleUpdateOne) SetOwnerID(v uint) *ArticleUpdateOne {
+	_u.mutation.ResetOwnerID()
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableOwnerID(v *uint) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
+// AddOwnerID adds value to the "owner_id" field.
+func (_u *ArticleUpdateOne) AddOwnerID(v int) *ArticleUpdateOne {
+	_u.mutation.AddOwnerID(v)
 	return _u
 }
 
@@ -1444,6 +1707,168 @@ func (_u *ArticleUpdateOne) ClearKeywords() *ArticleUpdateOne {
 	return _u
 }
 
+// SetReviewStatus sets the "review_status" field.
+func (_u *ArticleUpdateOne) SetReviewStatus(v article.ReviewStatus) *ArticleUpdateOne {
+	_u.mutation.SetReviewStatus(v)
+	return _u
+}
+
+// SetNillableReviewStatus sets the "review_status" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableReviewStatus(v *article.ReviewStatus) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetReviewStatus(*v)
+	}
+	return _u
+}
+
+// SetReviewComment sets the "review_comment" field.
+func (_u *ArticleUpdateOne) SetReviewComment(v string) *ArticleUpdateOne {
+	_u.mutation.SetReviewComment(v)
+	return _u
+}
+
+// SetNillableReviewComment sets the "review_comment" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableReviewComment(v *string) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetReviewComment(*v)
+	}
+	return _u
+}
+
+// ClearReviewComment clears the value of the "review_comment" field.
+func (_u *ArticleUpdateOne) ClearReviewComment() *ArticleUpdateOne {
+	_u.mutation.ClearReviewComment()
+	return _u
+}
+
+// SetReviewedAt sets the "reviewed_at" field.
+func (_u *ArticleUpdateOne) SetReviewedAt(v time.Time) *ArticleUpdateOne {
+	_u.mutation.SetReviewedAt(v)
+	return _u
+}
+
+// SetNillableReviewedAt sets the "reviewed_at" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableReviewedAt(v *time.Time) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetReviewedAt(*v)
+	}
+	return _u
+}
+
+// ClearReviewedAt clears the value of the "reviewed_at" field.
+func (_u *ArticleUpdateOne) ClearReviewedAt() *ArticleUpdateOne {
+	_u.mutation.ClearReviewedAt()
+	return _u
+}
+
+// SetReviewedBy sets the "reviewed_by" field.
+func (_u *ArticleUpdateOne) SetReviewedBy(v uint) *ArticleUpdateOne {
+	_u.mutation.ResetReviewedBy()
+	_u.mutation.SetReviewedBy(v)
+	return _u
+}
+
+// SetNillableReviewedBy sets the "reviewed_by" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableReviewedBy(v *uint) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetReviewedBy(*v)
+	}
+	return _u
+}
+
+// AddReviewedBy adds value to the "reviewed_by" field.
+func (_u *ArticleUpdateOne) AddReviewedBy(v int) *ArticleUpdateOne {
+	_u.mutation.AddReviewedBy(v)
+	return _u
+}
+
+// ClearReviewedBy clears the value of the "reviewed_by" field.
+func (_u *ArticleUpdateOne) ClearReviewedBy() *ArticleUpdateOne {
+	_u.mutation.ClearReviewedBy()
+	return _u
+}
+
+// SetIsTakedown sets the "is_takedown" field.
+func (_u *ArticleUpdateOne) SetIsTakedown(v bool) *ArticleUpdateOne {
+	_u.mutation.SetIsTakedown(v)
+	return _u
+}
+
+// SetNillableIsTakedown sets the "is_takedown" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableIsTakedown(v *bool) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetIsTakedown(*v)
+	}
+	return _u
+}
+
+// SetTakedownReason sets the "takedown_reason" field.
+func (_u *ArticleUpdateOne) SetTakedownReason(v string) *ArticleUpdateOne {
+	_u.mutation.SetTakedownReason(v)
+	return _u
+}
+
+// SetNillableTakedownReason sets the "takedown_reason" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableTakedownReason(v *string) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetTakedownReason(*v)
+	}
+	return _u
+}
+
+// ClearTakedownReason clears the value of the "takedown_reason" field.
+func (_u *ArticleUpdateOne) ClearTakedownReason() *ArticleUpdateOne {
+	_u.mutation.ClearTakedownReason()
+	return _u
+}
+
+// SetTakedownAt sets the "takedown_at" field.
+func (_u *ArticleUpdateOne) SetTakedownAt(v time.Time) *ArticleUpdateOne {
+	_u.mutation.SetTakedownAt(v)
+	return _u
+}
+
+// SetNillableTakedownAt sets the "takedown_at" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableTakedownAt(v *time.Time) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetTakedownAt(*v)
+	}
+	return _u
+}
+
+// ClearTakedownAt clears the value of the "takedown_at" field.
+func (_u *ArticleUpdateOne) ClearTakedownAt() *ArticleUpdateOne {
+	_u.mutation.ClearTakedownAt()
+	return _u
+}
+
+// SetTakedownBy sets the "takedown_by" field.
+func (_u *ArticleUpdateOne) SetTakedownBy(v uint) *ArticleUpdateOne {
+	_u.mutation.ResetTakedownBy()
+	_u.mutation.SetTakedownBy(v)
+	return _u
+}
+
+// SetNillableTakedownBy sets the "takedown_by" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableTakedownBy(v *uint) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetTakedownBy(*v)
+	}
+	return _u
+}
+
+// AddTakedownBy adds value to the "takedown_by" field.
+func (_u *ArticleUpdateOne) AddTakedownBy(v int) *ArticleUpdateOne {
+	_u.mutation.AddTakedownBy(v)
+	return _u
+}
+
+// ClearTakedownBy clears the value of the "takedown_by" field.
+func (_u *ArticleUpdateOne) ClearTakedownBy() *ArticleUpdateOne {
+	_u.mutation.ClearTakedownBy()
+	return _u
+}
+
 // AddPostTagIDs adds the "post_tags" edge to the PostTag entity by IDs.
 func (_u *ArticleUpdateOne) AddPostTagIDs(ids ...uint) *ArticleUpdateOne {
 	_u.mutation.AddPostTagIDs(ids...)
@@ -1634,6 +2059,11 @@ func (_u *ArticleUpdateOne) check() error {
 			return &ValidationError{Name: "pin_sort", err: fmt.Errorf(`ent: validator failed for field "Article.pin_sort": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ReviewStatus(); ok {
+		if err := article.ReviewStatusValidator(v); err != nil {
+			return &ValidationError{Name: "review_status", err: fmt.Errorf(`ent: validator failed for field "Article.review_status": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1677,6 +2107,12 @@ func (_u *ArticleUpdateOne) sqlSave(ctx context.Context) (_node *Article, err er
 	}
 	if _u.mutation.DeletedAtCleared() {
 		_spec.ClearField(article.FieldDeletedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.OwnerID(); ok {
+		_spec.SetField(article.FieldOwnerID, field.TypeUint, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerID(); ok {
+		_spec.AddField(article.FieldOwnerID, field.TypeUint, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(article.FieldCreatedAt, field.TypeTime, value)
@@ -1805,6 +2241,54 @@ func (_u *ArticleUpdateOne) sqlSave(ctx context.Context) (_node *Article, err er
 	}
 	if _u.mutation.KeywordsCleared() {
 		_spec.ClearField(article.FieldKeywords, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReviewStatus(); ok {
+		_spec.SetField(article.FieldReviewStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ReviewComment(); ok {
+		_spec.SetField(article.FieldReviewComment, field.TypeString, value)
+	}
+	if _u.mutation.ReviewCommentCleared() {
+		_spec.ClearField(article.FieldReviewComment, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReviewedAt(); ok {
+		_spec.SetField(article.FieldReviewedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ReviewedAtCleared() {
+		_spec.ClearField(article.FieldReviewedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ReviewedBy(); ok {
+		_spec.SetField(article.FieldReviewedBy, field.TypeUint, value)
+	}
+	if value, ok := _u.mutation.AddedReviewedBy(); ok {
+		_spec.AddField(article.FieldReviewedBy, field.TypeUint, value)
+	}
+	if _u.mutation.ReviewedByCleared() {
+		_spec.ClearField(article.FieldReviewedBy, field.TypeUint)
+	}
+	if value, ok := _u.mutation.IsTakedown(); ok {
+		_spec.SetField(article.FieldIsTakedown, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TakedownReason(); ok {
+		_spec.SetField(article.FieldTakedownReason, field.TypeString, value)
+	}
+	if _u.mutation.TakedownReasonCleared() {
+		_spec.ClearField(article.FieldTakedownReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.TakedownAt(); ok {
+		_spec.SetField(article.FieldTakedownAt, field.TypeTime, value)
+	}
+	if _u.mutation.TakedownAtCleared() {
+		_spec.ClearField(article.FieldTakedownAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TakedownBy(); ok {
+		_spec.SetField(article.FieldTakedownBy, field.TypeUint, value)
+	}
+	if value, ok := _u.mutation.AddedTakedownBy(); ok {
+		_spec.AddField(article.FieldTakedownBy, field.TypeUint, value)
+	}
+	if _u.mutation.TakedownByCleared() {
+		_spec.ClearField(article.FieldTakedownBy, field.TypeUint)
 	}
 	if _u.mutation.PostTagsCleared() {
 		edge := &sqlgraph.EdgeSpec{

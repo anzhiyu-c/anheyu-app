@@ -12,7 +12,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/setting"
 )
 
-// Setting is the model entity for the Setting schema.
+// 系统设置表
 type Setting struct {
 	config `json:"-"`
 	// ID of the ent.

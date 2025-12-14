@@ -72,6 +72,10 @@ type FileService interface {
 	// UploadFileByPolicyFlag 根据策略标志（如 article_image）上传文件。
 	UploadFileByPolicyFlag(ctx context.Context, viewerID uint, fileReader io.Reader, policyFlag, filename string) (*model.FileItem, error)
 
+	// UploadFileByPolicyFlagWithGroup 根据策略标志上传文件，并检查用户组权限。
+	// userGroupID 为 0 表示不检查用户组权限（仅适用于系统内部调用）。
+	UploadFileByPolicyFlagWithGroup(ctx context.Context, viewerID, userGroupID uint, fileReader io.Reader, policyFlag, filename string) (*model.FileItem, error)
+
 	// GetProviderForPolicy 根据存储策略获取对应的存储提供者实例
 	GetProviderForPolicy(policy *model.StoragePolicy) (storage.IStorageProvider, error)
 
@@ -86,6 +90,7 @@ type serviceImpl struct {
 	txManager         repository.TransactionManager
 	entityRepo        repository.EntityRepository
 	fileEntityRepo    repository.FileEntityRepository
+	userGroupRepo     repository.UserGroupRepository
 	metadataService   *file_info.MetadataService
 	extractionSvc     *file_info.ExtractionService
 	cacheSvc          utility.CacheService
@@ -105,6 +110,7 @@ func NewService(
 	txManager repository.TransactionManager,
 	entityRepo repository.EntityRepository,
 	fileEntityRepo repository.FileEntityRepository,
+	userGroupRepo repository.UserGroupRepository,
 	metadataService *file_info.MetadataService,
 	extractionSvc *file_info.ExtractionService,
 	cacheSvc utility.CacheService,
@@ -122,6 +128,7 @@ func NewService(
 		txManager:         txManager,
 		entityRepo:        entityRepo,
 		fileEntityRepo:    fileEntityRepo,
+		userGroupRepo:     userGroupRepo,
 		metadataService:   metadataService,
 		extractionSvc:     extractionSvc,
 		cacheSvc:          cacheSvc,

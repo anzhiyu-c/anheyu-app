@@ -236,6 +236,7 @@ func (s *uploadService) CreateUploadSession(ctx context.Context, ownerID uint, r
 			Expires:      presignedResult.ExpirationDateTime.Unix(),
 			UploadMethod: constant.UploadMethodClient,
 			UploadURL:    presignedResult.UploadURL,
+			ContentType:  presignedResult.ContentType,
 			StoragePolicy: &model.StoragePolicyInfo{
 				ID:      req.PolicyID,
 				Name:    policy.Name,
@@ -783,15 +784,40 @@ func (s *uploadService) FinalizeClientUpload(ctx context.Context, ownerID uint, 
 }
 
 // buildObjectKey 是一个辅助函数，用于构建云存储对象键
+//
+// 【路径转换规则】
+// virtualPath 是完整的虚拟路径，格式为: /挂载点/子目录/文件名
+// 例如: virtualPath = "/oss/aaa/123.jpg"
+//
+// 转换步骤:
+//  1. 从 virtualPath 中减去 policy.VirtualPath（挂载点），得到相对路径
+//     相对路径 = "/oss/aaa/123.jpg" - "/oss" = "/aaa/123.jpg"
+//  2. 将相对路径与 policy.BasePath（云存储基础路径）拼接
+//     对象键 = "test" + "/aaa/123.jpg" = "test/aaa/123.jpg"
+//
+// 【警告】此函数的逻辑必须与存储提供者（如 aliyun_oss.go）中的 buildObjectKey 保持一致！
 func buildObjectKey(policy *model.StoragePolicy, virtualPath string) string {
+	// 计算相对于策略挂载点的相对路径
+	// 例如: virtualPath="/oss/aaa/123.jpg", policy.VirtualPath="/oss" -> relativePath="/aaa/123.jpg"
+	relativePath := strings.TrimPrefix(virtualPath, policy.VirtualPath)
+	relativePath = strings.TrimPrefix(relativePath, "/")
+
+	// 基础前缀路径处理（从策略的 BasePath 获取）
 	basePath := strings.TrimPrefix(strings.TrimSuffix(policy.BasePath, "/"), "/")
-	filename := filepath.Base(virtualPath)
 
 	var objectKey string
 	if basePath == "" {
-		objectKey = filename
+		objectKey = relativePath
 	} else {
-		objectKey = basePath + "/" + filename
+		if relativePath == "" {
+			objectKey = basePath
+		} else {
+			objectKey = basePath + "/" + relativePath
+		}
 	}
+
+	// 确保不以斜杠开头
+	objectKey = strings.TrimPrefix(objectKey, "/")
+
 	return objectKey
 }

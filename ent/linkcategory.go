@@ -11,7 +11,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/linkcategory"
 )
 
-// LinkCategory is the model entity for the LinkCategory schema.
+// 友链分类表
 type LinkCategory struct {
 	config `json:"-"`
 	// ID of the ent.

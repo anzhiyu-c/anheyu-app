@@ -53,6 +53,7 @@ type ThumbnailResult struct {
 type PresignedUploadResult struct {
 	UploadURL          string    `json:"uploadUrl"`          // 预签名上传URL
 	ExpirationDateTime time.Time `json:"expirationDateTime"` // URL过期时间
+	ContentType        string    `json:"contentType"`        // 期望的 Content-Type，客户端上传时必须使用此值
 }
 
 // IStorageProvider 定义了所有存储提供者必须实现的接口。

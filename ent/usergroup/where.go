@@ -531,6 +531,16 @@ func SettingsLTE(v *model.GroupSettings) predicate.UserGroup {
 	return predicate.UserGroup(sql.FieldLTE(FieldSettings, v))
 }
 
+// StoragePolicyIdsIsNil applies the IsNil predicate on the "storage_policy_ids" field.
+func StoragePolicyIdsIsNil() predicate.UserGroup {
+	return predicate.UserGroup(sql.FieldIsNull(FieldStoragePolicyIds))
+}
+
+// StoragePolicyIdsNotNil applies the NotNil predicate on the "storage_policy_ids" field.
+func StoragePolicyIdsNotNil() predicate.UserGroup {
+	return predicate.UserGroup(sql.FieldNotNull(FieldStoragePolicyIds))
+}
+
 // HasUsers applies the HasEdge predicate on the "users" edge.
 func HasUsers() predicate.UserGroup {
 	return predicate.UserGroup(func(s *sql.Selector) {

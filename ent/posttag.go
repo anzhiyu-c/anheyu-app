@@ -12,7 +12,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/posttag"
 )
 
-// PostTag is the model entity for the PostTag schema.
+// 文章标签表
 type PostTag struct {
 	config `json:"-"`
 	// ID of the ent.

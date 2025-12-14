@@ -61,6 +61,9 @@ type ArticleRepository interface {
 	// GetBySlugOrID 根据文章的 slug 或 ID 获取文章详情。
 	GetBySlugOrID(ctx context.Context, slugOrID string) (*model.Article, error)
 
+	// GetBySlugOrIDForPreview 根据文章的 slug 或 ID 获取文章详情，不过滤文章状态，用于预览功能。
+	GetBySlugOrIDForPreview(ctx context.Context, slugOrID string) (*model.Article, error)
+
 	// GetPrevArticle 获取上一篇文章，基于当前文章的ID和创建时间。
 	GetPrevArticle(ctx context.Context, currentArticleID uint, createdAt time.Time) (*model.Article, error)
 

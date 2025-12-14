@@ -6,6 +6,8 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/schema/mixin"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -14,6 +16,14 @@ import (
 // Metadata holds the schema definition for the Metadata entity.
 type Metadata struct {
 	ent.Schema
+}
+
+// Annotations of the Metadata.
+func (Metadata) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("文件元数据表"),
+	}
 }
 
 // Mixin of the Metadata.

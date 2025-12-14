@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -17,6 +19,14 @@ import (
 // UserNotificationConfig holds the schema definition for the UserNotificationConfig entity.
 type UserNotificationConfig struct {
 	ent.Schema
+}
+
+// Annotations of the UserNotificationConfig.
+func (UserNotificationConfig) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("用户通知配置表"),
+	}
 }
 
 // Fields of the UserNotificationConfig.

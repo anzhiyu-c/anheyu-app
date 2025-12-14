@@ -13,7 +13,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/file"
 )
 
-// DirectLink is the model entity for the DirectLink schema.
+// 文件直链表
 type DirectLink struct {
 	config `json:"-"`
 	// ID of the ent.

@@ -13,7 +13,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/user"
 )
 
-// Comment is the model entity for the Comment schema.
+// 评论表
 type Comment struct {
 	config `json:"-"`
 	// ID of the ent.

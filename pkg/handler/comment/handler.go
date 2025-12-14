@@ -471,3 +471,29 @@ func (h *Handler) UpdateContent(c *gin.Context) {
 
 	response.Success(c, updatedComment, "评论更新成功")
 }
+
+// GetQQInfo
+// @Summary      获取QQ信息
+// @Description  根据QQ号获取QQ昵称和头像URL。用于评论表单自动填充功能。
+// @Tags         公开评论
+// @Produce      json
+// @Param        qq query string true "QQ号码"
+// @Success      200 {object} response.Response{data=comment.QQInfoResponse} "成功响应"
+// @Failure      400 {object} response.Response "请求参数错误"
+// @Failure      500 {object} response.Response "服务器内部错误"
+// @Router       /public/comments/qq-info [get]
+func (h *Handler) GetQQInfo(c *gin.Context) {
+	qqNumber := c.Query("qq")
+	if qqNumber == "" {
+		response.Fail(c, http.StatusBadRequest, "QQ号不能为空")
+		return
+	}
+
+	info, err := h.svc.GetQQInfo(c.Request.Context(), qqNumber)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Success(c, info, "获取成功")
+}

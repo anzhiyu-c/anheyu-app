@@ -7,6 +7,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -14,6 +16,14 @@ import (
 // Entity holds the schema definition for the Entity entity.
 type Entity struct {
 	ent.Schema
+}
+
+// Annotations of the Entity.
+func (Entity) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("存储实体表，存储物理文件信息"),
+	}
 }
 
 // Fields of the Entity.

@@ -403,8 +403,9 @@ note、abstract、info、tip、success、question、warning、failure、danger�
 
 **按钮参数**：
 
-- `icon`: 图标类名或图片链接（必填）
-  - 图标类名：如 `anzhiyu-icon-user-3-fill`
+- `icon`: 图标（必填），支持三种格式：
+  - AnZhiYu 图标：如 `anzhiyu-icon-user-3-fill`
+  - Iconify 图标：如 `ri:github-fill`、`mdi:home`（格式为 `prefix:name`）
   - 图片链接：支持 http:// 或 https:// 开头的图片 URL
 - `title`: 按钮标题（必填）
 - `url`: 链接地址，默认为 `#`

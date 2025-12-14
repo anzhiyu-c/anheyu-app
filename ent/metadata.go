@@ -13,7 +13,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/metadata"
 )
 
-// Metadata is the model entity for the Metadata schema.
+// 文件元数据表
 type Metadata struct {
 	config `json:"-"`
 	// ID of the ent.

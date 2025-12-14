@@ -113,6 +113,7 @@ type App struct {
 	entityRepo           repository.EntityRepository
 	cacheSvc             utility.CacheService
 	eventBus             *event.EventBus
+	postCategorySvc      *post_category_service.Service
 }
 
 func (a *App) PrintBanner() {
@@ -266,7 +267,7 @@ func NewApp(content embed.FS) (*App, func(), error) {
 	syncSvc := process.NewSyncService(txManager, fileRepo, entityRepo, fileEntityRepo, storagePolicySvc, eventBus, storageProviders)
 	vfsSvc := volume.NewVFSService(storagePolicySvc, cacheSvc, fileRepo, entityRepo, settingSvc, storageProviders)
 	extractionSvc := file_info.NewExtractionService(fileRepo, settingSvc, metadataSvc, vfsSvc)
-	fileSvc := file_service.NewService(fileRepo, storagePolicyRepo, txManager, entityRepo, fileEntityRepo, metadataSvc, extractionSvc, cacheSvc, storagePolicySvc, settingSvc, syncSvc, vfsSvc, storageProviders, eventBus, pathLocker)
+	fileSvc := file_service.NewService(fileRepo, storagePolicyRepo, txManager, entityRepo, fileEntityRepo, userGroupRepo, metadataSvc, extractionSvc, cacheSvc, storagePolicySvc, settingSvc, syncSvc, vfsSvc, storageProviders, eventBus, pathLocker)
 	uploadSvc := file_service.NewUploadService(txManager, eventBus, entityRepo, metadataSvc, cacheSvc, storagePolicySvc, settingSvc, storageProviders)
 	directLinkSvc := direct_link.NewDirectLinkService(directLinkRepo, fileRepo, userGroupRepo, settingSvc, storagePolicyRepo)
 	statService, err := statistics.NewVisitorStatService(
@@ -353,7 +354,7 @@ func NewApp(content embed.FS) (*App, func(), error) {
 	cdnSvc := cdn.NewService(settingSvc)
 	log.Printf("[DEBUG] CDNService 初始化完成")
 
-	articleSvc := article_service.NewService(articleRepo, postTagRepo, postCategoryRepo, commentRepo, txManager, cacheSvc, geoSvc, taskBroker, settingSvc, parserSvc, fileSvc, directLinkSvc, searchSvc, primaryColorSvc, cdnSvc)
+	articleSvc := article_service.NewService(articleRepo, postTagRepo, postCategoryRepo, commentRepo, txManager, cacheSvc, geoSvc, taskBroker, settingSvc, parserSvc, fileSvc, directLinkSvc, searchSvc, primaryColorSvc, cdnSvc, userRepo)
 	log.Printf("[DEBUG] 正在初始化 PushooService...")
 	pushooSvc := utility.NewPushooService(settingSvc)
 	log.Printf("[DEBUG] PushooService 初始化完成")
@@ -484,6 +485,7 @@ func NewApp(content embed.FS) (*App, func(), error) {
 		entityRepo:           entityRepo,
 		cacheSvc:             cacheSvc,
 		eventBus:             eventBus,
+		postCategorySvc:      postCategorySvc,
 	}
 
 	// 创建cleanup函数
@@ -574,6 +576,11 @@ func (a *App) EventBus() *event.EventBus {
 // Version 返回应用的版本号
 func (a *App) Version() string {
 	return a.appVersion
+}
+
+// PostCategoryService 返回文章分类服务（用于 PRO 版多人共创功能）
+func (a *App) PostCategoryService() *post_category_service.Service {
+	return a.postCategorySvc
 }
 
 func (a *App) Run() error {

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 )
@@ -18,6 +20,14 @@ import (
 // URLStat URL访问统计表，记录每个URL的访问统计
 type URLStat struct {
 	ent.Schema
+}
+
+// Annotations of the URLStat.
+func (URLStat) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("URL访问统计表"),
+	}
 }
 
 // Fields of the URLStat.

@@ -105,8 +105,8 @@ func (s *serviceImpl) ExportArticles(ctx context.Context, articleIDs []string) (
 	}
 
 	for _, articleID := range articleIDs {
-		// 获取文章详情
-		article, err := s.repo.GetBySlugOrID(ctx, articleID)
+		// 获取文章详情（使用 ForPreview 方法，不过滤文章状态，以支持导出草稿文章）
+		article, err := s.repo.GetBySlugOrIDForPreview(ctx, articleID)
 		if err != nil {
 			log.Printf("[导出文章] 获取文章 %s 失败: %v", articleID, err)
 			continue
@@ -285,6 +285,10 @@ func (s *serviceImpl) ImportArticles(ctx context.Context, req *ImportArticleRequ
 			// 查找或创建分类
 			// 先尝试查找现有分类
 			categories, err := s.postCategoryRepo.List(ctx)
+			if err != nil {
+				log.Printf("[导入文章] 查询分类失败 %s: %v", catName, err)
+				continue
+			}
 			var category *model.PostCategory
 			for _, cat := range categories {
 				if cat.Name == catName {
@@ -332,6 +336,10 @@ func (s *serviceImpl) ImportArticles(ctx context.Context, req *ImportArticleRequ
 			// 查找或创建标签
 			// 先尝试查找现有标签
 			tags, err := s.postTagRepo.List(ctx, &model.ListPostTagsOptions{})
+			if err != nil {
+				log.Printf("[导入文章] 查询标签失败 %s: %v", tagName, err)
+				continue
+			}
 			var tag *model.PostTag
 			for _, t := range tags {
 				if t.Name == tagName {

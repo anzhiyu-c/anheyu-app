@@ -34,6 +34,8 @@ const (
 	FieldSpeedLimit = "speed_limit"
 	// FieldSettings holds the string denoting the settings field in the database.
 	FieldSettings = "settings"
+	// FieldStoragePolicyIds holds the string denoting the storage_policy_ids field in the database.
+	FieldStoragePolicyIds = "storage_policy_ids"
 	// EdgeUsers holds the string denoting the users edge name in mutations.
 	EdgeUsers = "users"
 	// Table holds the table name of the usergroup in the database.
@@ -59,6 +61,7 @@ var Columns = []string{
 	FieldMaxStorage,
 	FieldSpeedLimit,
 	FieldSettings,
+	FieldStoragePolicyIds,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

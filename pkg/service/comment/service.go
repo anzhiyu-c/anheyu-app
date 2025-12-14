@@ -4,10 +4,12 @@ package comment
 import (
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -785,6 +787,9 @@ func (s *Service) ListChildren(ctx context.Context, parentPublicID string, page,
 	}, nil
 }
 
+// qqEmailRegex 用于匹配QQ邮箱格式并提取QQ号
+var qqEmailRegex = regexp.MustCompile(`^([1-9]\d{4,10})@qq\.com$`)
+
 // toResponseDTO 将领域模型 comment 转换为API响应的DTO。
 // parent: 父评论（用于设置 ParentID）
 // replyTo: 回复目标评论（用于设置 ReplyToID 和 ReplyToNick）
@@ -814,8 +819,15 @@ func (s *Service) toResponseDTO(ctx context.Context, c *model.Comment, parent *m
 	log.Printf("【DEBUG】评论 %s 渲染后HTML: %s", publicID, renderedContentHTML)
 
 	var emailMD5 string
+	var qqNumber *string
 	if c.Author.Email != nil {
-		emailMD5 = fmt.Sprintf("%x", md5.Sum([]byte(strings.ToLower(*c.Author.Email))))
+		emailLower := strings.ToLower(*c.Author.Email)
+		emailMD5 = fmt.Sprintf("%x", md5.Sum([]byte(emailLower)))
+
+		// 检测QQ邮箱格式并提取QQ号
+		if matches := qqEmailRegex.FindStringSubmatch(emailLower); len(matches) > 1 {
+			qqNumber = &matches[1]
+		}
 	}
 	var parentPublicID *string
 	if parent != nil {
@@ -846,10 +858,12 @@ func (s *Service) toResponseDTO(ctx context.Context, c *model.Comment, parent *m
 		PinnedAt:       c.PinnedAt,
 		Nickname:       c.Author.Nickname,
 		EmailMD5:       emailMD5,
+		QQNumber:       qqNumber,  // QQ号（如果是QQ邮箱）
 		AvatarURL:      avatarURL, // 添加用户自定义头像URL
 		Website:        c.Author.Website,
 		ContentHTML:    renderedContentHTML,
 		IsAdminComment: c.IsAdminAuthor,
+		IsAnonymous:    c.IsAnonymous, // 匿名评论标识
 		TargetPath:     c.TargetPath,
 		TargetTitle:    c.TargetTitle,
 		ParentID:       parentPublicID,
@@ -1076,4 +1090,85 @@ func (s *Service) UpdatePath(ctx context.Context, oldPath, newPath string) (int,
 		return 0, errors.New("无效的旧路径或新路径")
 	}
 	return s.repo.UpdatePath(ctx, oldPath, newPath)
+}
+
+// QQInfoResponse QQ信息API的响应结构
+type QQInfoResponse struct {
+	Nickname string `json:"nickname"`
+	Avatar   string `json:"avatar"`
+}
+
+// GetQQInfo 根据QQ号获取QQ昵称和头像
+// 该方法在后端调用第三方API，避免将API密钥暴露给前端
+func (s *Service) GetQQInfo(ctx context.Context, qqNumber string) (*QQInfoResponse, error) {
+	// 验证QQ号格式
+	if !regexp.MustCompile(`^[1-9]\d{4,10}$`).MatchString(qqNumber) {
+		return nil, errors.New("无效的QQ号格式")
+	}
+
+	// 获取配置
+	apiURL := s.settingSvc.Get(constant.KeyCommentQQAPIURL.String())
+	apiKey := s.settingSvc.Get(constant.KeyCommentQQAPIKey.String())
+
+	// 如果没有配置API，返回空结果
+	if apiURL == "" || apiKey == "" {
+		return nil, errors.New("QQ信息查询API未配置")
+	}
+
+	// 调用第三方API
+	resp, err := httpGetQQInfo(apiURL, apiKey, qqNumber)
+	if err != nil {
+		log.Printf("获取QQ信息失败: %v", err)
+		return nil, fmt.Errorf("获取QQ信息失败: %w", err)
+	}
+
+	return resp, nil
+}
+
+// httpGetQQInfo 调用第三方QQ信息API
+func httpGetQQInfo(apiURL, apiKey, qqNumber string) (*QQInfoResponse, error) {
+	// 构建请求URL
+	url := fmt.Sprintf("%s?key=%s&qq=%s", apiURL, apiKey, qqNumber)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API返回状态码: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// 解析API响应
+	// API返回格式: { code: 200, msg: "Success", data: { nick: "昵称", ... }, ... }
+	var apiResp struct {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+		Data struct {
+			Nick   string `json:"nick"`
+			Avatar string `json:"avatar"`
+		} `json:"data"`
+	}
+
+	if err := json.Unmarshal(body, &apiResp); err != nil {
+		return nil, fmt.Errorf("解析API响应失败: %w", err)
+	}
+
+	if apiResp.Code != 200 {
+		return nil, fmt.Errorf("API返回错误: %s", apiResp.Msg)
+	}
+
+	// 构建QQ头像URL
+	avatarURL := fmt.Sprintf("https://q.qlogo.cn/headimg_dl?dst_uin=%s&spec=100", qqNumber)
+
+	return &QQInfoResponse{
+		Nickname: apiResp.Data.Nick,
+		Avatar:   avatarURL,
+	}, nil
 }

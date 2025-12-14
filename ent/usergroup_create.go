@@ -126,6 +126,12 @@ func (_c *UserGroupCreate) SetSettings(v *model.GroupSettings) *UserGroupCreate 
 	return _c
 }
 
+// SetStoragePolicyIds sets the "storage_policy_ids" field.
+func (_c *UserGroupCreate) SetStoragePolicyIds(v []uint) *UserGroupCreate {
+	_c.mutation.SetStoragePolicyIds(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *UserGroupCreate) SetID(v uint) *UserGroupCreate {
 	_c.mutation.SetID(v)
@@ -315,6 +321,10 @@ func (_c *UserGroupCreate) createSpec() (*UserGroup, *sqlgraph.CreateSpec) {
 		_spec.SetField(usergroup.FieldSettings, field.TypeOther, value)
 		_node.Settings = value
 	}
+	if value, ok := _c.mutation.StoragePolicyIds(); ok {
+		_spec.SetField(usergroup.FieldStoragePolicyIds, field.TypeJSON, value)
+		_node.StoragePolicyIds = value
+	}
 	if nodes := _c.mutation.UsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -500,6 +510,24 @@ func (u *UserGroupUpsert) SetSettings(v *model.GroupSettings) *UserGroupUpsert {
 // UpdateSettings sets the "settings" field to the value that was provided on create.
 func (u *UserGroupUpsert) UpdateSettings() *UserGroupUpsert {
 	u.SetExcluded(usergroup.FieldSettings)
+	return u
+}
+
+// SetStoragePolicyIds sets the "storage_policy_ids" field.
+func (u *UserGroupUpsert) SetStoragePolicyIds(v []uint) *UserGroupUpsert {
+	u.Set(usergroup.FieldStoragePolicyIds, v)
+	return u
+}
+
+// UpdateStoragePolicyIds sets the "storage_policy_ids" field to the value that was provided on create.
+func (u *UserGroupUpsert) UpdateStoragePolicyIds() *UserGroupUpsert {
+	u.SetExcluded(usergroup.FieldStoragePolicyIds)
+	return u
+}
+
+// ClearStoragePolicyIds clears the value of the "storage_policy_ids" field.
+func (u *UserGroupUpsert) ClearStoragePolicyIds() *UserGroupUpsert {
+	u.SetNull(usergroup.FieldStoragePolicyIds)
 	return u
 }
 
@@ -691,6 +719,27 @@ func (u *UserGroupUpsertOne) SetSettings(v *model.GroupSettings) *UserGroupUpser
 func (u *UserGroupUpsertOne) UpdateSettings() *UserGroupUpsertOne {
 	return u.Update(func(s *UserGroupUpsert) {
 		s.UpdateSettings()
+	})
+}
+
+// SetStoragePolicyIds sets the "storage_policy_ids" field.
+func (u *UserGroupUpsertOne) SetStoragePolicyIds(v []uint) *UserGroupUpsertOne {
+	return u.Update(func(s *UserGroupUpsert) {
+		s.SetStoragePolicyIds(v)
+	})
+}
+
+// UpdateStoragePolicyIds sets the "storage_policy_ids" field to the value that was provided on create.
+func (u *UserGroupUpsertOne) UpdateStoragePolicyIds() *UserGroupUpsertOne {
+	return u.Update(func(s *UserGroupUpsert) {
+		s.UpdateStoragePolicyIds()
+	})
+}
+
+// ClearStoragePolicyIds clears the value of the "storage_policy_ids" field.
+func (u *UserGroupUpsertOne) ClearStoragePolicyIds() *UserGroupUpsertOne {
+	return u.Update(func(s *UserGroupUpsert) {
+		s.ClearStoragePolicyIds()
 	})
 }
 
@@ -1048,6 +1097,27 @@ func (u *UserGroupUpsertBulk) SetSettings(v *model.GroupSettings) *UserGroupUpse
 func (u *UserGroupUpsertBulk) UpdateSettings() *UserGroupUpsertBulk {
 	return u.Update(func(s *UserGroupUpsert) {
 		s.UpdateSettings()
+	})
+}
+
+// SetStoragePolicyIds sets the "storage_policy_ids" field.
+func (u *UserGroupUpsertBulk) SetStoragePolicyIds(v []uint) *UserGroupUpsertBulk {
+	return u.Update(func(s *UserGroupUpsert) {
+		s.SetStoragePolicyIds(v)
+	})
+}
+
+// UpdateStoragePolicyIds sets the "storage_policy_ids" field to the value that was provided on create.
+func (u *UserGroupUpsertBulk) UpdateStoragePolicyIds() *UserGroupUpsertBulk {
+	return u.Update(func(s *UserGroupUpsert) {
+		s.UpdateStoragePolicyIds()
+	})
+}
+
+// ClearStoragePolicyIds clears the value of the "storage_policy_ids" field.
+func (u *UserGroupUpsertBulk) ClearStoragePolicyIds() *UserGroupUpsertBulk {
+	return u.Update(func(s *UserGroupUpsert) {
+		s.ClearStoragePolicyIds()
 	})
 }
 

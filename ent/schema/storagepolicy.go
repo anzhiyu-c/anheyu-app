@@ -15,12 +15,22 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 )
 
 // StoragePolicy holds the schema definition for the StoragePolicy entity.
 type StoragePolicy struct {
 	ent.Schema
+}
+
+// Annotations of the StoragePolicy.
+func (StoragePolicy) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("存储策略表"),
+	}
 }
 
 // Mixin of the StoragePolicy.
@@ -42,9 +52,8 @@ func (StoragePolicy) Fields() []ent.Field {
 			UpdateDefault(time.Now),
 		field.String("name").
 			MaxLen(255).
-			Unique().
 			NotEmpty().
-			Comment("策略名称，必须唯一"),
+			Comment("策略名称，在未删除的策略中必须唯一"),
 		field.String("type").
 			MaxLen(255).
 			NotEmpty().

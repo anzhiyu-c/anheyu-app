@@ -155,13 +155,14 @@ func (bs *Boolset) UnmarshalJSON(data []byte) error {
 }
 
 type UserGroup struct {
-	ID          uint          `json:"id"`
-	CreatedAt   time.Time     `json:"created_at"`
-	UpdatedAt   time.Time     `json:"updated_at"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Permissions Boolset       `json:"permissions"`
-	MaxStorage  int64         `json:"max_storage"`
-	SpeedLimit  int64         `json:"speed_limit"`
-	Settings    GroupSettings `json:"settings"`
+	ID               uint          `json:"id"`
+	CreatedAt        time.Time     `json:"created_at"`
+	UpdatedAt        time.Time     `json:"updated_at"`
+	Name             string        `json:"name"`
+	Description      string        `json:"description"`
+	Permissions      Boolset       `json:"permissions"`
+	MaxStorage       int64         `json:"max_storage"`
+	SpeedLimit       int64         `json:"speed_limit"`
+	Settings         GroupSettings `json:"settings"`
+	StoragePolicyIDs []uint        `json:"storage_policy_ids"` // 该用户组可使用的存储策略ID列表
 }

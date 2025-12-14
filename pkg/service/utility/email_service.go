@@ -249,7 +249,7 @@ func (s *emailService) SendCommentNotification(newComment *model.Comment, parent
 		data := map[string]interface{}{
 			"SITE_NAME":    siteName,
 			"SITE_URL":     siteURL,
-			"PAGE_URL":     pageURL,
+			"POST_URL":     pageURL,
 			"TARGET_TITLE": targetTitle,
 			"NICK":         newComment.Author.Nickname,
 			"COMMENT":      template.HTML(newCommentHTML),
@@ -323,7 +323,7 @@ func (s *emailService) SendCommentNotification(newComment *model.Comment, parent
 		data := map[string]interface{}{
 			"SITE_NAME":      siteName,
 			"SITE_URL":       siteURL,
-			"PAGE_URL":       pageURL,
+			"POST_URL":       pageURL,
 			"PARENT_NICK":    parentComment.Author.Nickname,
 			"PARENT_COMMENT": template.HTML(parentCommentHTML),
 			"PARENT_IMG":     fmt.Sprintf("%s%s?d=%s", gravatarURL, parentCommentEmailMD5, defaultGravatar),
@@ -387,7 +387,7 @@ func (s *emailService) SendForgotPasswordEmail(ctx context.Context, toEmail, nic
 	}
 	siteURL = strings.TrimRight(siteURL, "/")
 
-	resetLink := fmt.Sprintf("%s/reset-password?id=%s&sign=%s", siteURL, userID, sign)
+	resetLink := fmt.Sprintf("%s/login/reset?id=%s&sign=%s", siteURL, userID, sign)
 	data := map[string]string{
 		"Nickname":  nickname,
 		"AppName":   appName,

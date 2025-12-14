@@ -12,7 +12,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/postcategory"
 )
 
-// PostCategory is the model entity for the PostCategory schema.
+// 文章分类表
 type PostCategory struct {
 	config `json:"-"`
 	// ID of the ent.

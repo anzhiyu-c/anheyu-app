@@ -2615,6 +2615,8 @@ type ArticleMutation struct {
 	typ                     string
 	id                      *uint
 	deleted_at              *time.Time
+	owner_id                *uint
+	addowner_id             *int
 	created_at              *time.Time
 	updated_at              *time.Time
 	title                   *string
@@ -2645,6 +2647,16 @@ type ArticleMutation struct {
 	copyright_author_href   *string
 	copyright_url           *string
 	keywords                *string
+	review_status           *article.ReviewStatus
+	review_comment          *string
+	reviewed_at             *time.Time
+	reviewed_by             *uint
+	addreviewed_by          *int
+	is_takedown             *bool
+	takedown_reason         *string
+	takedown_at             *time.Time
+	takedown_by             *uint
+	addtakedown_by          *int
 	clearedFields           map[string]struct{}
 	post_tags               map[uint]struct{}
 	removedpost_tags        map[uint]struct{}
@@ -2811,6 +2823,62 @@ func (m *ArticleMutation) DeletedAtCleared() bool {
 func (m *ArticleMutation) ResetDeletedAt() {
 	m.deleted_at = nil
 	delete(m.clearedFields, article.FieldDeletedAt)
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (m *ArticleMutation) SetOwnerID(u uint) {
+	m.owner_id = &u
+	m.addowner_id = nil
+}
+
+// OwnerID returns the value of the "owner_id" field in the mutation.
+func (m *ArticleMutation) OwnerID() (r uint, exists bool) {
+	v := m.owner_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOwnerID returns the old "owner_id" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldOwnerID(ctx context.Context) (v uint, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOwnerID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOwnerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOwnerID: %w", err)
+	}
+	return oldValue.OwnerID, nil
+}
+
+// AddOwnerID adds u to the "owner_id" field.
+func (m *ArticleMutation) AddOwnerID(u int) {
+	if m.addowner_id != nil {
+		*m.addowner_id += u
+	} else {
+		m.addowner_id = &u
+	}
+}
+
+// AddedOwnerID returns the value that was added to the "owner_id" field in this mutation.
+func (m *ArticleMutation) AddedOwnerID() (r int, exists bool) {
+	v := m.addowner_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOwnerID resets all changes to the "owner_id" field.
+func (m *ArticleMutation) ResetOwnerID() {
+	m.owner_id = nil
+	m.addowner_id = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -3949,6 +4017,414 @@ func (m *ArticleMutation) ResetKeywords() {
 	delete(m.clearedFields, article.FieldKeywords)
 }
 
+// SetReviewStatus sets the "review_status" field.
+func (m *ArticleMutation) SetReviewStatus(as article.ReviewStatus) {
+	m.review_status = &as
+}
+
+// ReviewStatus returns the value of the "review_status" field in the mutation.
+func (m *ArticleMutation) ReviewStatus() (r article.ReviewStatus, exists bool) {
+	v := m.review_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReviewStatus returns the old "review_status" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldReviewStatus(ctx context.Context) (v article.ReviewStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReviewStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReviewStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReviewStatus: %w", err)
+	}
+	return oldValue.ReviewStatus, nil
+}
+
+// ResetReviewStatus resets all changes to the "review_status" field.
+func (m *ArticleMutation) ResetReviewStatus() {
+	m.review_status = nil
+}
+
+// SetReviewComment sets the "review_comment" field.
+func (m *ArticleMutation) SetReviewComment(s string) {
+	m.review_comment = &s
+}
+
+// ReviewComment returns the value of the "review_comment" field in the mutation.
+func (m *ArticleMutation) ReviewComment() (r string, exists bool) {
+	v := m.review_comment
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReviewComment returns the old "review_comment" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldReviewComment(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReviewComment is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReviewComment requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReviewComment: %w", err)
+	}
+	return oldValue.ReviewComment, nil
+}
+
+// ClearReviewComment clears the value of the "review_comment" field.
+func (m *ArticleMutation) ClearReviewComment() {
+	m.review_comment = nil
+	m.clearedFields[article.FieldReviewComment] = struct{}{}
+}
+
+// ReviewCommentCleared returns if the "review_comment" field was cleared in this mutation.
+func (m *ArticleMutation) ReviewCommentCleared() bool {
+	_, ok := m.clearedFields[article.FieldReviewComment]
+	return ok
+}
+
+// ResetReviewComment resets all changes to the "review_comment" field.
+func (m *ArticleMutation) ResetReviewComment() {
+	m.review_comment = nil
+	delete(m.clearedFields, article.FieldReviewComment)
+}
+
+// SetReviewedAt sets the "reviewed_at" field.
+func (m *ArticleMutation) SetReviewedAt(t time.Time) {
+	m.reviewed_at = &t
+}
+
+// ReviewedAt returns the value of the "reviewed_at" field in the mutation.
+func (m *ArticleMutation) ReviewedAt() (r time.Time, exists bool) {
+	v := m.reviewed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReviewedAt returns the old "reviewed_at" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldReviewedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReviewedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReviewedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReviewedAt: %w", err)
+	}
+	return oldValue.ReviewedAt, nil
+}
+
+// ClearReviewedAt clears the value of the "reviewed_at" field.
+func (m *ArticleMutation) ClearReviewedAt() {
+	m.reviewed_at = nil
+	m.clearedFields[article.FieldReviewedAt] = struct{}{}
+}
+
+// ReviewedAtCleared returns if the "reviewed_at" field was cleared in this mutation.
+func (m *ArticleMutation) ReviewedAtCleared() bool {
+	_, ok := m.clearedFields[article.FieldReviewedAt]
+	return ok
+}
+
+// ResetReviewedAt resets all changes to the "reviewed_at" field.
+func (m *ArticleMutation) ResetReviewedAt() {
+	m.reviewed_at = nil
+	delete(m.clearedFields, article.FieldReviewedAt)
+}
+
+// SetReviewedBy sets the "reviewed_by" field.
+func (m *ArticleMutation) SetReviewedBy(u uint) {
+	m.reviewed_by = &u
+	m.addreviewed_by = nil
+}
+
+// ReviewedBy returns the value of the "reviewed_by" field in the mutation.
+func (m *ArticleMutation) ReviewedBy() (r uint, exists bool) {
+	v := m.reviewed_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReviewedBy returns the old "reviewed_by" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldReviewedBy(ctx context.Context) (v *uint, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReviewedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReviewedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReviewedBy: %w", err)
+	}
+	return oldValue.ReviewedBy, nil
+}
+
+// AddReviewedBy adds u to the "reviewed_by" field.
+func (m *ArticleMutation) AddReviewedBy(u int) {
+	if m.addreviewed_by != nil {
+		*m.addreviewed_by += u
+	} else {
+		m.addreviewed_by = &u
+	}
+}
+
+// AddedReviewedBy returns the value that was added to the "reviewed_by" field in this mutation.
+func (m *ArticleMutation) AddedReviewedBy() (r int, exists bool) {
+	v := m.addreviewed_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearReviewedBy clears the value of the "reviewed_by" field.
+func (m *ArticleMutation) ClearReviewedBy() {
+	m.reviewed_by = nil
+	m.addreviewed_by = nil
+	m.clearedFields[article.FieldReviewedBy] = struct{}{}
+}
+
+// ReviewedByCleared returns if the "reviewed_by" field was cleared in this mutation.
+func (m *ArticleMutation) ReviewedByCleared() bool {
+	_, ok := m.clearedFields[article.FieldReviewedBy]
+	return ok
+}
+
+// ResetReviewedBy resets all changes to the "reviewed_by" field.
+func (m *ArticleMutation) ResetReviewedBy() {
+	m.reviewed_by = nil
+	m.addreviewed_by = nil
+	delete(m.clearedFields, article.FieldReviewedBy)
+}
+
+// SetIsTakedown sets the "is_takedown" field.
+func (m *ArticleMutation) SetIsTakedown(b bool) {
+	m.is_takedown = &b
+}
+
+// IsTakedown returns the value of the "is_takedown" field in the mutation.
+func (m *ArticleMutation) IsTakedown() (r bool, exists bool) {
+	v := m.is_takedown
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsTakedown returns the old "is_takedown" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldIsTakedown(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsTakedown is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsTakedown requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsTakedown: %w", err)
+	}
+	return oldValue.IsTakedown, nil
+}
+
+// ResetIsTakedown resets all changes to the "is_takedown" field.
+func (m *ArticleMutation) ResetIsTakedown() {
+	m.is_takedown = nil
+}
+
+// SetTakedownReason sets the "takedown_reason" field.
+func (m *ArticleMutation) SetTakedownReason(s string) {
+	m.takedown_reason = &s
+}
+
+// TakedownReason returns the value of the "takedown_reason" field in the mutation.
+func (m *ArticleMutation) TakedownReason() (r string, exists bool) {
+	v := m.takedown_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTakedownReason returns the old "takedown_reason" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldTakedownReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTakedownReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTakedownReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTakedownReason: %w", err)
+	}
+	return oldValue.TakedownReason, nil
+}
+
+// ClearTakedownReason clears the value of the "takedown_reason" field.
+func (m *ArticleMutation) ClearTakedownReason() {
+	m.takedown_reason = nil
+	m.clearedFields[article.FieldTakedownReason] = struct{}{}
+}
+
+// TakedownReasonCleared returns if the "takedown_reason" field was cleared in this mutation.
+func (m *ArticleMutation) TakedownReasonCleared() bool {
+	_, ok := m.clearedFields[article.FieldTakedownReason]
+	return ok
+}
+
+// ResetTakedownReason resets all changes to the "takedown_reason" field.
+func (m *ArticleMutation) ResetTakedownReason() {
+	m.takedown_reason = nil
+	delete(m.clearedFields, article.FieldTakedownReason)
+}
+
+// SetTakedownAt sets the "takedown_at" field.
+func (m *ArticleMutation) SetTakedownAt(t time.Time) {
+	m.takedown_at = &t
+}
+
+// TakedownAt returns the value of the "takedown_at" field in the mutation.
+func (m *ArticleMutation) TakedownAt() (r time.Time, exists bool) {
+	v := m.takedown_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTakedownAt returns the old "takedown_at" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldTakedownAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTakedownAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTakedownAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTakedownAt: %w", err)
+	}
+	return oldValue.TakedownAt, nil
+}
+
+// ClearTakedownAt clears the value of the "takedown_at" field.
+func (m *ArticleMutation) ClearTakedownAt() {
+	m.takedown_at = nil
+	m.clearedFields[article.FieldTakedownAt] = struct{}{}
+}
+
+// TakedownAtCleared returns if the "takedown_at" field was cleared in this mutation.
+func (m *ArticleMutation) TakedownAtCleared() bool {
+	_, ok := m.clearedFields[article.FieldTakedownAt]
+	return ok
+}
+
+// ResetTakedownAt resets all changes to the "takedown_at" field.
+func (m *ArticleMutation) ResetTakedownAt() {
+	m.takedown_at = nil
+	delete(m.clearedFields, article.FieldTakedownAt)
+}
+
+// SetTakedownBy sets the "takedown_by" field.
+func (m *ArticleMutation) SetTakedownBy(u uint) {
+	m.takedown_by = &u
+	m.addtakedown_by = nil
+}
+
+// TakedownBy returns the value of the "takedown_by" field in the mutation.
+func (m *ArticleMutation) TakedownBy() (r uint, exists bool) {
+	v := m.takedown_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTakedownBy returns the old "takedown_by" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldTakedownBy(ctx context.Context) (v *uint, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTakedownBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTakedownBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTakedownBy: %w", err)
+	}
+	return oldValue.TakedownBy, nil
+}
+
+// AddTakedownBy adds u to the "takedown_by" field.
+func (m *ArticleMutation) AddTakedownBy(u int) {
+	if m.addtakedown_by != nil {
+		*m.addtakedown_by += u
+	} else {
+		m.addtakedown_by = &u
+	}
+}
+
+// AddedTakedownBy returns the value that was added to the "takedown_by" field in this mutation.
+func (m *ArticleMutation) AddedTakedownBy() (r int, exists bool) {
+	v := m.addtakedown_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTakedownBy clears the value of the "takedown_by" field.
+func (m *ArticleMutation) ClearTakedownBy() {
+	m.takedown_by = nil
+	m.addtakedown_by = nil
+	m.clearedFields[article.FieldTakedownBy] = struct{}{}
+}
+
+// TakedownByCleared returns if the "takedown_by" field was cleared in this mutation.
+func (m *ArticleMutation) TakedownByCleared() bool {
+	_, ok := m.clearedFields[article.FieldTakedownBy]
+	return ok
+}
+
+// ResetTakedownBy resets all changes to the "takedown_by" field.
+func (m *ArticleMutation) ResetTakedownBy() {
+	m.takedown_by = nil
+	m.addtakedown_by = nil
+	delete(m.clearedFields, article.FieldTakedownBy)
+}
+
 // AddPostTagIDs adds the "post_tags" edge to the PostTag entity by ids.
 func (m *ArticleMutation) AddPostTagIDs(ids ...uint) {
 	if m.post_tags == nil {
@@ -4145,9 +4621,12 @@ func (m *ArticleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ArticleMutation) Fields() []string {
-	fields := make([]string, 0, 25)
+	fields := make([]string, 0, 34)
 	if m.deleted_at != nil {
 		fields = append(fields, article.FieldDeletedAt)
+	}
+	if m.owner_id != nil {
+		fields = append(fields, article.FieldOwnerID)
 	}
 	if m.created_at != nil {
 		fields = append(fields, article.FieldCreatedAt)
@@ -4221,6 +4700,30 @@ func (m *ArticleMutation) Fields() []string {
 	if m.keywords != nil {
 		fields = append(fields, article.FieldKeywords)
 	}
+	if m.review_status != nil {
+		fields = append(fields, article.FieldReviewStatus)
+	}
+	if m.review_comment != nil {
+		fields = append(fields, article.FieldReviewComment)
+	}
+	if m.reviewed_at != nil {
+		fields = append(fields, article.FieldReviewedAt)
+	}
+	if m.reviewed_by != nil {
+		fields = append(fields, article.FieldReviewedBy)
+	}
+	if m.is_takedown != nil {
+		fields = append(fields, article.FieldIsTakedown)
+	}
+	if m.takedown_reason != nil {
+		fields = append(fields, article.FieldTakedownReason)
+	}
+	if m.takedown_at != nil {
+		fields = append(fields, article.FieldTakedownAt)
+	}
+	if m.takedown_by != nil {
+		fields = append(fields, article.FieldTakedownBy)
+	}
 	return fields
 }
 
@@ -4231,6 +4734,8 @@ func (m *ArticleMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case article.FieldDeletedAt:
 		return m.DeletedAt()
+	case article.FieldOwnerID:
+		return m.OwnerID()
 	case article.FieldCreatedAt:
 		return m.CreatedAt()
 	case article.FieldUpdatedAt:
@@ -4279,6 +4784,22 @@ func (m *ArticleMutation) Field(name string) (ent.Value, bool) {
 		return m.CopyrightURL()
 	case article.FieldKeywords:
 		return m.Keywords()
+	case article.FieldReviewStatus:
+		return m.ReviewStatus()
+	case article.FieldReviewComment:
+		return m.ReviewComment()
+	case article.FieldReviewedAt:
+		return m.ReviewedAt()
+	case article.FieldReviewedBy:
+		return m.ReviewedBy()
+	case article.FieldIsTakedown:
+		return m.IsTakedown()
+	case article.FieldTakedownReason:
+		return m.TakedownReason()
+	case article.FieldTakedownAt:
+		return m.TakedownAt()
+	case article.FieldTakedownBy:
+		return m.TakedownBy()
 	}
 	return nil, false
 }
@@ -4290,6 +4811,8 @@ func (m *ArticleMutation) OldField(ctx context.Context, name string) (ent.Value,
 	switch name {
 	case article.FieldDeletedAt:
 		return m.OldDeletedAt(ctx)
+	case article.FieldOwnerID:
+		return m.OldOwnerID(ctx)
 	case article.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case article.FieldUpdatedAt:
@@ -4338,6 +4861,22 @@ func (m *ArticleMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldCopyrightURL(ctx)
 	case article.FieldKeywords:
 		return m.OldKeywords(ctx)
+	case article.FieldReviewStatus:
+		return m.OldReviewStatus(ctx)
+	case article.FieldReviewComment:
+		return m.OldReviewComment(ctx)
+	case article.FieldReviewedAt:
+		return m.OldReviewedAt(ctx)
+	case article.FieldReviewedBy:
+		return m.OldReviewedBy(ctx)
+	case article.FieldIsTakedown:
+		return m.OldIsTakedown(ctx)
+	case article.FieldTakedownReason:
+		return m.OldTakedownReason(ctx)
+	case article.FieldTakedownAt:
+		return m.OldTakedownAt(ctx)
+	case article.FieldTakedownBy:
+		return m.OldTakedownBy(ctx)
 	}
 	return nil, fmt.Errorf("unknown Article field %s", name)
 }
@@ -4353,6 +4892,13 @@ func (m *ArticleMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDeletedAt(v)
+		return nil
+	case article.FieldOwnerID:
+		v, ok := value.(uint)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOwnerID(v)
 		return nil
 	case article.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -4522,6 +5068,62 @@ func (m *ArticleMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetKeywords(v)
 		return nil
+	case article.FieldReviewStatus:
+		v, ok := value.(article.ReviewStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReviewStatus(v)
+		return nil
+	case article.FieldReviewComment:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReviewComment(v)
+		return nil
+	case article.FieldReviewedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReviewedAt(v)
+		return nil
+	case article.FieldReviewedBy:
+		v, ok := value.(uint)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReviewedBy(v)
+		return nil
+	case article.FieldIsTakedown:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsTakedown(v)
+		return nil
+	case article.FieldTakedownReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTakedownReason(v)
+		return nil
+	case article.FieldTakedownAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTakedownAt(v)
+		return nil
+	case article.FieldTakedownBy:
+		v, ok := value.(uint)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTakedownBy(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Article field %s", name)
 }
@@ -4530,6 +5132,9 @@ func (m *ArticleMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *ArticleMutation) AddedFields() []string {
 	var fields []string
+	if m.addowner_id != nil {
+		fields = append(fields, article.FieldOwnerID)
+	}
 	if m.addview_count != nil {
 		fields = append(fields, article.FieldViewCount)
 	}
@@ -4545,6 +5150,12 @@ func (m *ArticleMutation) AddedFields() []string {
 	if m.addpin_sort != nil {
 		fields = append(fields, article.FieldPinSort)
 	}
+	if m.addreviewed_by != nil {
+		fields = append(fields, article.FieldReviewedBy)
+	}
+	if m.addtakedown_by != nil {
+		fields = append(fields, article.FieldTakedownBy)
+	}
 	return fields
 }
 
@@ -4553,6 +5164,8 @@ func (m *ArticleMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *ArticleMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case article.FieldOwnerID:
+		return m.AddedOwnerID()
 	case article.FieldViewCount:
 		return m.AddedViewCount()
 	case article.FieldWordCount:
@@ -4563,6 +5176,10 @@ func (m *ArticleMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedHomeSort()
 	case article.FieldPinSort:
 		return m.AddedPinSort()
+	case article.FieldReviewedBy:
+		return m.AddedReviewedBy()
+	case article.FieldTakedownBy:
+		return m.AddedTakedownBy()
 	}
 	return nil, false
 }
@@ -4572,6 +5189,13 @@ func (m *ArticleMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *ArticleMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case article.FieldOwnerID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOwnerID(v)
+		return nil
 	case article.FieldViewCount:
 		v, ok := value.(int)
 		if !ok {
@@ -4606,6 +5230,20 @@ func (m *ArticleMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPinSort(v)
+		return nil
+	case article.FieldReviewedBy:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReviewedBy(v)
+		return nil
+	case article.FieldTakedownBy:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTakedownBy(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Article numeric field %s", name)
@@ -4653,6 +5291,24 @@ func (m *ArticleMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(article.FieldKeywords) {
 		fields = append(fields, article.FieldKeywords)
+	}
+	if m.FieldCleared(article.FieldReviewComment) {
+		fields = append(fields, article.FieldReviewComment)
+	}
+	if m.FieldCleared(article.FieldReviewedAt) {
+		fields = append(fields, article.FieldReviewedAt)
+	}
+	if m.FieldCleared(article.FieldReviewedBy) {
+		fields = append(fields, article.FieldReviewedBy)
+	}
+	if m.FieldCleared(article.FieldTakedownReason) {
+		fields = append(fields, article.FieldTakedownReason)
+	}
+	if m.FieldCleared(article.FieldTakedownAt) {
+		fields = append(fields, article.FieldTakedownAt)
+	}
+	if m.FieldCleared(article.FieldTakedownBy) {
+		fields = append(fields, article.FieldTakedownBy)
 	}
 	return fields
 }
@@ -4707,6 +5363,24 @@ func (m *ArticleMutation) ClearField(name string) error {
 	case article.FieldKeywords:
 		m.ClearKeywords()
 		return nil
+	case article.FieldReviewComment:
+		m.ClearReviewComment()
+		return nil
+	case article.FieldReviewedAt:
+		m.ClearReviewedAt()
+		return nil
+	case article.FieldReviewedBy:
+		m.ClearReviewedBy()
+		return nil
+	case article.FieldTakedownReason:
+		m.ClearTakedownReason()
+		return nil
+	case article.FieldTakedownAt:
+		m.ClearTakedownAt()
+		return nil
+	case article.FieldTakedownBy:
+		m.ClearTakedownBy()
+		return nil
 	}
 	return fmt.Errorf("unknown Article nullable field %s", name)
 }
@@ -4717,6 +5391,9 @@ func (m *ArticleMutation) ResetField(name string) error {
 	switch name {
 	case article.FieldDeletedAt:
 		m.ResetDeletedAt()
+		return nil
+	case article.FieldOwnerID:
+		m.ResetOwnerID()
 		return nil
 	case article.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -4789,6 +5466,30 @@ func (m *ArticleMutation) ResetField(name string) error {
 		return nil
 	case article.FieldKeywords:
 		m.ResetKeywords()
+		return nil
+	case article.FieldReviewStatus:
+		m.ResetReviewStatus()
+		return nil
+	case article.FieldReviewComment:
+		m.ResetReviewComment()
+		return nil
+	case article.FieldReviewedAt:
+		m.ResetReviewedAt()
+		return nil
+	case article.FieldReviewedBy:
+		m.ResetReviewedBy()
+		return nil
+	case article.FieldIsTakedown:
+		m.ResetIsTakedown()
+		return nil
+	case article.FieldTakedownReason:
+		m.ResetTakedownReason()
+		return nil
+	case article.FieldTakedownAt:
+		m.ResetTakedownAt()
+		return nil
+	case article.FieldTakedownBy:
+		m.ResetTakedownBy()
 		return nil
 	}
 	return fmt.Errorf("unknown Article field %s", name)
@@ -22759,27 +23460,29 @@ func (m *UserMutation) ResetEdge(name string) error {
 // UserGroupMutation represents an operation that mutates the UserGroup nodes in the graph.
 type UserGroupMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *uint
-	deleted_at     *time.Time
-	created_at     *time.Time
-	updated_at     *time.Time
-	name           *string
-	description    *string
-	permissions    *model.Boolset
-	max_storage    *int64
-	addmax_storage *int64
-	speed_limit    *int64
-	addspeed_limit *int64
-	settings       **model.GroupSettings
-	clearedFields  map[string]struct{}
-	users          map[uint]struct{}
-	removedusers   map[uint]struct{}
-	clearedusers   bool
-	done           bool
-	oldValue       func(context.Context) (*UserGroup, error)
-	predicates     []predicate.UserGroup
+	op                       Op
+	typ                      string
+	id                       *uint
+	deleted_at               *time.Time
+	created_at               *time.Time
+	updated_at               *time.Time
+	name                     *string
+	description              *string
+	permissions              *model.Boolset
+	max_storage              *int64
+	addmax_storage           *int64
+	speed_limit              *int64
+	addspeed_limit           *int64
+	settings                 **model.GroupSettings
+	storage_policy_ids       *[]uint
+	appendstorage_policy_ids []uint
+	clearedFields            map[string]struct{}
+	users                    map[uint]struct{}
+	removedusers             map[uint]struct{}
+	clearedusers             bool
+	done                     bool
+	oldValue                 func(context.Context) (*UserGroup, error)
+	predicates               []predicate.UserGroup
 }
 
 var _ ent.Mutation = (*UserGroupMutation)(nil)
@@ -23276,6 +23979,71 @@ func (m *UserGroupMutation) ResetSettings() {
 	m.settings = nil
 }
 
+// SetStoragePolicyIds sets the "storage_policy_ids" field.
+func (m *UserGroupMutation) SetStoragePolicyIds(u []uint) {
+	m.storage_policy_ids = &u
+	m.appendstorage_policy_ids = nil
+}
+
+// StoragePolicyIds returns the value of the "storage_policy_ids" field in the mutation.
+func (m *UserGroupMutation) StoragePolicyIds() (r []uint, exists bool) {
+	v := m.storage_policy_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStoragePolicyIds returns the old "storage_policy_ids" field's value of the UserGroup entity.
+// If the UserGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserGroupMutation) OldStoragePolicyIds(ctx context.Context) (v []uint, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStoragePolicyIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStoragePolicyIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStoragePolicyIds: %w", err)
+	}
+	return oldValue.StoragePolicyIds, nil
+}
+
+// AppendStoragePolicyIds adds u to the "storage_policy_ids" field.
+func (m *UserGroupMutation) AppendStoragePolicyIds(u []uint) {
+	m.appendstorage_policy_ids = append(m.appendstorage_policy_ids, u...)
+}
+
+// AppendedStoragePolicyIds returns the list of values that were appended to the "storage_policy_ids" field in this mutation.
+func (m *UserGroupMutation) AppendedStoragePolicyIds() ([]uint, bool) {
+	if len(m.appendstorage_policy_ids) == 0 {
+		return nil, false
+	}
+	return m.appendstorage_policy_ids, true
+}
+
+// ClearStoragePolicyIds clears the value of the "storage_policy_ids" field.
+func (m *UserGroupMutation) ClearStoragePolicyIds() {
+	m.storage_policy_ids = nil
+	m.appendstorage_policy_ids = nil
+	m.clearedFields[usergroup.FieldStoragePolicyIds] = struct{}{}
+}
+
+// StoragePolicyIdsCleared returns if the "storage_policy_ids" field was cleared in this mutation.
+func (m *UserGroupMutation) StoragePolicyIdsCleared() bool {
+	_, ok := m.clearedFields[usergroup.FieldStoragePolicyIds]
+	return ok
+}
+
+// ResetStoragePolicyIds resets all changes to the "storage_policy_ids" field.
+func (m *UserGroupMutation) ResetStoragePolicyIds() {
+	m.storage_policy_ids = nil
+	m.appendstorage_policy_ids = nil
+	delete(m.clearedFields, usergroup.FieldStoragePolicyIds)
+}
+
 // AddUserIDs adds the "users" edge to the User entity by ids.
 func (m *UserGroupMutation) AddUserIDs(ids ...uint) {
 	if m.users == nil {
@@ -23364,7 +24132,7 @@ func (m *UserGroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserGroupMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.deleted_at != nil {
 		fields = append(fields, usergroup.FieldDeletedAt)
 	}
@@ -23392,6 +24160,9 @@ func (m *UserGroupMutation) Fields() []string {
 	if m.settings != nil {
 		fields = append(fields, usergroup.FieldSettings)
 	}
+	if m.storage_policy_ids != nil {
+		fields = append(fields, usergroup.FieldStoragePolicyIds)
+	}
 	return fields
 }
 
@@ -23418,6 +24189,8 @@ func (m *UserGroupMutation) Field(name string) (ent.Value, bool) {
 		return m.SpeedLimit()
 	case usergroup.FieldSettings:
 		return m.Settings()
+	case usergroup.FieldStoragePolicyIds:
+		return m.StoragePolicyIds()
 	}
 	return nil, false
 }
@@ -23445,6 +24218,8 @@ func (m *UserGroupMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSpeedLimit(ctx)
 	case usergroup.FieldSettings:
 		return m.OldSettings(ctx)
+	case usergroup.FieldStoragePolicyIds:
+		return m.OldStoragePolicyIds(ctx)
 	}
 	return nil, fmt.Errorf("unknown UserGroup field %s", name)
 }
@@ -23517,6 +24292,13 @@ func (m *UserGroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSettings(v)
 		return nil
+	case usergroup.FieldStoragePolicyIds:
+		v, ok := value.([]uint)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStoragePolicyIds(v)
+		return nil
 	}
 	return fmt.Errorf("unknown UserGroup field %s", name)
 }
@@ -23580,6 +24362,9 @@ func (m *UserGroupMutation) ClearedFields() []string {
 	if m.FieldCleared(usergroup.FieldDescription) {
 		fields = append(fields, usergroup.FieldDescription)
 	}
+	if m.FieldCleared(usergroup.FieldStoragePolicyIds) {
+		fields = append(fields, usergroup.FieldStoragePolicyIds)
+	}
 	return fields
 }
 
@@ -23599,6 +24384,9 @@ func (m *UserGroupMutation) ClearField(name string) error {
 		return nil
 	case usergroup.FieldDescription:
 		m.ClearDescription()
+		return nil
+	case usergroup.FieldStoragePolicyIds:
+		m.ClearStoragePolicyIds()
 		return nil
 	}
 	return fmt.Errorf("unknown UserGroup nullable field %s", name)
@@ -23634,6 +24422,9 @@ func (m *UserGroupMutation) ResetField(name string) error {
 		return nil
 	case usergroup.FieldSettings:
 		m.ResetSettings()
+		return nil
+	case usergroup.FieldStoragePolicyIds:
+		m.ResetStoragePolicyIds()
 		return nil
 	}
 	return fmt.Errorf("unknown UserGroup field %s", name)

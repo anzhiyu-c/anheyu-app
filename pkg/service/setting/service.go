@@ -32,6 +32,7 @@ type SettingService interface {
 	GetSiteConfig() map[string]interface{}
 	UpdateSettings(ctx context.Context, settingsToUpdate map[string]string) error
 	RegisterPublicSettings(keys []string) // 动态注册公开配置
+	IsPublicSetting(key string) bool      // 检查配置是否为公开配置
 }
 
 // settingService 是 SettingService 接口的实现
@@ -155,6 +156,11 @@ func (s *settingService) GetSiteConfig() map[string]interface{} {
 func (s *settingService) isPublicSetting(key string) bool {
 	_, ok := s.publicSetting[key]
 	return ok
+}
+
+// IsPublicSetting 检查配置是否为公开配置（公开方法）
+func (s *settingService) IsPublicSetting(key string) bool {
+	return s.isPublicSetting(key)
 }
 
 // RegisterPublicSettings 动态注册公开配置键

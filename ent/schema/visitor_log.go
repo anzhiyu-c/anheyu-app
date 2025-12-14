@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 )
@@ -18,6 +20,14 @@ import (
 // VisitorLog 访问日志表，记录详细的访问信息
 type VisitorLog struct {
 	ent.Schema
+}
+
+// Annotations of the VisitorLog.
+func (VisitorLog) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("访问日志表"),
+	}
 }
 
 // Fields of the VisitorLog.

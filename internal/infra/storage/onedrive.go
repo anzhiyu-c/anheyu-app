@@ -943,6 +943,7 @@ func (p *OneDriveProvider) CreatePresignedUploadURL(ctx context.Context, policy 
 	return &PresignedUploadResult{
 		UploadURL:          sessionResp.UploadURL,
 		ExpirationDateTime: expTime,
+		ContentType:        "", // OneDrive不需要指定Content-Type
 	}, nil
 }
 

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 )
@@ -18,6 +20,14 @@ import (
 // VisitorStat 访问统计表，记录每天的访问数据
 type VisitorStat struct {
 	ent.Schema
+}
+
+// Annotations of the VisitorStat.
+func (VisitorStat) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("每日访问统计表"),
+	}
 }
 
 // Fields of the VisitorStat.

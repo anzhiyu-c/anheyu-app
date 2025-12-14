@@ -7,6 +7,8 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -14,6 +16,14 @@ import (
 // AlbumCategory holds the schema definition for the AlbumCategory entity.
 type AlbumCategory struct {
 	ent.Schema
+}
+
+// Annotations of the AlbumCategory.
+func (AlbumCategory) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("相册分类表"),
+	}
 }
 
 // Fields of the AlbumCategory.

@@ -12,7 +12,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/urlstat"
 )
 
-// URLStat is the model entity for the URLStat schema.
+// URL访问统计表
 type URLStat struct {
 	config `json:"-"`
 	// ID of the ent.

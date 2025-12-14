@@ -15,7 +15,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/user"
 )
 
-// File is the model entity for the File schema.
+// 文件表，存储逻辑文件和目录信息
 type File struct {
 	config `json:"-"`
 	// ID of the ent.

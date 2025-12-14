@@ -7,6 +7,8 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/schema/mixin"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -15,6 +17,14 @@ import (
 // Comment 定义了 Comment 实体（即数据库中的评论表）的结构。
 type Comment struct {
 	ent.Schema
+}
+
+// Annotations of the Comment.
+func (Comment) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("评论表"),
+	}
 }
 
 // Mixin 为 Comment 实体混入可重用的功能。

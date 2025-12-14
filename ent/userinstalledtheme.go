@@ -14,7 +14,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/userinstalledtheme"
 )
 
-// UserInstalledTheme is the model entity for the UserInstalledTheme schema.
+// 用户已安装主题表
 type UserInstalledTheme struct {
 	config `json:"-"`
 	// ID of the ent.

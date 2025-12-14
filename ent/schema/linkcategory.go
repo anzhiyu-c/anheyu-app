@@ -2,7 +2,7 @@
  * @Description:
  * @Author: 安知鱼
  * @Date: 2025-08-18 15:05:01
- * @LastEditTime: 2025-08-19 14:44:44
+ * @LastEditTime: 2025-12-02 18:22:51
  * @LastEditors: 安知鱼
  */
 // ent/schema/linkcategory.go
@@ -10,6 +10,8 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -17,6 +19,14 @@ import (
 // LinkCategory holds the schema definition for the LinkCategory entity.
 type LinkCategory struct {
 	ent.Schema
+}
+
+// Annotations of the LinkCategory.
+func (LinkCategory) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.WithComments(true),
+		schema.Comment("友链分类表"),
+	}
 }
 
 // Fields of the LinkCategory.

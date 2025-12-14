@@ -85,9 +85,19 @@ func (h *Handler) UploadImage(c *gin.Context) {
 	}
 	log.Printf("[Handler.UploadImage] 解析用户ID成功, ownerID: %d", ownerID)
 
+	// 3.5 解析用户组ID
+	var userGroupID uint
+	if claims.UserGroupID != "" {
+		groupID, _, err := idgen.DecodePublicID(claims.UserGroupID)
+		if err == nil {
+			userGroupID = groupID
+			log.Printf("[Handler.UploadImage] 解析用户组ID成功, userGroupID: %d", userGroupID)
+		}
+	}
+
 	// 4. 调用Service层处理业务逻辑
 	log.Printf("[Handler.UploadImage] 开始调用Service层处理图片上传")
-	directLinkURL, publicFileID, err := h.svc.UploadArticleImage(c.Request.Context(), ownerID, fileReader, fileHeader.Filename)
+	directLinkURL, publicFileID, err := h.svc.UploadArticleImageWithGroup(c.Request.Context(), ownerID, userGroupID, fileReader, fileHeader.Filename)
 	if err != nil {
 		log.Printf("[Handler.UploadImage] Service处理失败: %v", err)
 		response.Fail(c, http.StatusInternalServerError, "图片上传失败")
@@ -383,18 +393,63 @@ func (h *Handler) Delete(c *gin.Context) {
 // @Param        pageSize query int false "每页数量" default(10)
 // @Param        query query string false "搜索关键词 (标题或摘要)"
 // @Param        status query string false "文章状态 (DRAFT, PUBLISHED, ARCHIVED)" Enums(DRAFT, PUBLISHED, ARCHIVED)
+// @Param        author_id query string false "作者ID（多人共创功能：普通用户只能查看自己的文章）"
 // @Success      200 {object} response.Response{data=model.ArticleListResponse} "成功响应"
+// @Failure      403 {object} response.Response "权限不足"
 // @Failure      500 {object} response.Response "服务器内部错误"
 // @Router       /articles [get]
 func (h *Handler) List(c *gin.Context) {
+	// 获取当前用户信息
+	claims, err := getClaims(c)
+	if err != nil {
+		response.Fail(c, http.StatusUnauthorized, "未登录")
+		return
+	}
+
+	// 检查是否为管理员（通过 UserGroupID 判断，管理员组ID为 1）
+	var isAdmin bool
+	userGroupID, entityType, err := idgen.DecodePublicID(claims.UserGroupID)
+	if err == nil && entityType == idgen.EntityTypeUserGroup && userGroupID == 1 {
+		isAdmin = true
+	}
+
+	// 解码当前用户的数据库ID
+	currentUserDBID, _, err := idgen.DecodePublicID(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "用户ID解析失败")
+		return
+	}
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
+
+	// 解析 author_id 参数（多人共创功能：按作者过滤）
+	var authorID *uint
+	if authorIDStr := c.Query("author_id"); authorIDStr != "" {
+		if dbID, _, err := idgen.DecodePublicID(authorIDStr); err == nil {
+			authorID = &dbID
+		}
+	}
+
+	// 如果是普通用户，必须传递 author_id 且必须与当前用户ID匹配
+	if !isAdmin {
+		if authorID == nil {
+			response.Fail(c, http.StatusForbidden, "普通用户必须指定 author_id 参数")
+			return
+		}
+		// 验证 author_id 是否与当前用户ID匹配
+		if *authorID != currentUserDBID {
+			response.Fail(c, http.StatusForbidden, "您只能查看自己的文章")
+			return
+		}
+	}
 
 	options := &model.ListArticlesOptions{
 		Page:     page,
 		PageSize: pageSize,
 		Query:    c.Query("query"),
 		Status:   c.Query("status"),
+		AuthorID: authorID,
 	}
 
 	result, err := h.svc.List(c.Request.Context(), options)

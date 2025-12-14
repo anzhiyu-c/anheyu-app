@@ -20,6 +20,8 @@ type StoragePolicyRepository interface {
 	Update(ctx context.Context, policy *model.StoragePolicy) error
 	Delete(ctx context.Context, id uint) error
 	FindByName(ctx context.Context, name string) (*model.StoragePolicy, error)
+	FindByNameUnscoped(ctx context.Context, name string) (*model.StoragePolicy, error) // 查找包括软删除的记录
+	HardDelete(ctx context.Context, id uint) error                                     // 硬删除策略
 	List(ctx context.Context, page, pageSize int) ([]*model.StoragePolicy, int64, error)
 	ListAll(ctx context.Context) ([]*model.StoragePolicy, error)
 	FindByVirtualPath(ctx context.Context, path string) (*model.StoragePolicy, error)
