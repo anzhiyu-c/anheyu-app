@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings" // 确保导入
 	"time"
@@ -19,6 +20,41 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
 	"github.com/anzhiyu-c/anheyu-app/pkg/idgen"
 )
+
+// getContentTypeFromFilename 根据文件名推断正确的 Content-Type
+// 如果数据库中的 MimeType 为空或无效，使用此函数来推断
+func getContentTypeFromFilename(filename string) string {
+	ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(filename), "."))
+
+	// MIME 类型映射表
+	mimeTypes := map[string]string{
+		// 图片
+		"svg":  "image/svg+xml",
+		"png":  "image/png",
+		"jpg":  "image/jpeg",
+		"jpeg": "image/jpeg",
+		"gif":  "image/gif",
+		"webp": "image/webp",
+		"bmp":  "image/bmp",
+		"ico":  "image/x-icon",
+		"avif": "image/avif",
+		// 其他常见类型
+		"pdf":  "application/pdf",
+		"json": "application/json",
+		"xml":  "application/xml",
+		"txt":  "text/plain",
+		"html": "text/html",
+		"css":  "text/css",
+		"js":   "application/javascript",
+	}
+
+	if mimeType, ok := mimeTypes[ext]; ok {
+		return mimeType
+	}
+
+	// 默认返回 application/octet-stream
+	return "application/octet-stream"
+}
 
 // DownloadResult 封装了下载操作成功后返回的元数据。
 type DownloadResult struct {
@@ -72,11 +108,15 @@ func (s *serviceImpl) Download(ctx context.Context, viewerID uint, publicFileID 
 	if policy.Type == constant.PolicyTypeLocal {
 		// 在流式传输前，设置Content-Type和Content-Length
 		if w, ok := writer.(http.ResponseWriter); ok {
-			if entity.MimeType.Valid {
-				w.Header().Set("Content-Type", entity.MimeType.String)
+			// 确定 Content-Type：优先使用数据库中的 MimeType，如果为空或无效则根据文件扩展名推断
+			contentType := "application/octet-stream"
+			if entity.MimeType.Valid && entity.MimeType.String != "" && entity.MimeType.String != "text/plain" {
+				contentType = entity.MimeType.String
 			} else {
-				w.Header().Set("Content-Type", "application/octet-stream")
+				// 如果 MimeType 为空或是 text/plain，根据文件扩展名推断
+				contentType = getContentTypeFromFilename(file.Name)
 			}
+			w.Header().Set("Content-Type", contentType)
 			w.Header().Set("Content-Length", strconv.FormatInt(file.Size, 10))
 		}
 		err = provider.Stream(ctx, policy, entity.Source.String, writer)

@@ -197,6 +197,13 @@ func (p *LocalProvider) Upload(ctx context.Context, file io.Reader, policy *mode
 	}
 	mimeType := http.DetectContentType(buffer[:n])
 
+	// 修正 SVG 文件的 MIME 类型：http.DetectContentType 会将 SVG 识别为 text/plain 或 text/xml
+	// 需要根据文件扩展名来正确识别
+	ext := strings.ToLower(filepath.Ext(virtualPath))
+	if ext == ".svg" {
+		mimeType = "image/svg+xml"
+	}
+
 	if _, err := tempFile.Seek(0, io.SeekStart); err != nil {
 		return nil, fmt.Errorf("无法重置临时文件指针以检测图片尺寸: %w", err)
 	}

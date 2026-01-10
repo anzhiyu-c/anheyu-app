@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,41 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/pkg/response"
 	"github.com/anzhiyu-c/anheyu-app/pkg/service/direct_link"
 )
+
+// getContentTypeFromFilename 根据文件名推断正确的 Content-Type
+// 如果数据库中的 MimeType 为空或无效，使用此函数来推断
+func getContentTypeFromFilename(filename string) string {
+	ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(filename), "."))
+
+	// MIME 类型映射表
+	mimeTypes := map[string]string{
+		// 图片
+		"svg":  "image/svg+xml",
+		"png":  "image/png",
+		"jpg":  "image/jpeg",
+		"jpeg": "image/jpeg",
+		"gif":  "image/gif",
+		"webp": "image/webp",
+		"bmp":  "image/bmp",
+		"ico":  "image/x-icon",
+		"avif": "image/avif",
+		// 其他常见类型
+		"pdf":  "application/pdf",
+		"json": "application/json",
+		"xml":  "application/xml",
+		"txt":  "text/plain",
+		"html": "text/html",
+		"css":  "text/css",
+		"js":   "application/javascript",
+	}
+
+	if mimeType, ok := mimeTypes[ext]; ok {
+		return mimeType
+	}
+
+	// 默认返回 application/octet-stream
+	return "application/octet-stream"
+}
 
 // DirectLinkHandler 负责处理直链相关的HTTP请求。
 type DirectLinkHandler struct {
@@ -140,7 +176,14 @@ func (h *DirectLinkHandler) HandleDirectDownload(c *gin.Context) {
 		// 本地存储：直接流式传输
 		encodedFileName := url.QueryEscape(filename)
 		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename*=UTF-8''%s", encodedFileName))
-		c.Header("Content-Type", file.PrimaryEntity.MimeType.String)
+
+		// 确定 Content-Type：优先使用数据库中的 MimeType，如果为空或无效则根据文件扩展名推断
+		contentType := file.PrimaryEntity.MimeType.String
+		if contentType == "" || contentType == "text/plain" {
+			// 如果 MimeType 为空或是 text/plain，根据文件扩展名推断
+			contentType = getContentTypeFromFilename(filename)
+		}
+		c.Header("Content-Type", contentType)
 		c.Header("Content-Length", fmt.Sprintf("%d", file.Size))
 
 		throttledWriter := utils.NewThrottledWriter(c.Writer, speedLimit, c.Request.Context())
