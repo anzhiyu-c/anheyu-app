@@ -558,7 +558,7 @@ func (s *serviceImpl) purgeCDNflyCache(ctx context.Context, urls []string) error
 	host := baseURL
 
 	// 构建请求体
-	params := []any{}
+	params := []map[string]interface{}{}
 	for _, url := range urls {
 		param := map[string]interface{}{
 			"type": "clean_url",
