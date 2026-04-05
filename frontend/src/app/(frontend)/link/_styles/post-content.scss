@@ -1,0 +1,440 @@
+// ============================================
+// 文章内容基础样式（用于渲染后端返回的 HTML 内容）
+// 从 anheyu-app article-content-base.scss 提取核心样式
+// ============================================
+
+.post-content {
+  line-height: 1.8;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  // ---- 链接 ----
+  a {
+    padding: 0 0.2rem !important;
+    font-family: inherit;
+    font-weight: 500;
+    line-height: 1.25rem;
+    color: var(--anzhiyu-fontcolor);
+    text-decoration: none;
+    border-bottom: dotted 2px var(--anzhiyu-lighttext);
+    transition: all 0.2s ease 0s !important;
+
+    &:hover {
+      color: var(--anzhiyu-white);
+      text-decoration: none;
+      background: var(--anzhiyu-main);
+      border-radius: 0.25rem !important;
+      box-shadow: var(--anzhiyu-shadow-lightblack);
+    }
+  }
+
+  // ---- 引用块 ----
+  blockquote {
+    padding: 0.5rem 0.8rem;
+    margin: 1rem 0;
+    color: var(--anzhiyu-secondtext);
+    background-color: var(--anzhiyu-secondbg);
+    border: var(--style-border-always);
+    border-radius: 8px;
+
+    p {
+      margin: 0.5rem;
+    }
+  }
+
+  // ---- 行内代码 ----
+  :not(pre) > code {
+    padding: 2px 4px;
+    margin: 0 4px;
+    line-height: 2;
+    color: #fff;
+    background: var(--anzhiyu-code-stress);
+    border-radius: 4px;
+    box-shadow: var(--anzhiyu-shadow-border);
+    font-weight: 700;
+  }
+
+  // ---- 段落 ----
+  p {
+    margin: 24px 0;
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.7;
+    color: var(--anzhiyu-fontcolor);
+    text-align: left;
+    letter-spacing: 0.6px;
+  }
+
+  // ---- 标题 ----
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    position: relative;
+    margin: 20px 0 14px;
+    font-weight: 700;
+    color: var(--text-highlight-color);
+    scroll-margin-top: 80px;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+
+  h3 {
+    font-size: 1.25em;
+  }
+
+  > :last-child {
+    margin-bottom: 0 !important;
+  }
+
+  // ---- 图片 ----
+  img {
+    display: block;
+    max-width: 100%;
+    margin: 20px auto;
+    border-radius: 8px;
+    transition: 0.3s;
+    max-height: 600px;
+  }
+
+  // ---- 列表基础 ----
+  ol,
+  ul {
+    margin-top: 0.4rem;
+    padding: 0 0 0 0.8rem;
+    list-style: none;
+  }
+
+  ol {
+    counter-reset: list-item 0;
+  }
+
+  ul {
+    counter-reset: li 0;
+  }
+
+  // ---- 有序列表项（蓝色圆形数字徽标）----
+  ol > li {
+    position: relative;
+    margin: 0.3rem 0;
+    font-size: 17px;
+    line-height: 1.7;
+    font-weight: 400;
+    padding: 0.2em 0.2em 0.2em 2em;
+    counter-increment: list-item 1;
+
+    &::before {
+      position: absolute;
+      top: 0.5em;
+      left: 0;
+      margin-top: 0;
+      width: 1.5em;
+      height: 1.5em;
+      border-radius: 0.75em;
+      content: counter(list-item);
+      text-align: center;
+      font-size: 0.85em;
+      line-height: 1.5em;
+      background: var(--anzhiyu-main);
+      color: #fff;
+      transition: all 0.3s ease-out 0s;
+    }
+  }
+
+  // ---- 无序列表项（蓝色圆环）----
+  ul li {
+    position: relative;
+    margin: 0.3rem 0;
+    font-size: 17px;
+    line-height: 1.7;
+    font-weight: 400;
+    padding: 0.2em 0.2em 0.2em 1.5em;
+
+    &::before {
+      position: absolute;
+      top: 0.65em;
+      left: 0;
+      width: 0.42rem;
+      height: 0.42rem;
+      border-radius: 50%;
+      content: "";
+      box-sizing: content-box;
+      border: 0.2081rem solid var(--anzhiyu-main);
+      background: 0;
+    }
+  }
+
+  // ---- 列表中的段落 ----
+  ol,
+  ul {
+    p {
+      margin: 0 0 8px;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    // 嵌套列表
+    ol,
+    ul {
+      padding-left: 20px;
+      counter-reset: list-item 0;
+    }
+  }
+
+  // ---- 折叠标签（details.folding-tag）----
+  details.folding-tag {
+    display: block;
+    padding: 16px;
+    margin: 1em 0;
+    font-size: 1rem;
+    transition: border 0s ease;
+
+    .content > :first-child {
+      margin-top: 0 !important;
+    }
+
+    &:not(.custom-color)[open] {
+      background: var(--anzhiyu-card-bg);
+      border: 1px solid var(--anzhiyu-main);
+      border-radius: 15px;
+    }
+
+    &.custom-color[open] {
+      border: 1px solid;
+      border-radius: 15px;
+    }
+
+    summary:not(.md-editor-code-head) {
+      position: relative;
+      padding: 16px;
+      margin: -16px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      line-height: normal;
+      cursor: pointer;
+    }
+
+    > summary {
+      color: var(--font-color) !important;
+      user-select: none;
+      background: var(--anzhiyu-card-bg);
+      border: var(--style-border) !important;
+      border-radius: 14px !important;
+      box-shadow: var(--anzhiyu-shadow-border);
+
+      &::before {
+        margin-right: 2px;
+        content: " ";
+      }
+
+      &:hover::after {
+        position: absolute;
+        top: 50%;
+        right: 16px;
+        text-align: center;
+        content: "+";
+        transform: translateY(-50%);
+      }
+    }
+
+    &:not(.custom-color)[open] > summary:not(.md-editor-code-head) {
+      margin-bottom: 0;
+      color: var(--anzhiyu-white) !important;
+      background: var(--anzhiyu-main);
+      border-top: none !important;
+      border-right: none !important;
+      border-left: none !important;
+      border-bottom-right-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+    }
+
+    &.custom-color[open] > summary:not(.md-editor-code-head) {
+      margin-bottom: 0;
+      color: var(--anzhiyu-white) !important;
+      border-top: none !important;
+      border-right: none !important;
+      border-left: none !important;
+      border-bottom-right-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+    }
+
+    &[open] > summary:not(.md-editor-code-head)::marker {
+      font-size: 16px;
+      color: var(--anzhiyu-white);
+    }
+
+    &[open] > summary:not(.md-editor-code-head):hover::after {
+      content: "-";
+    }
+
+    &[open] > div.content {
+      padding: 16px;
+      margin: -16px;
+      margin-top: 0;
+      border-radius: 0 0 16px 16px;
+    }
+
+    &:not(.custom-color) summary:not(.md-editor-code-head):hover {
+      color: var(--anzhiyu-white) !important;
+      cursor: pointer;
+      background: var(--anzhiyu-main);
+      box-shadow: var(--anzhiyu-shadow-main);
+      transition: 0.3s;
+    }
+
+    &.custom-color summary:not(.md-editor-code-head):hover {
+      color: var(--anzhiyu-white) !important;
+      cursor: pointer;
+      box-shadow: var(--anzhiyu-shadow-main);
+      transition: 0.3s;
+    }
+  }
+
+  // ---- 普通 details/summary 折叠 ----
+  details:not(.folding-tag) {
+    margin: 1rem 0;
+    background: var(--anzhiyu-card-bg);
+    border: var(--style-border-always);
+    border-radius: 8px;
+    overflow: hidden;
+
+    summary {
+      padding: 0.6rem 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--anzhiyu-secondbg);
+      user-select: none;
+      transition: all 0.3s;
+
+      &:hover {
+        background: var(--anzhiyu-main);
+        color: var(--anzhiyu-white);
+      }
+    }
+
+    &[open] summary {
+      border-bottom: var(--style-border-always);
+    }
+
+    > *:not(summary) {
+      padding: 0 1rem;
+    }
+  }
+
+  // ---- 表格 ----
+  table {
+    display: table;
+    width: 100%;
+    margin: 1rem 0;
+    empty-cells: show;
+    border-spacing: 0;
+    border-collapse: collapse;
+    border: var(--style-border-always);
+    border-radius: 8px;
+    overflow: hidden;
+
+    thead {
+      background: var(--anzhiyu-secondbg);
+    }
+
+    td,
+    th {
+      padding: 0.3rem 0.6rem;
+      vertical-align: middle;
+      border: var(--style-border-always);
+    }
+  }
+
+  // ---- 键盘键 ----
+  kbd {
+    padding: 3px 5px;
+    margin: 0 3px;
+    font-family: Monaco, "Ubuntu Mono", monospace;
+    font-size: 0.9em;
+    font-weight: 600;
+    line-height: 1em;
+    color: #34495e;
+    white-space: nowrap;
+    background-color: #f8f8f8;
+    border: 1px solid #b4b4b4;
+    border-radius: 3px;
+    box-shadow:
+      0 1px 3px rgb(0 0 0 / 25%),
+      0 2px 1px 0 rgb(255 255 255 / 60%) inset;
+  }
+
+  // ---- 水平分割线 ----
+  hr {
+    margin: 1.5rem 0;
+    border: none;
+    border-top: 2px dashed var(--anzhiyu-theme-op);
+  }
+
+  // ---- 复选框 ----
+  input[type="checkbox"] {
+    position: relative;
+    box-sizing: border-box;
+    display: inline-block;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin-right: 8px;
+    appearance: none;
+    pointer-events: none;
+    cursor: pointer;
+    border: 2px solid var(--anzhiyu-theme);
+    border-radius: 2px;
+    outline: 0;
+    transition: all 0.15s ease-out 0s;
+
+    &:checked {
+      background: var(--anzhiyu-theme);
+    }
+
+    &::before,
+    &::after {
+      position: absolute;
+      content: "";
+      background: #fff;
+    }
+
+    &:checked::before {
+      top: 7px;
+      left: 0;
+      width: 6px;
+      height: 2px;
+    }
+
+    &:checked::after {
+      right: 3px;
+      bottom: 1px;
+      width: 2px;
+      height: 10px;
+    }
+
+    &::before {
+      top: 5px;
+      left: 1px;
+      width: 0;
+      height: 2px;
+      transition: all 0.2s ease-in;
+      transform: rotate(45deg);
+    }
+
+    &::after {
+      right: 7px;
+      bottom: 3px;
+      width: 2px;
+      height: 0;
+      transition-delay: 0.25s;
+      transform: rotate(40deg);
+    }
+  }
+}

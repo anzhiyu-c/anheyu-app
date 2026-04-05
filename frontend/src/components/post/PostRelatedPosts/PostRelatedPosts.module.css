@@ -1,0 +1,192 @@
+/* 文章详情相关推荐模块 */
+
+.relatedPosts {
+  margin-top: 2.25rem;
+  user-select: none;
+}
+
+.headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.125rem;
+}
+
+.headlineLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.headlineIcon {
+  font-size: 1.5rem;
+  color: var(--foreground);
+  flex-shrink: 0;
+}
+
+.headlineTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--foreground);
+}
+
+.randomLink {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.randomLink:hover {
+  color: var(--primary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.item {
+  overflow: hidden;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.item:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.itemLink {
+  display: flex;
+  width: 100%;
+  height: 220px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.coverWrap {
+  position: relative;
+  width: 45%;
+  min-width: 45%;
+  overflow: hidden;
+}
+
+.cover {
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.item:hover .cover {
+  transform: scale(1.05);
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  width: 55%;
+  padding: 1.5rem 1.75rem;
+  background: var(--muted);
+  transition: background 0.3s ease;
+}
+
+.title {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1.45;
+  color: var(--foreground);
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  transition: color 0.3s ease;
+}
+
+.item:hover .content {
+  background: var(--primary);
+}
+
+.item:hover .title {
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .relatedPosts {
+    margin-top: 0.875rem;
+  }
+
+  .headline {
+    margin-bottom: 0.75rem;
+  }
+
+  .headlineLeft {
+    gap: 0.5rem;
+  }
+
+  .headlineIcon {
+    font-size: 1.5rem;
+  }
+
+  .headlineTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .list {
+    gap: 0.625rem;
+  }
+
+  .item {
+    border-radius: 12px;
+  }
+
+  .itemLink {
+    flex-direction: column;
+    height: auto;
+    min-height: 0;
+  }
+
+  .coverWrap {
+    width: 100%;
+    min-width: 100%;
+    height: 132px;
+  }
+
+  .content {
+    width: 100%;
+    padding: 0.875rem 0.875rem 1rem;
+    background: var(--muted);
+  }
+
+  .title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.5;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .item:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .item:hover .content {
+    background: var(--muted);
+  }
+
+  .item:hover .title {
+    color: var(--foreground);
+  }
+}

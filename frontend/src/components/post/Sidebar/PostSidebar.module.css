@@ -1,0 +1,51 @@
+/* PostSidebar 文章详情侧边栏样式 */
+
+.postSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  width: 300px;
+  min-width: 300px;
+  animation: slideIn 0.6s 0.1s backwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 粘性容器 */
+.stickyContainer {
+  position: sticky;
+  top: calc(60px + 0.625rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  max-height: calc(100vh - 60px - 1.25rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 隐藏滚动条但保持滚动功能 */
+.stickyContainer::-webkit-scrollbar {
+  width: 0;
+  display: none;
+}
+
+.stickyContainer {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 响应式：平板及以下隐藏侧边栏 */
+@media (max-width: 992px) {
+  .postSidebar {
+    display: none;
+  }
+}

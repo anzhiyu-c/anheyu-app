@@ -1,0 +1,321 @@
+// ============================================
+// PRO 内容块 — 参考 anheyu-app 卡片设计系统
+// 三色区分：amber(付费) / blue(密码) / purple(登录)
+// ============================================
+
+// 色彩 Token
+$pro-amber: #f59e0b;
+$pro-amber-deep: #b45309;
+$pro-blue: #3b82f6;
+$pro-blue-deep: #1d4ed8;
+$pro-purple: #a855f7;
+$pro-purple-deep: #7c3aed;
+
+// 暗色 Token
+$pro-amber-dark: #fbbf24;
+$pro-blue-dark: #93bbfd;
+$pro-purple-dark: #d8b4fe;
+
+// 编辑器专用：包装器
+.tiptap {
+  .paid-content-wrapper,
+  .password-content-wrapper,
+  .login-required-content-wrapper {
+    margin: 0.75em 0;
+  }
+
+  .paid-content-editable:empty::before,
+  .password-content-editable:empty::before,
+  .login-required-content-editable:empty::before {
+    content: "在此输入受保护的内容...";
+    color: var(--anzhiyu-secondtext, #9ca3af);
+    pointer-events: none;
+  }
+}
+
+// ---- PRO 块基础结构 ----
+.editor-pro-block {
+  position: relative;
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 12px;
+  box-shadow: var(--anzhiyu-shadow-border, 0 8px 16px -4px #2c2d300c);
+  overflow: hidden;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+
+  // 三色 hover
+  &--amber:hover {
+    border-color: $pro-amber;
+    box-shadow: 0 8px 12px -3px rgba($pro-amber, 0.15);
+  }
+  &--blue:hover {
+    border-color: $pro-blue;
+    box-shadow: 0 8px 12px -3px rgba($pro-blue, 0.15);
+  }
+  &--purple:hover {
+    border-color: $pro-purple;
+    box-shadow: 0 8px 12px -3px rgba($pro-purple, 0.15);
+  }
+}
+
+// ---- PRO 头部 ----
+.editor-pro-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--anzhiyu-secondbg, #f1f3f8);
+  border-bottom: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  user-select: none;
+}
+
+.editor-pro-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+// 三色图标+标签
+.editor-pro-block--amber .editor-pro-toolbar-left {
+  color: $pro-amber-deep;
+}
+.editor-pro-block--blue .editor-pro-toolbar-left {
+  color: $pro-blue-deep;
+}
+.editor-pro-block--purple .editor-pro-toolbar-left {
+  color: $pro-purple-deep;
+}
+
+:is(html.dark) {
+  .editor-pro-block--amber .editor-pro-toolbar-left {
+    color: $pro-amber-dark;
+  }
+  .editor-pro-block--blue .editor-pro-toolbar-left {
+    color: $pro-blue-dark;
+  }
+  .editor-pro-block--purple .editor-pro-toolbar-left {
+    color: $pro-purple-dark;
+  }
+}
+
+.editor-pro-toolbar-label {
+  letter-spacing: 0.3px;
+}
+
+.editor-pro-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+// 工具栏按钮
+.editor-pro-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--anzhiyu-main, #4259ef);
+    color: var(--anzhiyu-main, #4259ef);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  }
+
+  &--danger:hover {
+    border-color: var(--anzhiyu-red, #d80020);
+    color: var(--anzhiyu-red, #d80020);
+  }
+}
+
+// 价格显示（付费内容专用，红色）
+.editor-pro-price {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  color: var(--anzhiyu-red, #d80020);
+  background: rgba(216, 0, 32, 0.06);
+}
+
+:is(html.dark) .editor-pro-price {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.12);
+}
+
+.editor-pro-price-original {
+  margin-left: 3px;
+  font-size: 10px;
+  font-weight: 400;
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+// 三色徽章
+.editor-pro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  border-radius: 10px;
+
+  &--amber {
+    color: $pro-amber-deep;
+    background: rgba($pro-amber, 0.1);
+  }
+  &--blue {
+    color: $pro-blue-deep;
+    background: rgba($pro-blue, 0.1);
+  }
+  &--purple {
+    color: $pro-purple-deep;
+    background: rgba($pro-purple, 0.1);
+  }
+}
+
+:is(html.dark) {
+  .editor-pro-badge--amber {
+    color: $pro-amber-dark;
+    background: rgba($pro-amber, 0.15);
+  }
+  .editor-pro-badge--blue {
+    color: $pro-blue-dark;
+    background: rgba($pro-blue, 0.15);
+  }
+  .editor-pro-badge--purple {
+    color: $pro-purple-dark;
+    background: rgba($pro-purple, 0.15);
+  }
+}
+
+// ---- 设置面板 ----
+.editor-pro-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 0.5rem 0.75rem;
+  background: var(--anzhiyu-secondbg, #f1f3f8);
+  border-bottom: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  user-select: none;
+  animation: fadeIn 0.15s ease;
+}
+
+.editor-pro-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editor-pro-settings-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  white-space: nowrap;
+  min-width: 24px;
+}
+
+.editor-pro-settings-input {
+  height: 24px;
+  padding: 0 6px;
+  font-size: 12px;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 6px;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+
+  &:focus {
+    border-color: var(--anzhiyu-main, #4259ef);
+    box-shadow: 0 0 0 2px var(--anzhiyu-main-op, rgba(66, 89, 239, 0.08));
+  }
+
+  &[readonly] {
+    opacity: 0.6;
+    cursor: default;
+    background: var(--anzhiyu-card-bg-grey, #f0f2f5);
+  }
+
+  &--xs {
+    width: 36px;
+  }
+  &--sm {
+    width: 72px;
+  }
+  &--md {
+    width: 130px;
+  }
+  &--wide {
+    width: 160px;
+  }
+}
+
+.editor-pro-settings-password {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+// ---- 内容区域 ----
+.editor-pro-content {
+  padding: 0.5rem 0.75rem;
+
+  p {
+    margin: 0.25em 0;
+  }
+
+  > :first-child > :first-child {
+    margin-top: 0 !important;
+  }
+  > :first-child > :last-child {
+    margin-bottom: 0 !important;
+  }
+}
+
+// ---- 三色底部信息条 ----
+.editor-pro-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-top: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  font-size: 11px;
+  background: var(--anzhiyu-secondbg, #f1f3f8);
+
+  &--amber {
+    color: $pro-amber-deep;
+  }
+  &--blue {
+    color: $pro-blue-deep;
+  }
+  &--purple {
+    color: $pro-purple-deep;
+  }
+}
+
+:is(html.dark) {
+  .editor-pro-footer--amber {
+    color: $pro-amber-dark;
+  }
+  .editor-pro-footer--blue {
+    color: $pro-blue-dark;
+  }
+  .editor-pro-footer--purple {
+    color: $pro-purple-dark;
+  }
+}

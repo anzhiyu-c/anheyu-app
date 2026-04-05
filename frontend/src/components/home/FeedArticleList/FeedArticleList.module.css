@@ -1,0 +1,196 @@
+/* FeedArticleList - 文章列表容器 */
+
+.feedArticleList {
+  position: relative;
+  width: 100%;
+  min-height: 400px;
+  will-change: auto;
+}
+
+.articleList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 双栏模式 - 使用 flexbox 实现 */
+.doubleColumnContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  justify-content: space-between;
+}
+
+/* 平板范围 - 恢复单栏行布局 */
+@media screen and (min-width: 769px) and (max-width: 992px) {
+  .doubleColumnContainer {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .skeletonCardDouble {
+    flex-direction: row;
+    width: 100%;
+    margin: 0;
+  }
+
+  .skeletonCardDouble .skeletonCover {
+    width: 40%;
+    height: auto;
+    min-height: 180px;
+  }
+
+  .skeletonCardDouble .skeletonContent {
+    width: 60%;
+  }
+}
+
+/* 移动端 - 单栏 */
+@media (max-width: 768px) {
+  .doubleColumnContainer {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+/* 骨架屏样式 */
+.skeletonCard {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  margin: 1rem 0;
+  overflow: hidden;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 12px;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 双栏骨架屏 */
+.skeletonCardDouble {
+  flex-direction: column;
+  width: calc(50% - 0.3125rem);
+  margin: 0;
+}
+
+.skeletonCardDouble .skeletonCover {
+  width: 100%;
+  height: 225px;
+}
+
+.skeletonCardDouble .skeletonContent {
+  width: 100%;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.skeletonCover {
+  flex-shrink: 0;
+  width: 45%;
+  min-height: 180px;
+  background: var(--anzhiyu-secondbg);
+}
+
+.skeletonContent {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  width: 55%;
+  padding: 2rem;
+}
+
+.skeletonTags {
+  width: 40%;
+  height: 24px;
+  margin-bottom: 0.5rem;
+  background: var(--anzhiyu-secondbg);
+  border-radius: 12px;
+}
+
+.skeletonTitle {
+  width: 80%;
+  height: 28px;
+  margin-bottom: 1rem;
+  background: var(--anzhiyu-secondbg);
+  border-radius: 4px;
+}
+
+.skeletonMeta {
+  width: 60%;
+  height: 16px;
+  margin-top: auto;
+  background: var(--anzhiyu-secondbg);
+  border-radius: 4px;
+}
+
+/* 错误状态 */
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 12px;
+}
+
+.errorState svg {
+  font-size: 3rem;
+  color: var(--anzhiyu-red);
+  margin-bottom: 1rem;
+}
+
+.errorState p {
+  color: var(--anzhiyu-secondtext);
+}
+
+/* 空状态 */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 12px;
+}
+
+.emptyState svg {
+  font-size: 3rem;
+  color: var(--anzhiyu-secondtext);
+  margin-bottom: 1rem;
+}
+
+.emptyState p {
+  color: var(--anzhiyu-secondtext);
+}
+
+/* 响应式 - 移动端 */
+@media (max-width: 768px) {
+  .skeletonCard {
+    flex-direction: column;
+  }
+
+  .skeletonCover {
+    width: 100%;
+    height: 200px;
+  }
+
+  .skeletonContent {
+    width: 100%;
+    padding: 1rem;
+  }
+}

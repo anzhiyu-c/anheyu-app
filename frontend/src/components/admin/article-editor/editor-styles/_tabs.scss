@@ -1,0 +1,204 @@
+// ============================================
+// Tab 面板（与文章详情一致 - 前端渲染样式）
+// ============================================
+
+.tiptap {
+  .tabs {
+    position: relative;
+    padding: 8px;
+    margin: 1rem 0;
+    overflow: hidden;
+    background: var(--anzhiyu-card-bg, #fff);
+    border: 3px solid var(--anzhiyu-card-bg-grey, #f1f3f8);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .tabs > .nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 16px;
+    margin: 0;
+    background: var(--anzhiyu-card-bg, #fff);
+    list-style: none;
+  }
+
+  .tabs > .nav-tabs > .tab {
+    padding: 8px 18px;
+    margin: 4px;
+    line-height: 1;
+    color: var(--anzhiyu-fontcolor, var(--foreground));
+    cursor: pointer;
+    background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+    border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+    border-radius: 8px;
+    transition: all 0.4s;
+  }
+
+  .tabs > .nav-tabs > .tab.active {
+    cursor: default;
+    background: var(--anzhiyu-background, #f7f9fe);
+    border-color: var(--anzhiyu-theme, var(--primary));
+  }
+
+  .tabs > .nav-tabs > .tab:not(.active):hover {
+    color: #fff;
+    background: var(--anzhiyu-theme, var(--primary));
+  }
+
+  .tab-item-content {
+    position: relative;
+    display: none;
+    padding: 1.2rem;
+    background: var(--anzhiyu-background, #f7f9fe);
+    border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+    border-radius: 8px;
+    animation: fadeIn 0.5s;
+
+    &.active {
+      display: block;
+    }
+  }
+}
+
+// ============================================
+// 编辑器 Tab NodeView 样式
+// ============================================
+
+.editor-tabs-block {
+  margin: 1rem 0;
+}
+
+.editor-tabs {
+  position: relative;
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 3px solid var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.editor-tabs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 12px 12px;
+  gap: 4px;
+}
+
+.editor-tabs-tab {
+  padding: 8px 18px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  cursor: pointer;
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 8px;
+  transition: all 0.3s;
+
+  &.is-active {
+    background: var(--anzhiyu-background, #f7f9fe);
+    border-color: var(--anzhiyu-theme, #3b82f6);
+    cursor: default;
+  }
+
+  &:not(.is-active):hover {
+    color: #fff;
+    background: var(--anzhiyu-theme, #3b82f6);
+  }
+}
+
+.editor-tabs-tab-wrap {
+  position: relative;
+  display: inline-flex;
+
+  &:hover {
+    .editor-tabs-tab-remove {
+      opacity: 1;
+    }
+    .editor-tabs-tab:not(.is-active) {
+      color: #fff;
+      background: var(--anzhiyu-theme, #3b82f6);
+    }
+  }
+}
+
+.editor-tabs-tab-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: #fff;
+  background: #ef4444;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 2;
+
+  &:hover {
+    background: #dc2626;
+  }
+}
+
+.editor-tabs-tab-input {
+  width: 60px;
+  padding: 2px 4px;
+  font-size: 13px;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--anzhiyu-theme, #3b82f6);
+  border-radius: 4px;
+  outline: none;
+}
+
+.editor-tabs-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  background: none;
+  border: 1px dashed var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    color: var(--anzhiyu-theme, #3b82f6);
+    border-color: var(--anzhiyu-theme, #3b82f6);
+  }
+}
+
+// 面板内容容器
+.editor-tabs-panels {
+  border: 3px solid var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+// 单个面板
+.editor-tab-panel {
+  .editor-tab-panel-content {
+    min-height: 60px;
+    padding: 16px;
+    background: var(--anzhiyu-background, #f7f9fe);
+
+    > *:first-child {
+      margin-top: 0;
+    }
+    > *:last-child {
+      margin-bottom: 0;
+    }
+  }
+}

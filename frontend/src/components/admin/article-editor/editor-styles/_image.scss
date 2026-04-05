@@ -1,0 +1,840 @@
+// ============================================
+// CustomImage 样式 - 编辑器内图片节点
+// ============================================
+
+.tiptap {
+  // ---- 基础对齐 ----
+  .image-align-left {
+    margin-left: 0;
+    margin-right: auto;
+    display: block;
+  }
+
+  .image-align-center {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+  }
+
+  .image-align-right {
+    margin-left: auto;
+    margin-right: 0;
+    display: block;
+  }
+
+  figure.image-figure {
+    margin: 1.5em 0;
+
+    figcaption {
+      text-align: center;
+      font-size: 0.875em;
+      color: var(--anzhiyu-secondtext, #6b7280);
+      margin-top: 0.5em;
+    }
+  }
+
+  // ---- NodeView 容器 ----
+  .image-node-view {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    margin: 0.75em 0;
+
+    &.image-align-left {
+      align-items: flex-start;
+    }
+
+    &.image-align-center {
+      align-items: center;
+    }
+
+    &.image-align-right {
+      align-items: flex-end;
+    }
+  }
+
+  .image-node-container {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    line-height: 0;
+
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.3s ease;
+      margin: 0;
+    }
+  }
+
+  // ---- 图片样式 ----
+  .image-style-border .image-node-img {
+    border: 2px solid var(--anzhiyu-card-border, #e3e8f7);
+    border-radius: 8px;
+  }
+
+  .image-style-shadow .image-node-img {
+    box-shadow: 0 2px 16px -3px rgb(0 0 0 / 15%);
+    border-radius: 8px;
+  }
+
+  // ---- 旋转 ----
+  .image-rotation-90 .image-node-img {
+    transform: rotate(90deg);
+  }
+
+  .image-rotation-180 .image-node-img {
+    transform: rotate(180deg);
+  }
+
+  .image-rotation-270 .image-node-img {
+    transform: rotate(270deg);
+  }
+
+  // ---- 图片加载失败占位 ----
+  .image-load-failed-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: 200px;
+    min-height: 120px;
+    background: var(--anzhiyu-card-bg-grey, #f0f2f5);
+    border: 1px dashed var(--anzhiyu-card-border, #e3e8f7);
+    border-radius: 12px;
+    color: var(--anzhiyu-secondtext, #999);
+    font-size: 13px;
+    padding: 24px;
+    line-height: 1.5;
+
+    .image-load-failed-icon {
+      width: 36px;
+      height: 36px;
+      color: var(--anzhiyu-orange, #e38100);
+      opacity: 0.6;
+    }
+
+    .image-load-failed-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--anzhiyu-secondtext, #999);
+    }
+
+    .image-load-failed-hint {
+      font-size: 11px;
+      opacity: 0.6;
+    }
+
+    .image-load-failed-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .image-load-failed-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 28px;
+      padding: 0 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: var(--anzhiyu-theme, #4259ef);
+      color: #fff;
+
+      &:hover {
+        opacity: 0.85;
+      }
+    }
+  }
+
+  // ---- 上传遮罩 ----
+  .image-upload-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgb(0 0 0 / 50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 4px;
+    z-index: 10;
+    color: #fff;
+    font-size: 13px;
+    pointer-events: none;
+  }
+
+  .image-upload-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgb(255 255 255 / 30%);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: imageUploadSpin 0.6s linear infinite;
+  }
+
+  @keyframes imageUploadSpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  // ---- 上传失败遮罩 ----
+  .image-upload-error-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgb(0 0 0 / 60%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 4px;
+    z-index: 10;
+    color: #fff;
+    padding: 16px;
+  }
+
+  .image-upload-error-icon {
+    width: 28px;
+    height: 28px;
+    color: #fbbf24;
+    flex-shrink: 0;
+  }
+
+  .image-upload-error-text {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .image-upload-error-detail {
+    font-size: 11px;
+    opacity: 0.7;
+    text-align: center;
+    max-width: 200px;
+    word-break: break-all;
+    line-height: 1.4;
+  }
+
+  .image-upload-error-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .image-upload-error-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 28px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+
+  .image-upload-error-btn-retry {
+    background: var(--anzhiyu-theme, #4259ef);
+    color: #fff;
+  }
+
+  .image-upload-error-btn-delete {
+    background: rgb(255 255 255 / 20%);
+    color: #fff;
+  }
+
+  // ---- 选中状态 ----
+  .image-node-view.is-selected .image-node-container {
+    outline: 2px solid var(--anzhiyu-theme, #4259ef);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  // ---- 调整手柄（6个：四角 + 左右中） ----
+  .image-resize-handle {
+    position: absolute;
+    z-index: 20;
+    background: #fff;
+    border: 2px solid var(--anzhiyu-theme, #4259ef);
+    transition:
+      transform 0.1s ease,
+      box-shadow 0.1s ease;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 12%);
+
+    &:hover {
+      transform: scale(1.3);
+      box-shadow: 0 2px 8px rgb(0 0 0 / 18%);
+    }
+
+    // 四角手柄：圆形，10x10
+    &.handle-nw,
+    &.handle-ne,
+    &.handle-sw,
+    &.handle-se {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    // 左右中间手柄：竖条，6x20，圆角
+    &.handle-e,
+    &.handle-w {
+      width: 6px;
+      height: 20px;
+      border-radius: 3px;
+    }
+
+    &.handle-nw {
+      top: -5px;
+      left: -5px;
+      cursor: nw-resize;
+
+      &:hover {
+        transform: scale(1.3) translate(-1px, -1px);
+      }
+    }
+
+    &.handle-ne {
+      top: -5px;
+      right: -5px;
+      cursor: ne-resize;
+
+      &:hover {
+        transform: scale(1.3) translate(1px, -1px);
+      }
+    }
+
+    &.handle-sw {
+      bottom: -5px;
+      left: -5px;
+      cursor: sw-resize;
+
+      &:hover {
+        transform: scale(1.3) translate(-1px, 1px);
+      }
+    }
+
+    &.handle-se {
+      bottom: -5px;
+      right: -5px;
+      cursor: se-resize;
+
+      &:hover {
+        transform: scale(1.3) translate(1px, 1px);
+      }
+    }
+
+    &.handle-e {
+      top: 50%;
+      right: -3px;
+      transform: translateY(-50%);
+      cursor: e-resize;
+
+      &:hover {
+        transform: translateY(-50%) scaleX(1.3);
+      }
+    }
+
+    &.handle-w {
+      top: 50%;
+      left: -3px;
+      transform: translateY(-50%);
+      cursor: w-resize;
+
+      &:hover {
+        transform: translateY(-50%) scaleX(1.3);
+      }
+    }
+  }
+
+  // ---- 图片描述 ----
+  .image-caption-area {
+    text-align: center;
+    font-size: 13px;
+    color: var(--anzhiyu-secondtext, #6b7280);
+    margin-top: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: text;
+    transition: background 0.2s;
+    min-height: 24px;
+    outline: none;
+    width: 100%;
+
+    &:hover {
+      background: var(--anzhiyu-card-bg-grey, #f0f2f5);
+    }
+
+    &:focus {
+      background: var(--anzhiyu-card-bg-grey, #f0f2f5);
+      box-shadow: 0 0 0 1px var(--anzhiyu-theme, #4259ef);
+    }
+
+    &.is-empty::before {
+      content: "添加图片描述";
+      color: var(--anzhiyu-secondtext, #999);
+      opacity: 0.5;
+    }
+  }
+
+  // ---- 浮动工具栏 ----
+  .image-floating-toolbar {
+    position: absolute;
+    top: -48px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 4px 5px;
+    background: rgb(255 255 255 / 92%);
+    border: 1px solid rgb(0 0 0 / 6%);
+    border-radius: 10px;
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 5%),
+      0 4px 16px -2px rgb(0 0 0 / 8%),
+      0 12px 32px -4px rgb(0 0 0 / 4%);
+    backdrop-filter: blur(16px) saturate(1.6);
+    z-index: 50;
+    white-space: nowrap;
+    animation: imageToolbarFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html.dark & .image-floating-toolbar {
+    background: rgb(30 30 34 / 88%);
+    border-color: rgb(255 255 255 / 8%);
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 20%),
+      0 4px 16px -2px rgb(0 0 0 / 25%),
+      0 12px 32px -4px rgb(0 0 0 / 15%);
+  }
+
+  @keyframes imageToolbarFadeIn {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(6px) scale(0.97);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+  }
+
+  .image-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 30px;
+    padding: 0 8px;
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 450;
+    color: var(--anzhiyu-fontcolor, #363636);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+    line-height: 1;
+
+    &:hover {
+      background: rgb(0 0 0 / 5%);
+    }
+
+    &:active {
+      background: rgb(0 0 0 / 8%);
+      transform: scale(0.97);
+    }
+
+    &.is-active {
+      background: var(--anzhiyu-theme-op, rgb(66 89 239 / 12%));
+      color: var(--anzhiyu-theme, #4259ef);
+    }
+
+    svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      stroke-width: 1.75;
+    }
+  }
+
+  html.dark & .image-toolbar-btn {
+    &:hover {
+      background: rgb(255 255 255 / 8%);
+    }
+
+    &:active {
+      background: rgb(255 255 255 / 12%);
+    }
+  }
+
+  .image-toolbar-divider {
+    width: 1px;
+    height: 16px;
+    background: rgb(0 0 0 / 8%);
+    margin: 0 3px;
+    flex-shrink: 0;
+    border-radius: 1px;
+  }
+
+  html.dark & .image-toolbar-divider {
+    background: rgb(255 255 255 / 10%);
+  }
+
+  // ---- 工具栏 Popover 内容 ----
+  .image-toolbar-popover {
+    padding: 10px 12px;
+    min-width: 200px;
+  }
+
+  .image-toolbar-popover-title {
+    font-size: 11px;
+    color: var(--anzhiyu-secondtext, #999);
+    margin-bottom: 8px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .image-toolbar-link-input {
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    background: var(--anzhiyu-card-bg-grey, #f5f6f8);
+    color: var(--anzhiyu-fontcolor, #363636);
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
+
+    &::placeholder {
+      color: var(--anzhiyu-secondtext, #999);
+      opacity: 0.6;
+    }
+
+    &:focus {
+      border-color: var(--anzhiyu-theme, #4259ef);
+      box-shadow: 0 0 0 2px var(--anzhiyu-theme-op-light, rgb(66 89 239 / 8%));
+      background: var(--anzhiyu-card-bg, #fff);
+    }
+  }
+
+  .image-toolbar-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--anzhiyu-fontcolor, #363636);
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      accent-color: var(--anzhiyu-theme, #4259ef);
+      width: 15px;
+      height: 15px;
+    }
+  }
+
+  .image-toolbar-size-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .image-size-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--anzhiyu-secondtext, #666);
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    input[type="number"] {
+      width: 88px;
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 450;
+      outline: none;
+      background: var(--anzhiyu-card-bg-grey, #f5f6f8);
+      color: var(--anzhiyu-fontcolor, #363636);
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+      appearance: textfield;
+      -moz-appearance: textfield;
+
+      &::-webkit-inner-spin-button,
+      &::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      &:focus {
+        border-color: var(--anzhiyu-theme, #4259ef);
+        box-shadow: 0 0 0 2px var(--anzhiyu-theme-op-light, rgb(66 89 239 / 8%));
+        background: var(--anzhiyu-card-bg, #fff);
+      }
+    }
+  }
+
+  // ---- 百分比预设按钮 ----
+  .image-size-presets {
+    display: flex;
+    margin-top: 10px;
+    border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .image-size-preset-btn {
+    flex: 1;
+    height: 32px;
+    border: none;
+    background: var(--anzhiyu-card-bg-grey, #f5f6f8);
+    color: var(--anzhiyu-fontcolor, #363636);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.12s ease;
+
+    & + & {
+      border-left: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+    }
+
+    &:hover {
+      background: var(--anzhiyu-theme-op, rgb(66 89 239 / 10%));
+      color: var(--anzhiyu-theme, #4259ef);
+    }
+
+    &:active {
+      background: var(--anzhiyu-theme-op, rgb(66 89 239 / 18%));
+    }
+  }
+
+  // ---- 下拉菜单项 ----
+  .image-toolbar-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    font-size: 13px;
+    color: var(--anzhiyu-fontcolor, #363636);
+    cursor: pointer;
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: var(--anzhiyu-card-bg-grey, #f0f2f5);
+    }
+
+    &:active {
+      background: rgb(0 0 0 / 6%);
+    }
+
+    .image-toolbar-menu-check {
+      width: 14px;
+      height: 14px;
+      color: var(--anzhiyu-theme, #4259ef);
+    }
+  }
+
+  // ---- 裁剪模式 ----
+
+  // 裁剪遮罩（暗化非裁剪区域）
+  .image-crop-mask {
+    position: absolute;
+    background: rgb(0 0 0 / 45%);
+    z-index: 15;
+    pointer-events: none;
+  }
+
+  // 裁剪区域边框（可拖拽平移）
+  .image-crop-border {
+    position: absolute;
+    border: 2px dashed #fff;
+    z-index: 16;
+    cursor: move;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 30%);
+  }
+
+  // 裁剪三分法网格线
+  .image-crop-grid-h,
+  .image-crop-grid-v {
+    position: absolute;
+    background: rgb(255 255 255 / 30%);
+  }
+
+  .image-crop-grid-h {
+    left: 0;
+    right: 0;
+    height: 1px;
+  }
+
+  .image-crop-grid-v {
+    top: 0;
+    bottom: 0;
+    width: 1px;
+  }
+
+  // 裁剪手柄
+  .image-crop-handle {
+    position: absolute;
+    z-index: 18;
+    background: #fff;
+    border: 2px solid var(--anzhiyu-theme, #4259ef);
+    box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+
+    // 四角手柄：L形角标
+    &.handle-nw,
+    &.handle-ne,
+    &.handle-sw,
+    &.handle-se {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+    }
+
+    // 左右手柄：竖条
+    &.handle-e,
+    &.handle-w {
+      width: 6px;
+      height: 24px;
+      border-radius: 3px;
+      transform: translate(-50%, -50%);
+    }
+
+    &.handle-nw {
+      transform: translate(-50%, -50%);
+      cursor: nw-resize;
+      border-radius: 4px 0 4px 0;
+      border-right: none;
+      border-bottom: none;
+      background: transparent;
+    }
+
+    &.handle-ne {
+      transform: translate(-50%, -50%);
+      cursor: ne-resize;
+      border-radius: 0 4px 0 4px;
+      border-left: none;
+      border-bottom: none;
+      background: transparent;
+    }
+
+    &.handle-sw {
+      transform: translate(-50%, -50%);
+      cursor: sw-resize;
+      border-radius: 0 4px 0 4px;
+      border-right: none;
+      border-top: none;
+      background: transparent;
+    }
+
+    &.handle-se {
+      transform: translate(-50%, -50%);
+      cursor: se-resize;
+      border-radius: 4px 0 4px 0;
+      border-left: none;
+      border-top: none;
+      background: transparent;
+    }
+
+    &.handle-e {
+      cursor: e-resize;
+    }
+
+    &.handle-w {
+      cursor: w-resize;
+    }
+  }
+
+  // 裁剪模式下的容器
+  .image-node-container.is-cropping {
+    cursor: crosshair;
+    user-select: none;
+    -webkit-user-drag: none;
+
+    img {
+      pointer-events: none;
+      -webkit-user-drag: none;
+    }
+  }
+
+  // 裁剪工具栏（确认/取消）
+  .image-crop-toolbar {
+    position: absolute;
+    top: -44px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgb(255 255 255 / 92%);
+    border: 1px solid rgb(0 0 0 / 6%);
+    border-radius: 10px;
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 5%),
+      0 4px 16px -2px rgb(0 0 0 / 8%);
+    backdrop-filter: blur(16px) saturate(1.6);
+    z-index: 50;
+    white-space: nowrap;
+    animation: imageToolbarFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html.dark & .image-crop-toolbar {
+    background: rgb(30 30 34 / 88%);
+    border-color: rgb(255 255 255 / 8%);
+  }
+
+  .image-crop-toolbar-btn {
+    height: 30px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .image-crop-toolbar-cancel {
+    background: var(--anzhiyu-card-bg-grey, #f0f2f5);
+    color: var(--anzhiyu-fontcolor, #363636);
+
+    &:hover {
+      background: var(--anzhiyu-card-border, #e3e8f7);
+    }
+  }
+
+  .image-crop-toolbar-confirm {
+    background: var(--anzhiyu-theme, #4259ef);
+    color: #fff;
+
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+}

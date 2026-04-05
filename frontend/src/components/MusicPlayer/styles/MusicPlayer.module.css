@@ -1,0 +1,68 @@
+.navMusic {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1009;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
+}
+
+.navMusic.musicHidden {
+  opacity: 0;
+  transform: translateX(-100%);
+}
+
+/* 当进入页脚区域时隐藏播放器 */
+.navMusic.inFooterArea {
+  bottom: -10px;
+  opacity: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 收起动画 */
+@keyframes playButtonCollapse {
+  0% {
+    opacity: 0.8;
+    transform: translateX(0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-100px) scale(1.5);
+  }
+}
+
+@keyframes playButtonExpand {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  100% {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    backdrop-filter: none;
+    border-radius: 50%;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+
+/* 收起动画状态 - 使用 :global 穿透 CSS module */
+.navMusic :global(.collapsing) [data-music-controls] {
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+.navMusic :global(.collapsing) [data-music-controls] :global(.playPauseBtn) {
+  z-index: 15;
+  animation: playButtonCollapse 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+@media (prefers-color-scheme: dark) {
+  .navMusic :global(.playlistContainer) {
+    background: rgb(40 40 40 / 95%);
+  }
+}

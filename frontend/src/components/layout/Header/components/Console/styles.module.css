@@ -1,0 +1,571 @@
+/* Console 中控台样式 */
+
+.console {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10010;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100dvh;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+.console.show {
+  pointer-events: all;
+  opacity: 1;
+}
+
+.console.show .buttonGroup {
+  opacity: 1;
+  transition-delay: 0.2s;
+  transform: translateY(0);
+}
+
+.console.show .consoleMask {
+  backdrop-filter: blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  transform: translateZ(0);
+  animation: 0.6s ease 0s 1 normal none running to_show;
+}
+
+.console.show .consoleContent > * {
+  pointer-events: auto;
+}
+
+.console.show .consoleCardGroup {
+  pointer-events: auto;
+}
+
+.console.show .consoleCardGroup {
+  opacity: 1;
+  transition-delay: 0.1s;
+  transform: translateY(0);
+}
+
+@keyframes to_show {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 控制台遮罩 - 点击关闭 */
+.consoleMask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 100vw;
+  height: 100dvh;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+:global(.dark) .consoleMask {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* 控制台内容 */
+.consoleContent {
+  position: fixed;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  width: 100dvw;
+  max-width: 1400px;
+  max-height: 800px;
+  padding-top: 30px;
+  color: var(--foreground);
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: 0.3s !important;
+}
+
+/* 卡片组 */
+.consoleCardGroup {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: calc(100% - 64px);
+  height: 800px;
+  max-height: calc(100dvh - 180px);
+  opacity: 0;
+  transition: 0.3s;
+  transform: translateY(20px);
+}
+
+.consoleCardGroupLeft {
+  width: 40%;
+  min-width: 300px;
+  max-width: 550px;
+  height: 100%;
+}
+
+.consoleCardGroupRight {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 60%;
+  min-width: 500px;
+  max-width: 900px;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 卡片基础样式 */
+.consoleCard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px 36px 36px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.05);
+}
+
+.cardNewestComments {
+  height: 100%;
+}
+
+/* 标题样式 */
+.authorContentItemTips {
+  margin-bottom: 0.625rem;
+  font-size: 0.75rem;
+  opacity: 0.8;
+  transition: 0.3s !important;
+  color: inherit;
+}
+
+.cardHorContent {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.authorContentItemTitle {
+  display: flex;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  transition: none !important;
+  color: inherit;
+}
+
+.goToRecentComments {
+  margin-left: auto;
+  color: var(--foreground) !important;
+}
+
+/* 评论列表 */
+.consoleRecentComments {
+  display: flex;
+  flex: 1;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+  overflow-y: scroll;
+}
+
+.consoleRecentComments::-webkit-scrollbar {
+  display: none;
+}
+
+.commentCard {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: space-between;
+  width: calc(100% / 2 - 4px);
+  padding: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.commentCard:hover {
+  border-color: var(--primary);
+}
+
+.commentInfo {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  min-height: 40px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.commentInfo img {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  object-fit: cover;
+  border-radius: 30px;
+}
+
+.commentInfo > div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+}
+
+.commentUser {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commentTime {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.commentContent {
+  display: -webkit-box;
+  flex-shrink: 0;
+  min-height: 48px;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.7;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  transition: 0.3s;
+  -webkit-box-orient: vertical;
+}
+
+.commentTitle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  min-height: 20px;
+  padding-top: 8px;
+  margin-top: auto;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--muted-foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.6;
+  transition: 0.3s;
+}
+
+.commentTitle svg {
+  flex-shrink: 0;
+}
+
+.noComments {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100px;
+  color: var(--muted-foreground);
+}
+
+/* 标签卡片 */
+.tags {
+  flex: 1;
+  min-height: 0;
+}
+
+.cardTagCloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: scroll;
+  transition: 0s;
+}
+
+.cardTagCloud::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cardTagCloud::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.cardTagCloud::-webkit-scrollbar-thumb {
+  background-color: var(--primary-op, rgba(66, 89, 239, 0.14));
+}
+
+.tagItem {
+  padding: 2px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--foreground);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition:
+    color 0.3s,
+    background 0s;
+}
+
+.tagItem:hover {
+  color: var(--primary-foreground) !important;
+  background: var(--primary);
+  box-shadow: 0 8px 12px -3px var(--primary-op, rgba(66, 89, 239, 0.14));
+}
+
+.noTags {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 2rem;
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+
+.tagItem sup {
+  position: relative;
+  top: -0.4rem;
+  font-size: 75%;
+  line-height: 0;
+  vertical-align: baseline;
+  opacity: 0.6;
+}
+
+/* 历史卡片 */
+.history {
+  flex-shrink: 0;
+  padding: 0;
+  margin-top: 8px;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.cardArchiveList {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cardArchiveListItem {
+  flex: 0 0 calc(25% - 6px);
+  height: 82px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: 0.3s;
+}
+
+.cardArchiveListItem:hover .cardArchiveListLink {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.cardArchiveListLink {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: 12px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.05);
+}
+
+.cardArchiveListDate {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.cardArchiveListCountGroup {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-items: baseline;
+}
+
+.cardArchiveListCount {
+  width: auto;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 0.9;
+  text-align: left;
+}
+
+.cardArchiveListCountUnit {
+  width: auto;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+
+/* 按钮组 */
+.buttonGroup {
+  display: flex;
+  justify-content: center;
+  width: fit-content;
+  opacity: 0;
+  transition: 0.3s;
+  transform: translateY(20px);
+}
+
+.consoleBtnItem {
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+}
+
+.consoleBtnItem:not(:last-child) {
+  margin-right: 0.5rem;
+}
+
+.consoleBtnItem button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--foreground);
+  cursor: pointer;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 60px;
+  outline: none;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.05);
+  transition:
+    color 0.3s,
+    background 0.3s,
+    filter 0.3s;
+}
+
+.consoleBtnItem button:hover {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.consoleBtnItem button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.consoleBtnItem.on button {
+  color: var(--primary-foreground);
+  background: var(--orange, #e38100);
+}
+
+.consoleBtnItem.on button:hover {
+  filter: brightness(1.2);
+}
+
+/* 主题切换图标动画 */
+.darkmodeSwitch {
+  position: relative;
+  overflow: hidden;
+}
+
+.themeIcon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.3s ease;
+}
+
+.sunIcon {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0);
+}
+
+.sunIcon.active {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+.moonIcon {
+  opacity: 0;
+  transform: rotate(90deg) scale(0);
+}
+
+.moonIcon.active {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+/* 响应式 */
+@media (max-width: 1024px) {
+  .consoleCardGroupRight {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    max-width: 900px;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .consoleCardGroup {
+    width: 100%;
+  }
+
+  .consoleCardGroupLeft {
+    display: none;
+  }
+
+  .cardArchiveListItem {
+    flex: 0 0 calc(50% - 4px);
+    height: 82px;
+  }
+}
+
+@media (max-width: 768px) {
+  .consoleCard {
+    padding: 24px;
+  }
+
+  .authorContentItemTitle {
+    font-size: 24px;
+  }
+
+  .cardArchiveListItem {
+    flex: 0 0 100%;
+    height: 82px;
+  }
+}

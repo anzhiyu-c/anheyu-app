@@ -1,0 +1,36 @@
+/* CustomSidebarBlocks - 自定义侧边栏块样式 */
+
+.customBlock {
+  position: relative;
+  padding: 1rem;
+  overflow: hidden;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.customBlock:hover {
+  box-shadow: var(--anzhiyu-shadow-main);
+}
+
+.customBlockTitle {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor);
+  border-bottom: 1px solid var(--anzhiyu-card-border, var(--border));
+}
+
+.customBlockContent img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 响应式 - 992px 以下隐藏 */
+@media (max-width: 992px) {
+  .customBlock {
+    display: none;
+  }
+}

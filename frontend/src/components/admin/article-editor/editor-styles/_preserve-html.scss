@@ -1,0 +1,27 @@
+// ============================================
+// PreserveHTML 样式
+// ============================================
+
+.tiptap .preserve-html-wrapper {
+  margin: 1em 0;
+  border: 1px dashed var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 8px;
+  padding: 0.5em;
+  position: relative;
+  user-select: none;
+
+  &::before {
+    content: "嵌入内容";
+    position: absolute;
+    top: -0.75em;
+    left: 1em;
+    background: var(--anzhiyu-card-bg, #fff);
+    padding: 0 0.5em;
+    font-size: 0.7em;
+    color: var(--anzhiyu-secondtext, #9ca3af);
+  }
+
+  &.ProseMirror-selectednode {
+    border-color: var(--anzhiyu-theme, #3b82f6);
+  }
+}

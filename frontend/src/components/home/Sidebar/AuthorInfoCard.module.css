@@ -1,0 +1,253 @@
+/* AuthorInfoCard - 用户信息卡片 */
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.cardInfo {
+  position: relative;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  contain: layout;
+}
+
+.cardInfo::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  content: "";
+  background: linear-gradient(
+    -25deg,
+    var(--anzhiyu-main),
+    var(--anzhiyu-main-op-deep),
+    var(--anzhiyu-main),
+    var(--anzhiyu-main-op-deep)
+  );
+  background-size: 400%;
+  animation: gradient 15s ease infinite;
+  will-change: background-position;
+}
+
+.cardContent {
+  position: relative;
+  min-height: 320px;
+  height: 320px;
+  padding: 1rem 1.2rem;
+}
+
+.cardInfo:hover .authorInfoAvatar,
+.cardInfo:hover .authorStatus {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.cardInfo:hover .authorInfoDescription {
+  opacity: 1;
+}
+
+/* 问候语/技能标签 */
+.authorInfoSayhi {
+  width: fit-content;
+  padding: 2px 8px;
+  margin: auto;
+  font-size: 12px;
+  color: var(--anzhiyu-white);
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  background: var(--anzhiyu-white-op);
+  border-radius: 12px;
+  transition: 0.3s;
+}
+
+.authorInfoSayhi:hover {
+  color: var(--anzhiyu-fontcolor);
+  background: var(--anzhiyu-card-bg);
+  transform: scale(1.15);
+}
+
+.authorInfoSayhi:active {
+  opacity: 0.8;
+  transform: scale(0.8);
+}
+
+/* 头像区域 */
+.authorInfoAvatar {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 118px;
+  height: 118px;
+  margin: 45px auto;
+  user-select: none;
+  transition: cubic-bezier(0.69, 0.39, 0, 1.21) 0.3s;
+  transform-origin: bottom;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: var(--style-border-avatar);
+  border-radius: 50%;
+  opacity: 0;
+  background: var(--anzhiyu-secondbg);
+  transition: opacity 0.6s ease;
+  animation: avatarFadeIn 0.6s ease forwards;
+}
+
+@keyframes avatarFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.authorStatus {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 33px;
+  height: 33px;
+  overflow: hidden;
+  background-color: var(--anzhiyu-white);
+  border-radius: 50%;
+  transition: 0.3s 0.2s;
+  transform: scale(1);
+}
+
+.gStatus {
+  width: 26px;
+  height: 26px;
+  border-radius: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  animation: statusFadeIn 0.6s ease 0.2s forwards;
+}
+
+@keyframes statusFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 描述信息 */
+.authorInfoDescription {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  width: 100%;
+  padding: 1rem 1.2rem;
+  color: var(--anzhiyu-white);
+  opacity: 0;
+  transition: 0.3s;
+}
+
+.authorInfoDescription div {
+  margin: 0.6rem 0;
+  line-height: 1.38;
+  color: rgb(255 255 255 / 80%);
+  text-align: justify;
+}
+
+.authorInfoDescription b {
+  color: #fff;
+}
+
+/* 底部信息 */
+.authorInfoBottomGroup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.authorInfoBottomGroupLeft {
+  text-decoration: none;
+}
+
+.authorInfoName {
+  margin-top: 0;
+  margin-bottom: 5px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--anzhiyu-white);
+  text-align: left;
+}
+
+.authorInfoDesc {
+  font-size: 12px;
+  line-height: 1;
+  color: var(--anzhiyu-white);
+  opacity: 0.6;
+}
+
+/* 社交图标 */
+.cardInfoSocialIcons {
+  display: flex;
+  flex-flow: row wrap;
+  min-width: 100px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.socialIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 0 10px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  font-size: 1.4em;
+  color: var(--anzhiyu-fontcolor);
+  background: var(--anzhiyu-white-op);
+  border-radius: 32px;
+  cursor: pointer;
+  transition: all 0.3s ease 0s;
+  text-decoration: none;
+}
+
+.socialIcon:hover {
+  color: var(--anzhiyu-main);
+  background: var(--anzhiyu-secondbg);
+  box-shadow: none;
+  transform: scale(1.1);
+}
+
+.socialIcon:hover .socialIconify {
+  color: var(--anzhiyu-main);
+}
+
+.socialIconImg {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.socialIconify {
+  width: 20px;
+  height: 20px;
+  color: var(--anzhiyu-white);
+}

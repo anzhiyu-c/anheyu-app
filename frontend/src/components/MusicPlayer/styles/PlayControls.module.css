@@ -1,0 +1,191 @@
+.musicControls {
+  position: absolute;
+  top: 0;
+  right: -150px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  width: 150px;
+  height: 100%;
+  padding: 0 10px;
+  border-radius: 0 20px 20px 0;
+  opacity: 0;
+  transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.musicControls.visible {
+  right: 0;
+  opacity: 1;
+}
+
+.controlBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  border-radius: 50% !important;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.controlBtn:hover {
+  background: rgb(255 255 255 / 20%);
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.controlBtn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.playPauseBtn {
+  position: relative;
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* 音量滑块弹出层（portal 渲染到 body） */
+.volumeSliderPopup {
+  --popup-bg: rgb(255 255 255 / 88%);
+  --popup-border: rgb(255 255 255 / 60%);
+  --popup-shadow: 0 8px 32px rgb(0 0 0 / 15%), 0 2px 8px rgb(0 0 0 / 8%);
+  --track-rail: rgb(0 0 0 / 8%);
+  --thumb-border: #667eea;
+
+  position: fixed;
+  z-index: 9999;
+  width: 40px;
+  height: 120px;
+  padding: 10px 8px;
+  background: var(--popup-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--popup-border);
+  border-radius: 20px;
+  box-shadow: var(--popup-shadow);
+  transform: translateX(-50%) translateY(-10px);
+  animation: volumeSliderIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+:global(html.dark) .volumeSliderPopup {
+  --popup-bg: rgb(30 30 40 / 85%);
+  --popup-border: rgb(255 255 255 / 8%);
+  --popup-shadow: 0 8px 32px rgb(0 0 0 / 40%);
+  --track-rail: rgb(255 255 255 / 12%);
+  --thumb-border: #a78bfa;
+}
+
+@keyframes volumeSliderIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px);
+  }
+}
+
+.volumeSliderPopup::before {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  content: "";
+  border-top: 8px solid var(--popup-bg);
+  border-right: 8px solid transparent;
+  border-left: 8px solid transparent;
+  transform: translateX(-50%);
+}
+
+.volumeSliderTrack {
+  position: relative;
+  width: 24px;
+  height: 100px;
+  margin: 0 auto;
+  border-radius: 12px;
+}
+
+/* 轨道底色 */
+.volumeSliderTrack::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  content: "";
+  background: var(--track-rail);
+  border-radius: 2px;
+  transform: translateX(-50%);
+}
+
+/* 音量填充指示条 */
+.volumeSliderFill {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  z-index: 1;
+  width: 4px;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--thumb-border), #a78bfa);
+  border-radius: 2px;
+  transform: translateX(-50%);
+}
+
+.volumeRange {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  outline: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  appearance: none;
+}
+
+.volumeRange::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  appearance: none;
+  cursor: pointer;
+  background: white;
+  border: 2px solid var(--thumb-border);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 15%);
+  transition: all 0.2s ease;
+}
+
+.volumeRange::-webkit-slider-thumb:hover {
+  box-shadow: 0 3px 10px rgb(0 0 0 / 25%);
+  transform: scale(1.15);
+}
+
+.volumeRange::-webkit-slider-track {
+  background: transparent;
+  border: none;
+}
+
+.volumeRange::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  background: white;
+  border: 2px solid var(--thumb-border);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 15%);
+  transition: all 0.2s ease;
+}
+
+.volumeRange::-moz-range-track {
+  background: transparent;
+  border: none;
+}

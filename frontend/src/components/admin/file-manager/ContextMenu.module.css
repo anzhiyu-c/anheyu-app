@@ -1,0 +1,67 @@
+.context-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2050;
+}
+
+.context-menu {
+  position: fixed;
+  z-index: 2060;
+  width: 220px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  box-shadow: var(--anzhiyu-shadow-border);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--anzhiyu-fontcolor);
+  cursor: pointer;
+  /* 仅用 CSS 做 hover：避免 Framer whileHover 对 background 插值产生整块脏色 */
+  transition:
+    background-color 0.12s ease,
+    transform 0.12s ease;
+}
+
+.menu-item:hover {
+  background: var(--anzhiyu-theme-op);
+  transform: translateX(2px);
+}
+
+.menu-item.danger:hover {
+  background: color-mix(in srgb, var(--anzhiyu-red) 14%, transparent);
+}
+
+.menu-item:focus {
+  outline: none;
+}
+
+.menu-item:focus-visible {
+  outline: 2px solid var(--anzhiyu-theme);
+  outline-offset: 2px;
+}
+
+.menu-item.danger:focus-visible {
+  outline-color: var(--anzhiyu-red);
+}
+
+.divider {
+  height: 1px;
+  margin: 6px 0;
+  background: var(--anzhiyu-card-border);
+}
+
+.danger {
+  color: var(--anzhiyu-red);
+}
+
+.menu-icon {
+  font-size: 16px;
+}

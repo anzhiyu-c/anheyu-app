@@ -1,0 +1,408 @@
+/* MobileMenu 移动端菜单样式 */
+
+.sidebarMenus {
+  position: fixed;
+  top: 2vh;
+  right: -100%;
+  z-index: 1010;
+  width: 300px;
+  height: 96vh;
+  padding: 20px 15px;
+  overflow-y: auto;
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: -2px 0 8px rgb(0 0 0 / 10%);
+  transition: right 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebarMenus::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebarMenus.open {
+  right: 10px;
+}
+
+/* 站点数据统计 */
+.siteData {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.dataItem {
+  text-align: center;
+}
+
+.dataItem.isCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dataItemLink {
+  width: 100%;
+}
+
+.dataItemLink a {
+  display: block;
+  padding: 15px 10px;
+  color: var(--foreground);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.dataItemLink a:hover {
+  box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+  transform: translateY(-2px);
+}
+
+.headline {
+  margin-bottom: 5px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.lengthNum {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* 标题样式 */
+.sidebarMenuItemTitle {
+  display: block;
+  padding-left: 5px;
+  font-size: 12px;
+  line-height: 3;
+  color: var(--muted-foreground);
+}
+
+/* 功能区域 */
+.sidebarMenuItem {
+  margin-bottom: 20px;
+}
+
+.darkmodeSwitchButton {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 15px;
+  color: var(--foreground);
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.darkmodeSwitchButton.isDark {
+  color: var(--primary-foreground);
+  background: var(--orange, #e38100);
+}
+
+.darkmodeSwitchButton svg {
+  font-size: 16px;
+  transition: transform 0.3s ease;
+}
+
+.darkmodeSwitchButton span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.darkmodeSwitchButton:active svg {
+  transform: scale(0.95);
+}
+
+/* 快捷菜单组 */
+.backMenuListGroups {
+  margin-bottom: 20px;
+}
+
+.backMenuListGroup {
+  margin-bottom: 20px;
+}
+
+.backMenuListTitle {
+  padding: 0 5px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.backMenuList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.backMenuItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  color: var(--foreground);
+  text-decoration: none;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.backMenuItem:hover {
+  transform: translateY(-2px);
+}
+
+.backMenuItemIcon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 6px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.backMenuItemIconFont {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border-radius: 0;
+  color: var(--foreground);
+}
+
+.backMenuItemText {
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* 菜单图标 */
+.menuIcon {
+  margin-right: 6px;
+  font-size: 1rem;
+}
+
+.menuIconImg {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.menuIconIconify {
+  font-size: 16px;
+  vertical-align: -0.125em;
+}
+
+/* 主菜单 */
+.menusItems {
+  margin-bottom: 25px;
+}
+
+.menuGroup {
+  margin-bottom: 15px;
+}
+
+.menuGroup:last-child {
+  margin-bottom: 0;
+}
+
+.menuGroupTitle {
+  padding: 0 5px;
+  margin: 0 0 12px 5px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.menuGroupList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.menuGroupItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 15px;
+  font-size: 12px;
+  color: var(--foreground);
+  text-decoration: none;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.menuGroupItem:hover {
+  color: var(--primary);
+  transform: scale(1.03);
+}
+
+.menuGroupItem svg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+/* 标签云 */
+.cardWidget {
+  padding: 0;
+  margin-bottom: 20px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.cardTagCloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cardTagCloud a {
+  display: inline-block;
+  padding: 4px 8px;
+  font-size: 1rem;
+  text-decoration: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.cardTagCloud a:hover {
+  color: var(--primary-foreground) !important;
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.cardTagCloud sup {
+  margin-left: 2px;
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.noTags {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.noTagsText {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted-foreground);
+  opacity: 0.8;
+}
+
+/* 网站信息 */
+.webinfo {
+  margin-bottom: 20px;
+}
+
+.webinfoItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 15px;
+  margin-bottom: 8px;
+  background: var(--background);
+  border-radius: 8px;
+}
+
+.webinfoItemTitle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--foreground);
+}
+
+.webinfoItemTitle svg {
+  font-size: 14px;
+}
+
+.itemName {
+  font-weight: 500;
+}
+
+.itemCount {
+  font-size: 13px;
+}
+
+/* 移动端遮罩 */
+.sidebarMask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1009;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+:global(.dark) .sidebarMask {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.sidebarMask.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+  .sidebarMenus {
+    width: 280px;
+  }
+
+  .siteData {
+    gap: 8px;
+  }
+
+  .dataItemLink a {
+    padding: 12px 8px;
+  }
+
+  .headline {
+    font-size: 13px;
+  }
+
+  .lengthNum {
+    font-size: 16px;
+  }
+
+  .backMenuList {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 6px;
+  }
+
+  .backMenuItem {
+    padding: 10px 6px;
+  }
+
+  .backMenuItemIcon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .backMenuItemText {
+    font-size: 11px;
+  }
+}

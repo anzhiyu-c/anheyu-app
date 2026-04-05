@@ -1,0 +1,194 @@
+/* CardToc 目录组件样式 - 参考 anheyu-app */
+
+.cardToc {
+  padding: 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  padding-left: 0.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.cardTitle svg {
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.count {
+  margin-left: auto;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border-radius: 9999px;
+}
+
+.tocContainer {
+  position: relative;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 自定义滚动条 - 与 anheyu-app 保持一致 */
+.tocContainer::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.tocContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tocContainer::-webkit-scrollbar-thumb {
+  background: var(--scrollbar, rgba(60, 60, 67, 0.2));
+  border-radius: 3px;
+}
+
+.tocContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover, rgba(60, 60, 67, 0.4));
+}
+
+/* 鼠标悬停时取消模糊 */
+.tocContainer:hover .tocItem {
+  filter: blur(0);
+  opacity: 1;
+}
+
+.tocList {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.tocItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 8px 8px 8px 12px;
+  overflow: hidden;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  border-radius: 8px;
+  transition:
+    color 0.2s ease-out,
+    background-color 0.2s ease-out,
+    font-size 0.2s ease-out,
+    filter 0.2s ease-out,
+    opacity 0.2s ease-out;
+}
+
+/* 非激活项的模糊效果 */
+.tocItem:not(.active) {
+  width: 100%;
+  cursor: pointer;
+  filter: blur(1px);
+  opacity: 0.6;
+}
+
+.tocItem:hover {
+  color: var(--primary);
+  background-color: var(--primary-op-light);
+}
+
+.tocItem.active {
+  font-weight: 600;
+  color: var(--primary);
+  background-color: var(--primary-op-light);
+}
+
+.tocText {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: transform 0.2s ease-out;
+}
+
+/* 激活指示器 */
+.indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 4px;
+  background-color: var(--primary);
+  border-radius: 4px;
+  opacity: 0;
+  transition:
+    top 0.2s cubic-bezier(0, 1, 0.5, 1),
+    height 0.2s cubic-bezier(0, 1, 0.5, 1),
+    opacity 0.2s ease-in-out;
+  pointer-events: none;
+}
+
+/* 不同层级的缩进和字体大小 - 使用 :global() 来匹配 data 属性 */
+.tocItem:global([data-level="1"]) {
+  padding-left: 0.8rem;
+  font-size: 0.95rem;
+}
+.tocItem:global([data-level="1"]).active {
+  font-size: 1.1rem;
+}
+
+.tocItem:global([data-level="2"]) {
+  padding-left: 1.6rem;
+  font-size: 0.9rem;
+}
+.tocItem:global([data-level="2"]).active {
+  font-size: 1.05rem;
+}
+
+.tocItem:global([data-level="3"]) {
+  padding-left: 2.4rem;
+  font-size: 0.85rem;
+}
+.tocItem:global([data-level="3"]).active {
+  font-size: 1rem;
+}
+
+.tocItem:global([data-level="4"]) {
+  padding-left: 3.2rem;
+  font-size: 0.8rem;
+}
+.tocItem:global([data-level="4"]).active {
+  font-size: 0.95rem;
+}
+
+.tocItem:global([data-level="5"]) {
+  padding-left: 4rem;
+  font-size: 0.75rem;
+}
+.tocItem:global([data-level="5"]).active {
+  font-size: 0.9rem;
+}
+
+.tocItem:global([data-level="6"]) {
+  padding-left: 4.8rem;
+  font-size: 0.7rem;
+}
+.tocItem:global([data-level="6"]).active {
+  font-size: 0.85rem;
+}
+
+/* 响应式 */
+@media (max-width: 992px) {
+  .cardToc {
+    display: none;
+  }
+}

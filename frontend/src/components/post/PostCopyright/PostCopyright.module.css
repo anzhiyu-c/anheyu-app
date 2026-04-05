@@ -1,0 +1,763 @@
+/* 文章版权信息样式 - 与 anheyu-app 一致 */
+
+.postCopyright {
+  position: relative;
+  padding: 34px 12px 20px;
+  margin: 80px 0 30px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: 0.3s;
+  text-align: center;
+}
+
+/* 作者头像 */
+.authorAvatar {
+  position: absolute;
+  top: -33px;
+  left: calc(50% - 33px);
+  width: 66px;
+  height: 66px;
+  margin: auto;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 66px;
+  box-shadow: 0 8px 12px -3px color-mix(in srgb, var(--primary) 30%, transparent);
+  transition: all 0.2s ease 0s;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: all 0.2s ease 0s;
+}
+
+.authorAvatar:hover {
+  box-shadow: inset 0 0 0 10px var(--primary);
+  transform: scale(1.05);
+}
+
+.authorAvatar:hover .avatarImage {
+  overflow: hidden;
+  border-radius: 66px;
+  transform: scale(0.8);
+}
+
+/* 作者名称 */
+.authorName {
+  margin-top: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--foreground);
+  text-align: center;
+}
+
+.authorLink {
+  color: var(--foreground);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.authorLink:hover {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* 作者描述 */
+.authorDesc {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+/* 按钮组 */
+.buttonGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  width: 100%;
+  margin-top: 8px;
+  user-select: none;
+}
+
+/* 打赏容器 */
+.reward {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-top: 0;
+}
+
+/* 按钮通用样式 */
+.rewardButton,
+.subscribeButton,
+.shareButton {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0.6rem 1.5rem;
+  font-weight: bold;
+  font-size: 14px;
+  color: white;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  transition: all 0.4s ease 0s;
+}
+
+.rewardButton {
+  background: #d80020;
+}
+
+.rewardButton svg {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.subscribeButton {
+  background: #57bd6a;
+}
+
+.shareButton {
+  background: #3e86f6;
+}
+
+.rewardButton:hover:not(:disabled),
+.subscribeButton:hover:not(:disabled),
+.shareButton:hover:not(:disabled) {
+  background: var(--primary);
+  box-shadow: none;
+}
+
+.rewardButton:disabled,
+.subscribeButton:disabled,
+.shareButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.shareButton.loading {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* 打赏面板 */
+.rewardMain {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 102;
+  display: flex;
+  width: fit-content;
+  padding: 0 0 15px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* 移动端打赏面板 */
+@media (max-width: 768px) {
+  .rewardMain {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100%;
+    padding: 0;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+.rewardAll {
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  margin: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .rewardAll {
+    width: 100%;
+    max-height: 80vh;
+    padding: 1.5rem 1rem;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.rewardTitle {
+  font-weight: 700;
+  color: #d80020;
+}
+
+.rewardGroup {
+  display: flex;
+  margin-top: 0.625rem;
+  padding: 0;
+  list-style: none;
+}
+
+.rewardItem {
+  display: inline-block;
+  padding: 0 8px;
+  text-align: center;
+  vertical-align: top;
+  list-style-type: none;
+}
+
+.rewardItem:first-child .qrCode {
+  border-color: #57bd6a;
+}
+
+.rewardItem:last-child .qrCode {
+  border-color: #3e86f6;
+}
+
+.qrCode {
+  width: 130px;
+  height: 130px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .qrCode {
+    width: 140px;
+    height: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .qrCode {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+.qrCodeDesc {
+  width: 130px;
+  padding-top: 0;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+@media (max-width: 768px) {
+  .qrCodeDesc {
+    width: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .qrCodeDesc {
+    width: 120px;
+  }
+}
+
+.rewardMainBtn {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 16px);
+  padding: 8px 0;
+  margin: 8px;
+  color: var(--foreground);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.rewardMainBtn:hover {
+  color: white;
+  background-color: #d80020;
+  background-image: url("https://upload-bbs.miyoushe.com/upload/2025/08/10/125766904/dfc8878f7e65451f068d69830a4ff39c_2744970941687453951.gif");
+  background-size: cover;
+  background-position: center;
+  border-color: #d80020;
+  box-shadow: 0 8px 12px -3px rgba(216, 0, 32, 0.3);
+}
+
+.rewardText {
+  margin-bottom: 0;
+  font-weight: 700;
+}
+
+.rewardDec {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* 遮罩层 */
+.quitBox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 101;
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 版权说明 */
+.copyrightNotice {
+  padding-left: 0;
+  margin: 1rem 0 0.5rem;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  text-align: center;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+/* 链接样式 - 与文章内超链接样式一致 */
+.copyrightNotice a {
+  padding: 0 0.2rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  text-decoration: none;
+  border-bottom: dotted 2px var(--primary);
+  transition: all 0.2s ease 0s;
+}
+
+.copyrightNotice a:hover {
+  color: var(--anzhiyu-white, #fff);
+  text-decoration: none;
+  background: var(--primary);
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-bottom-color: transparent;
+}
+
+/* 弹窗遮罩 */
+.dialogOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.2s ease;
+}
+
+/* 弹窗 */
+.dialog {
+  position: relative;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  animation: dialogSlideIn 0.3s ease;
+}
+
+/* 海报弹窗 - 更宽 */
+.posterDialog {
+  max-width: 720px;
+}
+
+@keyframes dialogSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dialogHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.dialogClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.dialogClose:hover {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+.dialogContent {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(90vh - 60px);
+}
+
+/* 操作区域 */
+.actionSection {
+  margin-bottom: 1.5rem;
+}
+
+.actionSection:last-child {
+  margin-bottom: 0;
+}
+
+.sectionLabel {
+  margin-bottom: 0.6rem;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.urlInput {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--foreground);
+  cursor: pointer;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.urlInput:hover {
+  border-color: var(--primary);
+}
+
+/* 分享按钮组 */
+.shareButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.shareBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.shareBtn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.shareBtn svg {
+  font-size: 18px;
+}
+
+.shareBtnWeibo {
+  background: #e6162d;
+}
+
+.shareBtnWeibo:hover {
+  background: #d1142a;
+}
+
+.shareBtnQQ {
+  background: #12b7f5;
+}
+
+.shareBtnQQ:hover {
+  background: #0fa5db;
+}
+
+.shareBtnQzone {
+  background: #fcee21;
+  color: #333;
+}
+
+.shareBtnQzone:hover {
+  background: #f5e31a;
+}
+
+/* 订阅弹窗内容 */
+.subscribeDialogContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 1.5rem 1.5rem;
+  text-align: center;
+}
+
+.subscribeDesc {
+  margin: 0 0 1.5rem;
+  font-size: 15px;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+.subscribeInput {
+  width: 100%;
+  max-width: 300px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.subscribeInput:hover,
+.subscribeInput:focus {
+  border-color: var(--primary);
+}
+
+.subscribeInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.codeInputWrapper {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 300px;
+  margin-top: 1rem;
+}
+
+.codeInputWrapper .subscribeInput {
+  flex: 1;
+  width: auto;
+  max-width: none;
+}
+
+.sendCodeBtn {
+  width: 110px;
+  flex-shrink: 0;
+  padding: 12px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  background: var(--primary);
+  border: none;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.sendCodeBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.sendCodeBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.subscribeActions {
+  margin-top: 1.5rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.subscribeSubmitBtn {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  background: var(--primary);
+  border: none;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.subscribeSubmitBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.subscribeSubmitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.subscribeTips {
+  margin: 1rem 0 0;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  opacity: 0.7;
+}
+
+/* 海报弹窗内容 */
+.posterDialogContent {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+@media (max-width: 768px) {
+  .posterDialogContent {
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+}
+
+.posterPreviewSide {
+  flex: 0 0 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+@media (max-width: 768px) {
+  .posterPreviewSide {
+    flex: 1;
+    width: 100%;
+  }
+}
+
+.posterImageWrapper {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.posterImage {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.posterLoading {
+  padding: 3rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+
+.posterActionsSide {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.5rem 0;
+  justify-content: center;
+}
+
+/* 下载按钮 */
+.downloadBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: #4a4a4a;
+  border: none;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.downloadBtn:hover:not(:disabled) {
+  background: #3a3a3a;
+}
+
+.downloadBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

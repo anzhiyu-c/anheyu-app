@@ -1,0 +1,236 @@
+/* 移动/复制弹窗 - 遮罩层 */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  background: rgb(0 0 0 / 50%);
+  backdrop-filter: blur(12px) saturate(180%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 弹窗主体 */
+.modal {
+  width: 85vw;
+  max-width: 1100px;
+  height: 80vh;
+  max-height: 700px;
+  background: var(--anzhiyu-card-bg);
+  border-radius: 20px;
+  border: var(--style-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow:
+    0 32px 64px -16px rgb(0 0 0 / 25%),
+    0 0 0 1px rgb(255 255 255 / 5%) inset;
+}
+
+.modal-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  min-height: 0;
+}
+
+/* 左侧目录树 - 精致滚动条 */
+.tree-aside {
+  border-right: var(--style-border);
+  overflow: auto;
+  padding: 16px;
+  background: var(--anzhiyu-secondbg);
+}
+
+.tree-aside::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tree-aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tree-aside::-webkit-scrollbar-thumb {
+  background: var(--anzhiyu-scrollbar);
+  border-radius: 3px;
+}
+
+.tree-aside::-webkit-scrollbar-thumb:hover {
+  background: var(--anzhiyu-theme-op);
+}
+
+/* 目录树节点 */
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--anzhiyu-fontcolor);
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  margin-bottom: 2px;
+}
+
+.tree-node:hover {
+  background: var(--anzhiyu-theme-op);
+  color: var(--anzhiyu-theme);
+  transform: translateX(2px);
+}
+
+.tree-node:active {
+  transform: translateX(2px) scale(0.98);
+}
+
+.tree-node.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.tree-node svg {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.tree-children {
+  margin-left: 16px;
+  padding-left: 12px;
+  border-left: 2px solid var(--anzhiyu-card-border);
+}
+
+/* 主内容区 */
+.main-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 16px;
+  gap: 12px;
+}
+
+/* 底部操作栏 */
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-top: var(--style-border);
+  background: var(--anzhiyu-secondbg);
+}
+
+.target-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--anzhiyu-secondtext);
+}
+
+.target-path {
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor);
+  padding: 4px 12px;
+  background: var(--anzhiyu-theme-op);
+  border-radius: 6px;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.footer-actions button {
+  position: relative;
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: var(--style-border);
+  background: var(--anzhiyu-card-bg);
+  color: var(--anzhiyu-fontcolor);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.footer-actions button:hover {
+  background: var(--anzhiyu-secondbg);
+  transform: translateY(-1px);
+}
+
+.footer-actions button:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.1s;
+}
+
+.footer-actions button.primary {
+  background: linear-gradient(135deg, var(--anzhiyu-theme), var(--anzhiyu-theme-op-deep));
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px -2px var(--anzhiyu-theme-op);
+}
+
+.footer-actions button.primary:hover {
+  box-shadow: 0 6px 16px -2px var(--anzhiyu-theme-op);
+}
+
+.footer-actions button.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.primary {
+  background: linear-gradient(135deg, var(--anzhiyu-theme), var(--anzhiyu-theme-op-deep));
+  color: #fff;
+  border: none;
+}
+
+/* 深色模式微调 */
+:global(html.dark) .modal {
+  box-shadow:
+    0 32px 64px -16px rgb(0 0 0 / 60%),
+    0 0 0 1px rgb(255 255 255 / 8%) inset;
+}
+
+/* 响应式布局 */
+@media screen and (width <= 768px) {
+  .modal {
+    width: 95vw;
+    height: 90vh;
+    border-radius: 16px;
+  }
+
+  .modal-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 200px 1fr;
+  }
+
+  .tree-aside {
+    border-right: none;
+    border-bottom: var(--style-border);
+    max-height: 200px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .footer-actions {
+    justify-content: stretch;
+  }
+
+  .footer-actions button {
+    flex: 1;
+  }
+}

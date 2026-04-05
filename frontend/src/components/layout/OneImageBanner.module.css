@@ -1,0 +1,171 @@
+/* OneImageBanner */
+
+.oneImageBanner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
+  color: #fff;
+  text-align: center;
+  /* 与 .frontend-layout 同理：fixed + z-index:-1 的视频背景需落在本层叠上下文内 */
+  isolation: isolate;
+}
+
+.videoBackground {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  object-fit: cover;
+  z-index: -1;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  will-change: opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.videoSoundControl {
+  position: absolute;
+  bottom: 120px;
+  right: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: #fff;
+  background: rgb(0 0 0 / 50%);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.8s 0.8s ease-out backwards;
+  z-index: 10;
+}
+
+.videoSoundControl:hover {
+  background: rgb(0 0 0 / 70%);
+  transform: scale(1.1);
+}
+
+.videoSoundControl span {
+  display: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.videoSoundControlHint {
+  width: auto;
+  padding: 10px 20px;
+  border-radius: 25px;
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.videoSoundControlHint:hover {
+  transform: translateX(-50%) scale(1.05);
+}
+
+.videoSoundControlHint span {
+  display: inline;
+}
+
+.siteInfo {
+  margin-bottom: 60px;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.siteTitle {
+  margin: 0 0 20px;
+  font-size: 3.5rem;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgb(0 0 0 / 30%);
+  animation: fadeInUp 0.8s 0.2s ease-out backwards;
+}
+
+.siteSubtitle {
+  font-size: 1.5rem;
+  font-weight: 300;
+  text-shadow: 1px 1px 2px rgb(0 0 0 / 30%);
+  animation: fadeInUp 0.8s 0.4s ease-out backwards;
+}
+
+.typedCursor {
+  display: inline-block;
+  margin-left: 4px;
+  font-weight: 400;
+  animation: blink 1s infinite;
+}
+
+.scrollDown {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #fff;
+  animation: fadeInUp 0.8s 0.6s ease-out backwards;
+}
+
+.scrollDownIcon {
+  position: relative;
+  text-shadow: 1px 1px 2px rgb(0 0 0 / 30%);
+  animation: scrollDownBounce 2s infinite;
+}
+
+@media (max-width: 768px) {
+  .siteTitle {
+    font-size: 2.5rem;
+  }
+
+  .siteSubtitle {
+    font-size: 1.2rem;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes scrollDownBounce {
+  0% {
+    top: 0;
+    opacity: 0.4;
+  }
+  50% {
+    top: -16px;
+    opacity: 1;
+  }
+  100% {
+    top: 0;
+    opacity: 0.4;
+  }
+}

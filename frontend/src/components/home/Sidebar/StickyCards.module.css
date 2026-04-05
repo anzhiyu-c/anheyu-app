@@ -1,0 +1,273 @@
+/* StickyCards - 粘性侧边栏卡片 */
+
+.stickyContainer {
+  position: sticky;
+  top: calc(60px + 0.625rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cardWidget {
+  position: relative;
+  padding: 1rem;
+  overflow: hidden;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 12px;
+  /* 与旧版一致：仅过渡边框，避免 transition: all + 大阴影产生「抬起」观感 */
+  transition: border-color 0.3s ease;
+}
+
+.cardWidget:hover {
+  border: var(--style-border-hover);
+}
+
+/* Section Header */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor);
+}
+
+.sectionSubtitle {
+  font-size: 0.75rem;
+  color: var(--anzhiyu-secondtext);
+}
+
+/* Divider */
+.divider {
+  position: relative;
+  display: flex;
+  height: 0;
+  margin: 1rem 10px;
+  background: transparent;
+  border: none;
+  border: 1px dashed var(--primary-op);
+}
+
+/* Loading & Empty Tips */
+.loadingTip,
+.emptyTip {
+  padding: 1rem 0;
+  font-size: 14px;
+  color: var(--anzhiyu-secondtext);
+  text-align: center;
+}
+
+/* ========== Tags Card ========== */
+.cardTags {
+  width: 100%;
+}
+
+.cardContent {
+  width: 100%;
+}
+
+.cardTagCloud {
+  position: relative;
+  display: flex;
+  flex-flow: row wrap;
+  gap: 4px;
+  max-height: 360px;
+  overflow: hidden;
+}
+
+.cardTagCloud.isOverflow::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 150px;
+  pointer-events: none;
+  content: "";
+  background-image: linear-gradient(to top, var(--anzhiyu-card-bg), transparent);
+}
+
+.tagLink {
+  padding: 0 0.375rem;
+  font-size: 1rem;
+  color: var(--anzhiyu-fontcolor);
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+/* 高亮标签样式 */
+.tagLink.isHighlight {
+  font-weight: bold;
+  color: var(--anzhiyu-theme);
+}
+
+.tagLink:hover {
+  color: var(--anzhiyu-card-bg);
+  background: var(--anzhiyu-lighttext);
+  border-radius: 4px;
+  box-shadow: var(--anzhiyu-shadow-theme);
+}
+
+.tagLink.isSelected {
+  color: var(--anzhiyu-white);
+  background: var(--anzhiyu-main);
+  border-radius: 4px;
+}
+
+.tagLink sup {
+  margin-left: 2px;
+  font-size: 0.7em;
+  opacity: 0.6;
+}
+
+.cardFooter {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.viewAllButton {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 4px 0;
+  font-size: 14px;
+  color: var(--anzhiyu-fontcolor);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  background: var(--anzhiyu-secondbg);
+  border: var(--style-border-always);
+  border-radius: 8px;
+  box-shadow: var(--anzhiyu-shadow-border);
+  transition: all 0.2s;
+}
+
+.viewAllButton:hover {
+  color: var(--anzhiyu-white);
+  background-color: var(--anzhiyu-theme);
+  border-color: var(--anzhiyu-theme);
+  box-shadow: var(--anzhiyu-shadow-theme);
+}
+
+/* ========== Archives Card ========== */
+.cardArchives {
+  width: 100%;
+}
+
+.archiveList {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.archiveItem {
+  flex: 0 0 48%;
+  width: 100%;
+}
+
+.archiveLink {
+  display: flex;
+  flex-direction: column;
+  padding: 3px 10px;
+  margin: 4px 0;
+  color: var(--anzhiyu-fontcolor);
+  text-decoration: none;
+  border: var(--style-border);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.archiveLink:hover {
+  color: var(--anzhiyu-white);
+  background-color: var(--anzhiyu-main);
+}
+
+.archiveDate {
+  flex: inherit;
+  width: auto;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.6;
+}
+
+.archiveCountGroup {
+  display: flex;
+  align-items: baseline;
+}
+
+.archiveCountGroup span:last-child {
+  width: fit-content;
+  margin-left: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archiveCount {
+  overflow: hidden;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 2;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ========== WebInfo Card ========== */
+.cardWebinfo {
+  width: 100%;
+  padding-left: 10px;
+}
+
+.webinfo {
+  min-height: 3rem;
+  padding: 0.2rem 0;
+}
+
+.webinfoItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.9rem;
+}
+
+.webinfoItemTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--anzhiyu-fontcolor);
+}
+
+.webinfoItemTitle svg {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.itemName {
+  font-size: 0.9rem;
+}
+
+.itemCount {
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor);
+}
+
+/* 响应式 - 992px 以下隐藏 */
+@media (max-width: 992px) {
+  .stickyContainer {
+    display: none;
+  }
+}

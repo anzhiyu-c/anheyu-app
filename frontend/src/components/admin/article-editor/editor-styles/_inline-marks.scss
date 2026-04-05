@@ -1,0 +1,58 @@
+// ============================================
+// 内联样式 Marks（与文章详情一致）
+// ============================================
+
+.tiptap {
+  .inline-underline {
+    text-decoration: underline;
+    text-decoration-color: var(--anzhiyu-theme, #3b82f6);
+    text-underline-offset: 4px;
+  }
+
+  .inline-emphasis-mark {
+    text-emphasis: filled circle;
+    text-emphasis-position: under left;
+  }
+
+  .inline-wavy {
+    text-decoration: underline wavy;
+    text-decoration-color: var(--anzhiyu-theme, #3b82f6);
+    text-underline-offset: 3px;
+  }
+
+  .inline-delete {
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    opacity: 0.7;
+  }
+
+  .inline-kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    font-family: Monaco, Menlo, Consolas, monospace;
+    font-size: 0.85em;
+    line-height: 1.4;
+    color: var(--anzhiyu-fontcolor, var(--foreground));
+    background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+    border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+    border-radius: 4px;
+    box-shadow:
+      0 1px 0 rgba(0, 0, 0, 0.2),
+      inset 0 0 0 2px var(--anzhiyu-card-bg, #fff);
+  }
+
+  .inline-password {
+    padding: 2px 4px;
+    color: transparent;
+    cursor: pointer;
+    user-select: none;
+    background: rgb(161, 161, 161);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      color: var(--anzhiyu-fontcolor, var(--foreground));
+      background: none;
+    }
+  }
+}

@@ -1,0 +1,496 @@
+/* 文章统计页面 — 1:1 复刻 anheyu-app */
+
+.page {
+  max-width: 1400px;
+  min-height: 400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* ---------- 页面头部 ---------- */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 14px;
+  color: var(--foreground);
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.backBtn:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+.backBtn svg {
+  width: 16px;
+  height: 16px;
+}
+.pageTitle {
+  margin: 0;
+  font-size: 1.75em;
+  font-weight: 700;
+  color: var(--foreground);
+  text-align: center;
+}
+.headerSpacer {
+  width: 80px;
+}
+
+/* ---------- 加载 / 错误 ---------- */
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--muted-foreground);
+}
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 1rem;
+  border: 3px solid color-mix(in srgb, var(--primary) 20%, transparent);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.errorIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+.retryBtn {
+  margin-top: 1rem;
+  padding: 0.5rem 1.5rem;
+  font-size: 14px;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.retryBtn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* ---------- 数据容器 ---------- */
+.statisticsContent {
+  animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- 概览卡片 ---------- */
+.overviewCards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+@media (max-width: 1024px) {
+  .overviewCards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .overviewCards {
+    grid-template-columns: 1fr;
+  }
+}
+.overviewCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+  animation: cardPopIn 0.5s ease backwards;
+}
+.overviewCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+}
+@keyframes cardPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.cardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.cardIcon svg {
+  width: 24px;
+  height: 24px;
+}
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.cardValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1;
+}
+.cardLabel {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+/* ---------- 图表网格 ---------- */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+@media (max-width: 768px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+.chartCard {
+  padding: 1.5rem;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  animation: cardFadeIn 0.5s ease backwards;
+}
+.chartTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.chartTitle svg {
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
+}
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- 底部网格 ---------- */
+.bottomGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+@media (max-width: 768px) {
+  .bottomGrid {
+    grid-template-columns: 1fr;
+  }
+}
+.listCard {
+  padding: 1.5rem;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  animation: cardFadeIn 0.5s ease backwards;
+}
+.listCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.listCardTitle svg {
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
+}
+
+/* ---------- 热门文章 ---------- */
+.topArticles {
+  min-height: 200px;
+}
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--muted-foreground);
+}
+.articleList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.articleItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--muted, #f4f4f5);
+  border-radius: 8px;
+  transition: all 0.3s;
+  text-decoration: none;
+  color: inherit;
+}
+.articleItem:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  transform: translateX(4px);
+}
+.rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  background: var(--card, #fff);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.rankGold {
+  color: #fff;
+  background: linear-gradient(135deg, #ffd700, #ffb800);
+}
+.rankSilver {
+  color: #fff;
+  background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+}
+.rankBronze {
+  color: #fff;
+  background: linear-gradient(135deg, #cd7f32, #b87333);
+}
+.articleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+.articleTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.articleViews {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.articleViews svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ---------- 标签云 ---------- */
+.tagCloud {
+  min-height: 200px;
+}
+.tagsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.tagItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.tagItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.tagName {
+  font-weight: 500;
+}
+.tagCount {
+  font-size: 0.75em;
+  opacity: 0.8;
+}
+
+/* ---------- 分类饼图 (CSS) ---------- */
+.categoryChart {
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+@media (max-width: 480px) {
+  .categoryChart {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+.pieContainer {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+}
+.pieCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.pieCenterValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1;
+}
+.pieCenterLabel {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
+.legendList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  color: var(--foreground);
+}
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.legendCount {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  padding-left: 1rem;
+}
+
+/* ---------- 发布趋势 (CSS bars) ---------- */
+.trendChart {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  /* 柱顶数字 position: absolute 向上偏移，避免被裁切 */
+  padding-top: 0.5rem;
+  overflow: visible;
+}
+.trendBars {
+  display: flex;
+  /* stretch：每列占满图表高度，子元素 height:% 相对列高计算；flex-end 会让列高≈内容高度导致柱子几乎为 0 */
+  align-items: stretch;
+  gap: 4px;
+  flex: 1;
+  min-height: 220px;
+  padding-bottom: 2rem;
+  position: relative;
+}
+.trendBarWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 0;
+}
+.trendBar {
+  width: 100%;
+  max-width: 48px;
+  background: linear-gradient(to top, rgba(59, 130, 246, 0.35), rgba(59, 130, 246, 0.9));
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s;
+  /* 有数据时保证肉眼可见（极小占比时仍有一截柱形） */
+  min-height: 4px;
+  position: relative;
+  box-sizing: border-box;
+}
+.trendBar:hover {
+  background: linear-gradient(to top, rgba(59, 130, 246, 0.5), rgba(59, 130, 246, 1));
+}
+.trendBarValue {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+  opacity: 1;
+  pointer-events: none;
+}
+.trendBarLabel {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  margin-top: 6px;
+  white-space: nowrap;
+}

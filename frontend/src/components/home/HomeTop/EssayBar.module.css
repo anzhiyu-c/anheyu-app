@@ -1,0 +1,125 @@
+/* 即刻条样式 */
+.essayBarContainer {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: calc(1400px - 3rem);
+  height: 50px;
+  padding: 0.5rem 1rem;
+  margin: 0 auto;
+  font-weight: 700;
+  color: var(--foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.essayLogo {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--foreground);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.essayLogo:hover {
+  color: var(--primary);
+}
+
+.essayLogoIcon {
+  stroke: currentColor;
+  stroke-width: 20;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+}
+
+.essayCarouselWrapper {
+  flex: 1;
+  height: 30px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.essayCarouselLink {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+}
+
+.essayCarousel {
+  width: 100%;
+  transition: transform 1s ease;
+}
+
+.essayItem {
+  width: 100%;
+  height: 30px;
+  padding: 0 0.5rem;
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 30px;
+  color: var(--foreground);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+.essayItem:hover {
+  color: var(--primary);
+}
+
+.essayMoreBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.essayMoreBtn:hover {
+  color: var(--primary);
+  transform: translateX(4px);
+}
+
+.essayLoadingPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+@media (max-width: 1400px) {
+  .essayBarContainer {
+    max-width: calc(100% - 3rem);
+  }
+}
+
+@media (max-width: 1200px) {
+  .essayBarContainer {
+    width: auto;
+    max-width: 100%;
+    margin: 0 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .essayBarContainer {
+    padding: 0 1rem;
+    margin: 0 1rem;
+  }
+
+  .essayMoreBtn {
+    font-size: 1.125rem;
+  }
+}

@@ -1,0 +1,32 @@
+@keyframes coverRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.albumCover {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 2;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  background-color: rgb(255 255 255 / 10%);
+  background-position: center;
+  background-size: cover;
+  border: var(--style-border-always);
+  border-color: transparent;
+  border-radius: 15px;
+  transition: all 0.4s ease;
+  animation: coverRotate 8s linear infinite paused;
+}
+
+.albumCover.playing {
+  box-shadow: rgb(255 255 255 / 46%) 0 0 5.67781px 0;
+  animation-play-state: running;
+}

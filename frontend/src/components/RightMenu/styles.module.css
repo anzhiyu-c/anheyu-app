@@ -1,0 +1,110 @@
+/* 右键菜单 - 1:1 移植自 anheyu-app RightMenu/index.vue */
+
+@keyframes menuShow {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes menuHide {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9) translateY(0);
+  }
+}
+
+.rightMenu {
+  position: fixed;
+  z-index: 9999;
+  padding: 8px;
+  font-size: 14px;
+  color: var(--anzhiyu-fontcolor);
+  background-color: var(--anzhiyu-maskbg);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: var(--style-border);
+  border-radius: 12px;
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rightMenu.visible {
+  pointer-events: auto;
+  animation: menuShow 0.2s ease-out forwards;
+}
+
+.rightMenu.hiding {
+  animation: menuHide 0.1s ease-in forwards;
+}
+
+/* 菜单分组 */
+.menuGroup {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.menuGroup:not(:last-child) {
+  margin-bottom: 4px;
+}
+
+.menuGroupLine {
+  flex-direction: column;
+  padding-top: 4px;
+  border-top: 2px dashed var(--anzhiyu-theme-op);
+}
+
+/* 菜单项 */
+.menuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 6px 10px;
+  white-space: nowrap;
+  cursor: pointer;
+  border-radius: 8px;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.menuItem svg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  margin-right: 8px;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.menuItem:hover {
+  color: var(--anzhiyu-white);
+  background-color: var(--anzhiyu-main);
+}
+
+/* 小图标行 */
+.menuSmall .menuItem {
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.menuSmall .menuItem svg {
+  margin-right: 0;
+}
