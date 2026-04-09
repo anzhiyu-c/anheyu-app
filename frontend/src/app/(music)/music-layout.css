@@ -1,0 +1,11 @@
+/* 音乐路由：Header 已在文档流占位 60px，此处占满剩余视口并禁止整页滚动 */
+.music-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}

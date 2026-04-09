@@ -1,0 +1,594 @@
+/* 首页顶部样式 */
+.homeTopContainer {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0.5rem auto 0;
+}
+
+.leftSection {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  height: 340px;
+}
+
+.rightSection {
+  flex: 1;
+  min-width: 0;
+  height: 340px;
+}
+
+/* 只有左侧时的样式 */
+.leftOnly {
+  gap: 0;
+}
+
+.fullWidth {
+  flex: 1;
+  max-width: 100%;
+}
+
+/* 随机 Banner */
+.randomBanner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 76%;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.05);
+  transition: 0.3s;
+  will-change: transform;
+}
+
+.randomBanner:hover .randomHover {
+  padding-left: 2rem;
+  opacity: 1;
+  background: var(--primary-op-deep);
+  backdrop-filter: blur(15px);
+}
+
+.bannersTitle {
+  position: absolute;
+  top: 2.9rem;
+  left: 3rem;
+  z-index: 2;
+  margin-bottom: 0.5rem;
+}
+
+.bannersTitleBig {
+  margin-bottom: 0.5rem;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bannersTitleSmall {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--muted-foreground);
+}
+
+/* 创意图标区域 */
+.skillsTagsGroupAll {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  margin-top: 7rem;
+  transition: 0.3s;
+  transform: rotate(-30deg) scale(1);
+}
+
+.tagsGroupWrapper {
+  display: flex;
+  flex-wrap: nowrap;
+  animation: rowup 60s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+@keyframes rowup {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.tagsGroupIconPair {
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+.tagsGroupIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  font-size: 66px;
+  font-weight: 700;
+  color: #fff;
+  border-radius: 30px;
+  box-shadow: 0 2px 16px -3px rgb(0 0 0 / 15%);
+}
+
+.tagsGroupIcon img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.tagsGroupIconPair .tagsGroupIcon:nth-child(even) {
+  margin-top: 1rem;
+  transform: translateX(-60px);
+}
+
+/* 随便逛逛按钮 */
+.randomHover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding-left: 0.5rem;
+  font-size: 60px;
+  color: #ffffff;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.71, 0.15, 0.16, 1.15);
+}
+
+.randomHover.isLoading {
+  pointer-events: none;
+  cursor: wait;
+}
+
+/* 纸飞机图标 */
+.randomHover > svg:first-child {
+  font-size: 4.5rem;
+  margin-right: 1rem;
+  line-height: 1;
+}
+
+.bannerText {
+  display: flex;
+  align-items: center;
+  font-size: 3.5rem;
+  font-weight: bold;
+}
+
+/* 箭头图标 */
+.bannerText > svg {
+  font-size: 4.5rem;
+  margin-left: 1rem;
+}
+
+/* 分类按钮组 */
+.categoryGroup {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.categoryItem {
+  position: relative;
+  flex: 1;
+  transition: all 0.8s cubic-bezier(0.65, 0.15, 0.37, 1.19);
+}
+
+.categoryItem:hover {
+  flex: 2;
+}
+
+.categoryItem:hover .categoryIcon {
+  font-size: 2.5rem;
+  opacity: 0.8;
+  filter: blur(0);
+  transition: 0.8s;
+  transition-delay: 0.15s;
+  transform: scale(1.03);
+}
+
+.categoryItem:hover .categoryIconImg {
+  width: 2.5rem;
+  height: 2.5rem;
+  opacity: 0.8;
+  filter: blur(0);
+  transition: 0.8s;
+  transition-delay: 0.15s;
+  transform: scale(1.03);
+}
+
+.categoryButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.2rem;
+  color: white;
+  text-decoration: none;
+  background-size: 200% !important;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.categoryButtonText {
+  display: inline-block;
+  max-width: 150px;
+  overflow: hidden;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.categoryIcon {
+  position: absolute;
+  right: 0;
+  width: 100px;
+  font-size: 5rem;
+  text-align: center;
+  opacity: 0.2;
+  filter: blur(2px);
+  transition: 0.3s;
+  transform: scale(1) rotate(15deg);
+}
+
+.categoryIconImg {
+  position: absolute;
+  right: 0;
+  width: 5rem;
+  height: 5rem;
+  object-fit: contain;
+  opacity: 0.2;
+  filter: blur(2px);
+  transition: 0.3s;
+  transform: scale(1) rotate(15deg);
+}
+
+/* 右侧区域 */
+.topGroup {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-content: space-between;
+  height: 340px;
+}
+
+/* Today Card */
+.todayCard {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: all;
+}
+
+.todayCard.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.todayCard.hide .todayCardCover {
+  transform: scale(1.2);
+}
+
+.todayCardInfo {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: 2;
+  max-width: 60%;
+  color: white;
+  transition: 0.3s;
+}
+
+.todayCardTips {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.todayCardTitle {
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 36px;
+}
+
+.todayCardCover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease-in-out;
+}
+
+.todayCardCoverPlaceholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--muted);
+}
+
+/* 当显示 Lottie 动画时的样式适配 */
+.hasLottie .todayCardInfo {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.hasLottie .todayCardTips {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.hasLottie .todayCardTitle {
+  color: rgb(3 145 150 / 82%);
+}
+
+.hasLottie .bannerButton {
+  color: rgb(215 83 126);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.05);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+.hasLottie .bannerButton:hover {
+  color: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* 暗色模式下 Lottie 按钮样式 */
+:global(html.dark) .hasLottie .bannerButton {
+  border: none;
+  box-shadow: none;
+}
+
+.bannerButtonGroup {
+  position: absolute;
+  right: 2rem;
+  bottom: 2rem;
+  z-index: 5;
+  display: flex;
+  transition: 0.3s;
+}
+
+.bannerButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 125px;
+  height: 40px;
+  color: white;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  backdrop-filter: saturate(180%) blur(20px);
+  transition: 0.3s;
+  transform: translateZ(0);
+}
+
+.bannerButton:hover {
+  color: white;
+  background: var(--primary);
+}
+
+.bannerButtonText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bannerButton svg {
+  margin-right: 8px;
+  font-size: 22px;
+}
+
+/* 推荐文章卡片 */
+.recentPostItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: calc(33.333% - 0.5rem * 2 / 3);
+  height: calc(50% - 0.25rem);
+  overflow: hidden;
+  color: var(--foreground);
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.05);
+  transition: 0.3s;
+}
+
+.recentPostItem:hover .articleTitle {
+  color: var(--primary);
+}
+
+.postCover {
+  position: relative;
+  width: 100%;
+  height: 60%;
+  overflow: hidden;
+}
+
+.recentPostTopText {
+  position: absolute;
+  top: 0;
+  left: -40px;
+  z-index: 2;
+  display: flex;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: white;
+  cursor: pointer;
+  background: var(--primary);
+  border-radius: 0 0 12px 0;
+  transition: left 0.3s;
+}
+
+.recentPostItem:hover .recentPostTopText {
+  left: 0;
+}
+
+.postBg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--muted);
+  border-radius: 0;
+}
+
+.recentPostInfo {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 0.8rem;
+  transition: 0.3s;
+}
+
+.articleTitle {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: bold;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+}
+
+/* 响应式 */
+@media (max-width: 992px) {
+  .homeTopContainer {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .bannersTitle {
+    left: 2rem !important;
+  }
+
+  .leftSection {
+    position: relative;
+    height: calc(328px + 0.625rem);
+  }
+
+  .leftSection .randomBanner {
+    height: calc(328px + 0.625rem);
+  }
+
+  .leftSection .categoryGroup {
+    position: absolute;
+    bottom: 2.9rem;
+    left: 2rem;
+  }
+
+  .leftSection .categoryItem:nth-child(3) {
+    display: none;
+  }
+
+  .leftSection .categoryButton {
+    flex-direction: row-reverse;
+    gap: 0.3rem;
+    width: max-content;
+    padding: 8px 18px 8px 14px;
+    color: white;
+    border-radius: 60px;
+  }
+
+  .leftSection .categoryButton .categoryIcon {
+    position: static;
+    width: auto;
+    font-size: 1.375rem;
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+
+  .rightSection {
+    display: flex;
+    width: auto;
+    height: auto;
+    overflow: overlay;
+  }
+
+  .rightSection .topGroup {
+    display: flex;
+    flex-wrap: nowrap;
+    width: auto;
+  }
+
+  .rightSection .recentPostItem {
+    width: 200px;
+    height: 168px;
+  }
+
+  .rightSection .recentPostItem .postCover {
+    height: 60%;
+  }
+
+  .rightSection .recentPostItem .recentPostInfo {
+    height: 40%;
+  }
+
+  .rightSection,
+  .topGroup {
+    height: auto;
+  }
+
+  .topGroup {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .topGroup .todayCard {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .skillsTagsGroupAll {
+    opacity: 0.1;
+    filter: blur(8px);
+  }
+}

@@ -1,0 +1,18 @@
+// ============================================
+// MathBlock / MathInline 样式
+// ============================================
+
+.tiptap {
+  .math-block-wrapper {
+    margin: 1em 0;
+  }
+
+  .math-block-display {
+    padding: 1em;
+  }
+
+  .math-inline {
+    display: inline;
+    vertical-align: baseline;
+  }
+}

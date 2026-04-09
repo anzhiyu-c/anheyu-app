@@ -1,0 +1,256 @@
+/* 面包屑容器 */
+.file-breadcrumb-wrapper {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 20px;
+  overflow: hidden;
+  cursor: text;
+  background-color: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px -2px rgb(0 0 0 / 5%);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.file-breadcrumb-wrapper:hover {
+  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 8%);
+}
+
+.file-breadcrumb-wrapper:focus-within {
+  border-color: var(--anzhiyu-theme);
+  box-shadow: 0 0 0 4px var(--anzhiyu-theme-op);
+}
+
+.file-breadcrumb {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* 首页图标 - 匹配 anheyu-app（font-size: 16px） */
+.home-icon {
+  flex-shrink: 0;
+  margin-right: 12px;
+  font-size: 16px;
+  color: var(--anzhiyu-fontcolor);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.home-icon:hover {
+  color: var(--anzhiyu-theme);
+}
+
+/* 面包屑列表 */
+.breadcrumb-list {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  color: var(--anzhiyu-fontcolor);
+}
+
+/* 面包屑链接 */
+.breadcrumb-link {
+  display: inline-block;
+  padding: 6px 10px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--anzhiyu-secondtext);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.breadcrumb-link:hover {
+  color: var(--anzhiyu-theme);
+  background-color: var(--anzhiyu-theme-op);
+}
+
+.breadcrumb-link:active {
+  transform: scale(0.96);
+}
+
+/* 分隔符 */
+.breadcrumb-separator {
+  color: var(--anzhiyu-secondtext);
+  font-size: 14px;
+  opacity: 0.5;
+}
+
+/* 下拉触发器 - 当前目录 */
+.dropdown-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--anzhiyu-fontcolor);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dropdown-trigger:hover {
+  color: var(--anzhiyu-theme);
+  background-color: var(--anzhiyu-theme-op);
+}
+
+.dropdown-trigger:active {
+  transform: scale(0.98);
+}
+
+/* 下拉菜单 */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 200px;
+  padding: 8px;
+  background-color: var(--anzhiyu-card-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: var(--style-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px -8px rgb(0 0 0 / 18%);
+  z-index: 1100;
+}
+
+/* 下拉菜单项 */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--anzhiyu-fontcolor);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 17px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.dropdown-item:hover .dropdown-icon {
+  opacity: 1;
+}
+
+.divider {
+  margin-top: 6px;
+  border-top: 1px solid var(--anzhiyu-card-border);
+  padding-top: 14px;
+}
+
+.dropdown-item:hover {
+  background: var(--anzhiyu-theme-op);
+  color: var(--anzhiyu-theme);
+  transform: translateX(2px);
+}
+
+.dropdown-item:focus {
+  outline: none;
+}
+
+.dropdown-item:focus-visible {
+  outline: 2px solid var(--anzhiyu-theme);
+  outline-offset: 2px;
+}
+
+.dropdown-item.dropdown-danger:focus-visible,
+.dropdown-danger:focus-visible {
+  outline-color: var(--anzhiyu-red);
+}
+
+/* 危险操作 */
+.dropdown-danger {
+  color: var(--anzhiyu-red);
+}
+
+.dropdown-danger:hover {
+  color: #fff;
+  background-color: var(--anzhiyu-red);
+}
+
+.dropdown-danger:hover .dropdown-icon {
+  opacity: 1;
+}
+
+/* 输入模式 */
+.input-mode {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+}
+
+.path-input {
+  flex: 1;
+  height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--anzhiyu-fontcolor);
+  outline: none;
+}
+
+.path-input::placeholder {
+  color: var(--anzhiyu-secondtext);
+  font-weight: 400;
+}
+
+/* 响应式布局 */
+@media screen and (width <= 768px) {
+  .file-breadcrumb-wrapper {
+    min-height: 48px;
+    padding: 0 14px;
+    border-radius: 12px;
+  }
+
+  .home-icon {
+    margin-right: 10px;
+    font-size: 18px;
+  }
+
+  .breadcrumb-link {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .dropdown-trigger {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+}
+
+@media screen and (width <= 576px) {
+  .breadcrumb-link,
+  .dropdown-trigger span {
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dropdown-menu {
+    min-width: 180px;
+  }
+}

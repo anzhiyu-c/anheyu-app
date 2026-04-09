@@ -1,0 +1,176 @@
+/* BackMenuListGroups - 项目列表下拉菜单 */
+
+.backHomeButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  margin-right: 5px;
+  margin-left: 4px;
+  cursor: pointer;
+  border-radius: 50px;
+  transition: 0.3s;
+}
+
+.backHomeButton::after {
+  position: absolute;
+  top: 75%;
+  left: 17px;
+  width: 120%;
+  height: 20px;
+  pointer-events: none;
+  content: "";
+  transition: pointer-events 0s linear 1s;
+}
+
+.triggerIcon {
+  width: 1.375rem;
+  height: 1.375rem;
+  color: inherit;
+  transition: color 0.2s ease-out;
+}
+
+/* 白色文字状态（页面顶部透明时） */
+.backHomeButton.textIsWhite {
+  color: #fff;
+}
+
+.backHomeButton.textIsWhite:hover {
+  color: var(--primary-foreground);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+
+.backHomeButton:hover {
+  color: var(--primary-foreground);
+  background: var(--primary);
+  box-shadow: 0 8px 12px -3px var(--primary-op, rgba(66, 89, 239, 0.14));
+}
+
+.backHomeButton:hover::after {
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+.backHomeButton:hover .backMenuListGroups {
+  pointer-events: auto;
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 下拉菜单容器 */
+.backMenuListGroups {
+  position: absolute;
+  top: 55px;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  pointer-events: none;
+  background-color: var(--card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.05);
+  opacity: 0;
+  transition: 0.2s;
+  transform: scale(0.8);
+  transform-origin: top left;
+  cursor: auto;
+}
+
+/* 菜单分组 */
+.backMenuListGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.backMenuListGroup:hover .backMenuListTitle {
+  color: var(--primary);
+}
+
+/* 分组标题 */
+.backMenuListTitle {
+  margin: 8px 0 4px 12px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  transition: 0.3s;
+}
+
+/* 菜单列表 */
+.backMenuList {
+  display: flex;
+  flex-wrap: wrap;
+  width: 340px;
+  margin-bottom: 8px;
+}
+
+.backMenuList::before {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  width: 100%;
+  height: 25px;
+  content: "";
+  transition: 0s;
+}
+
+/* 菜单项 */
+.backMenuItem {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: 162px;
+  padding: 4px 8px;
+  margin: 4px;
+  border-radius: 8px;
+  transition: 0.2s;
+  text-decoration: none;
+  color: var(--foreground);
+}
+
+.backMenuItem:hover {
+  background-color: var(--primary);
+  color: var(--foreground);
+}
+
+.backMenuItem:hover .backMenuItemText {
+  color: var(--primary-foreground);
+}
+
+.backMenuItem:hover .backMenuItemIconIconify {
+  color: var(--primary-foreground);
+}
+
+/* 图标样式 */
+.backMenuItemIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.backMenuItemIcon.backMenuItemIconIconify {
+  border-radius: 0;
+  color: var(--foreground);
+  transition: 0.2s;
+}
+
+/* 文字样式 */
+.backMenuItemText {
+  overflow: hidden;
+  font-size: 14px;
+  color: var(--foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: 0.2s;
+}
+
+/* 移动端隐藏 */
+@media (max-width: 768px) {
+  .backHomeButton {
+    display: none;
+  }
+}

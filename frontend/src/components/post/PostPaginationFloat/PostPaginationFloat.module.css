@@ -1,0 +1,114 @@
+/* 右下角浮动上下篇导航 - 与评论弹幕同位置、同尺寸 */
+
+.floatWrap {
+  position: fixed;
+  right: 60px;
+  bottom: 0;
+  z-index: 998;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 0 20px 10px;
+  pointer-events: none;
+  transform: translateY(0);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-delay: 0s;
+}
+
+/* 开启评论弹幕时：未到评论区前卡片在视口下方，滚动到评论区后延迟上移 */
+.floatWrap[data-visible="false"] {
+  transform: translateY(100%);
+  pointer-events: none;
+}
+
+.floatWrap[data-visible="true"] {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 与评论弹幕 .commentBarrageItem 统一：边框、圆角、阴影、内边距 */
+.floatCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  min-width: 300px;
+  max-width: 300px;
+  min-height: 80px;
+  padding: 8px 14px;
+  margin: 4px;
+  pointer-events: auto;
+  text-decoration: none;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: rgb(255 255 255 / 85%);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: var(--style-border);
+  border-radius: 8px;
+  box-shadow: var(--anzhiyu-shadow-border);
+  transition: background 0.2s ease, color 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.floatCard:hover {
+  background: var(--anzhiyu-main, var(--primary));
+  color: #fff;
+  border: var(--style-border-hover);
+  box-shadow: var(--anzhiyu-shadow-main);
+}
+
+.floatCard:hover .floatLabel,
+.floatCard:hover .floatTitle {
+  color: #fff;
+}
+
+.floatCard:hover .floatDivider {
+  background: rgb(255 255 255 / 0.35);
+}
+
+.floatLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  transition: color 0.2s ease;
+}
+
+.floatDivider {
+  display: block;
+  width: 100%;
+  height: 1px;
+  margin: 8px 0;
+  background: var(--anzhiyu-border-color, var(--border));
+  transition: background 0.2s ease;
+}
+
+.floatTitle {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  transition: color 0.2s ease;
+}
+
+:global([data-theme="dark"]) .floatCard,
+:global(.dark) .floatCard {
+  background: rgb(30 30 30 / 80%);
+}
+
+/* 屏宽 < 1400px 时隐藏浮动，改用版权下方的内联上一篇/下一篇 */
+@media screen and (max-width: 1399px) {
+  .floatWrap {
+    display: none !important;
+  }
+}
+
+@media screen and (width <= 768px) {
+  .floatWrap {
+    display: none !important;
+  }
+}

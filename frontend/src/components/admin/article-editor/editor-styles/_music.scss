@@ -1,0 +1,492 @@
+// ============================================
+// 音乐播放器（与文章详情一致）
+// ============================================
+
+.tiptap {
+  .music-block-wrapper {
+    margin: 1rem 0;
+  }
+
+  .music-container {
+    margin: 1rem 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--anzhiyu-card-bg, #fff);
+    border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+
+    // APlayer 样式
+    .aplayer {
+      background: var(--anzhiyu-card-bg, #fff) !important;
+      box-shadow: none !important;
+
+      .aplayer-body {
+        background: var(--anzhiyu-card-bg, #fff) !important;
+      }
+      .aplayer-info {
+        border-color: var(--anzhiyu-card-border, #e3e8f7) !important;
+      }
+    }
+  }
+
+  // ---- 自定义音乐播放器 ----
+  .markdown-music-player {
+    width: 100%;
+    margin: 20px 0;
+    user-select: none;
+
+    .music-player-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      min-height: 200px;
+      padding: 0 16px 0 0;
+      background: var(--anzhiyu-card-bg, #fff);
+      border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s;
+      gap: 16px;
+      overflow: visible;
+    }
+
+    .music-artwork-container {
+      flex-shrink: 0;
+      width: 200px;
+      height: 200px;
+      position: relative;
+      z-index: 1;
+      overflow: visible;
+    }
+
+    .music-artwork-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1;
+      overflow: visible;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &.is-playing {
+        transform: scale(1.02);
+
+        .artwork-image-vinyl-background {
+          animation-play-state: running;
+        }
+        .artwork-image {
+          animation-play-state: running;
+          filter: saturate(1);
+        }
+        .artwork-image-blur {
+          opacity: 0.7;
+          filter: blur(8px) saturate(1);
+        }
+        .artwork-border-ring {
+          border-color: rgba(139, 139, 139, 0.6);
+          box-shadow: 0 0 20px rgba(255, 255, 255, 0.35);
+        }
+      }
+
+      img {
+        margin: 0;
+      }
+
+      &:hover {
+        .music-play-overlay {
+          opacity: 1;
+        }
+        .music-play-button-overlay {
+          transform: scale(1.1);
+          border-color: #ff4d4f;
+
+          svg {
+            color: #ff4d4f;
+            filter: drop-shadow(0 0 3px rgba(255, 77, 79, 0.6));
+          }
+        }
+      }
+
+      &.is-playing:hover .music-play-overlay {
+        opacity: 1;
+      }
+    }
+
+    // 唱片相关样式
+    .vinyl-background {
+      position: absolute;
+      top: 60%;
+      left: 68%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      max-width: none !important;
+      object-fit: contain;
+      z-index: 0;
+      pointer-events: none;
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .artwork-image-vinyl-background {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50%;
+      z-index: 1;
+      pointer-events: none;
+      animation: vinyl-spin 8s linear infinite;
+      animation-play-state: paused;
+      max-width: none !important;
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .artwork-image-vinyl-inner-background {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      pointer-events: none;
+      max-width: none !important;
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .artwork-image-needle-background {
+      position: absolute;
+      top: 15%;
+      right: 19%;
+      height: 58%;
+      z-index: 3;
+      transform-origin: 50% 27px;
+      transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      pointer-events: none;
+      max-width: none !important;
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+
+      &.needle-playing {
+        transform: rotate(14deg);
+      }
+    }
+
+    .artwork-image-groove-background {
+      position: absolute;
+      top: 17%;
+      right: 19.4%;
+      height: 56.5%;
+      pointer-events: none;
+      max-width: none !important;
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .artwork-transition-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .artwork-image {
+      width: 30%;
+      height: 30%;
+      border-radius: 50%;
+      object-fit: cover;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      border: 7px solid transparent;
+      pointer-events: none;
+      animation: vinyl-spin 8s linear infinite;
+      animation-play-state: paused;
+      filter: saturate(0.85);
+      transition: filter 0.4s ease;
+    }
+
+    .artwork-image-blur {
+      width: 50%;
+      height: 50%;
+      border-radius: 50%;
+      object-fit: cover;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      opacity: 0.5;
+      filter: blur(12px) saturate(0.8);
+      clip-path: circle(90% at center);
+      pointer-events: none;
+      transition:
+        opacity 0.4s ease,
+        filter 0.4s ease;
+    }
+
+    .artwork-border-ring {
+      width: 50%;
+      height: 50%;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      border: 2px solid rgba(139, 139, 139, 0.4);
+      background: transparent;
+      pointer-events: none;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+      transition:
+        border-color 0.4s ease,
+        box-shadow 0.4s ease;
+    }
+
+    .music-cover-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: var(--anzhiyu-secondtext, #9ca3af);
+      background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+      border-radius: 8px;
+    }
+
+    .music-info-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .music-text-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .music-name {
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--anzhiyu-fontcolor, var(--foreground));
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .music-artist {
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--anzhiyu-secondtext, #9ca3af);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .music-progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      z-index: 0;
+    }
+
+    .music-progress-track {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    .music-progress-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: var(--anzhiyu-theme, var(--primary));
+      opacity: 0.08;
+      transition: width 0.1s linear;
+      pointer-events: none;
+    }
+
+    .nmsingle-playtime {
+      display: block;
+      font-size: 12px;
+      color: var(--anzhiyu-secondtext, #9ca3af);
+    }
+
+    .music-decoration-image {
+      flex-shrink: 0;
+      width: 68px;
+      height: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      right: 20px;
+      z-index: 1;
+      opacity: 0.5;
+      pointer-events: none;
+
+      img {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+      }
+    }
+
+    // 播放覆盖层
+    .music-play-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .music-play-button-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      background: transparent;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+      transition: all 0.3s ease;
+
+      svg {
+        width: 24px;
+        height: 24px;
+        color: rgba(255, 255, 255, 0.95);
+        filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+        transition: all 0.3s ease;
+      }
+    }
+
+    // 加载/错误状态
+    .music-loading,
+    .music-error {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      z-index: 20;
+
+      svg,
+      .loading-icon {
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    .music-error {
+      background: rgba(245, 108, 108, 0.9);
+    }
+    .music-audio-element {
+      display: none;
+    }
+  }
+}
+
+// ---- 编辑器音乐播放器编辑面板 ----
+.editor-music-edit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  animation: editorCalloutPanelIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editor-music-help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    color: var(--anzhiyu-theme, #3b82f6);
+    border-color: var(--anzhiyu-theme, #3b82f6);
+    background: var(--anzhiyu-card-bg, #fff);
+  }
+}
+
+.editor-music-help-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  width: 320px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: ecsmFadeIn 0.15s ease-out;
+
+  code {
+    font-size: 12px;
+    padding: 1px 4px;
+    background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+    border-radius: 4px;
+    color: var(--anzhiyu-fontcolor, var(--foreground));
+    box-shadow: none;
+  }
+}

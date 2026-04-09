@@ -1,0 +1,164 @@
+/* 对话框遮罩层 */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 40%);
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
+  backdrop-filter: blur(8px) saturate(180%);
+}
+
+/* backdrop-filter 降级方案 */
+@supports not (backdrop-filter: blur(8px)) {
+  .dialog-overlay {
+    background: rgb(0 0 0 / 70%);
+  }
+}
+
+/* 对话框主体 */
+.dialog {
+  width: 400px;
+  max-width: 90vw;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 20px;
+  box-shadow:
+    0 24px 48px -12px rgb(0 0 0 / 18%),
+    0 0 0 1px rgb(255 255 255 / 5%) inset;
+  padding: 24px;
+}
+
+/* 对话框头部 */
+.dialog-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.dialog-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor);
+  letter-spacing: -0.01em;
+}
+
+.dialog-desc {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--anzhiyu-secondtext);
+}
+
+/* 对话框内容区 */
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dialog-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 2px solid var(--anzhiyu-card-border);
+  background: var(--anzhiyu-secondbg);
+  font-size: 14px;
+  color: var(--anzhiyu-fontcolor);
+  transition: all 0.25s ease;
+  outline: none;
+}
+
+.dialog-input:focus {
+  border-color: var(--anzhiyu-theme);
+  background: var(--anzhiyu-card-bg);
+  box-shadow: 0 0 0 4px var(--anzhiyu-theme-op);
+}
+
+.dialog-input::placeholder {
+  color: var(--anzhiyu-secondtext);
+  opacity: 0.6;
+}
+
+.dialog-error {
+  font-size: 13px;
+  color: var(--anzhiyu-red);
+  padding-left: 2px;
+}
+
+/* 对话框底部按钮区 */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.dialog-button {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: var(--style-border);
+  background: var(--anzhiyu-card-bg);
+  color: var(--anzhiyu-fontcolor);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.dialog-button:hover {
+  background: var(--anzhiyu-secondbg);
+}
+
+.dialog-button:active {
+  transform: scale(0.98);
+  transition-duration: 0.1s;
+}
+
+/* 主要按钮 */
+.primary {
+  background: var(--anzhiyu-theme);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px -2px var(--anzhiyu-theme-op);
+}
+
+.primary:hover {
+  box-shadow: 0 6px 16px -2px var(--anzhiyu-theme-op);
+}
+
+/* 危险按钮 */
+.danger {
+  background: var(--anzhiyu-red);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px -2px rgb(216 0 32 / 30%);
+}
+
+.danger:hover {
+  box-shadow: 0 6px 16px -2px rgb(216 0 32 / 40%);
+}
+
+/* 深色模式微调 */
+:global(html.dark) .dialog {
+  box-shadow:
+    0 24px 48px -12px rgb(0 0 0 / 50%),
+    0 0 0 1px rgb(255 255 255 / 8%) inset;
+}
+
+/* 屏幕阅读器专用 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

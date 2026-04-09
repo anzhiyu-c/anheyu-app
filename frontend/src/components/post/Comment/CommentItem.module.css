@@ -1,0 +1,446 @@
+.commentItemContainer {
+  width: 100%;
+}
+
+.commentItem {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.commentAvatar {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border, #eee);
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.commentAvatar:hover {
+  transform: scale(1.1) rotate(10deg);
+}
+
+.commentMain {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.userInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.nickname {
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.timestamp {
+  font-size: 0.8rem;
+  color: var(--anzhiyu-fontcolor);
+}
+
+.masterTag {
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #fff;
+  background-color: var(--anzhiyu-red);
+  border-radius: 4px;
+}
+
+.pinnedTag {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #fff;
+  background-color: #ff6b6b;
+  border-radius: 4px;
+}
+
+.commentActions {
+  display: flex;
+  gap: 0.5rem;
+  height: 30px;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  color: var(--anzhiyu-secondtext);
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  transition:
+    color 0.3s,
+    background-color 0.3s;
+}
+
+.actionButton:hover {
+  color: var(--anzhiyu-fontcolor);
+  background-color: var(--anzhiyu-secondbg);
+}
+
+.actionButtonLiked {
+  color: var(--el-color-primary, var(--anzhiyu-main));
+}
+
+.actionButtonLiked:hover {
+  background-color: var(--anzhiyu-secondbg);
+}
+
+.actionButtonDisabled {
+  color: var(--anzhiyu-lighttext);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.actionButtonDisabled:hover {
+  color: var(--anzhiyu-lighttext);
+  background-color: transparent;
+}
+
+.likeCount {
+  margin-left: 6px;
+  font-size: 0.8rem;
+}
+
+.replyToBlock {
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--anzhiyu-secondtext);
+}
+
+.replyToNick {
+  padding: 0 0.2em;
+  font-weight: 500;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.replyToNick:hover {
+  color: var(--anzhiyu-white);
+  background-color: var(--anzhiyu-theme);
+  border-radius: 4px;
+}
+
+.commentContent {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--anzhiyu-fontcolor);
+  transition: opacity 0.2s;
+}
+
+.commentContentCanReply {
+}
+
+.commentContent p {
+  margin: 0.5rem 0;
+}
+
+.commentContent code:not(.hljs) {
+  padding: 2px 4px;
+  margin: 0 4px;
+  line-height: 2;
+  color: #fff;
+  background: var(--anzhiyu-code-stress);
+  border-radius: 4px;
+  box-shadow: var(--anzhiyu-shadow-border);
+}
+
+.commentContent pre,
+.commentContent .md-editor-code {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.commentContent table {
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+
+.commentContent img {
+  max-width: 100%;
+  max-height: 300px;
+  height: auto;
+  vertical-align: middle;
+  border-radius: 4px;
+}
+
+.commentContent img:not(.anzhiyu-owo-emotion) {
+  cursor: zoom-in;
+}
+
+.commentContent .anzhiyu-owo-emotion {
+  width: 3rem;
+  height: auto;
+  margin: 0;
+  display: inline;
+}
+
+.commentContent a[data-fancybox] {
+  padding: 0 !important;
+  border-bottom: none !important;
+}
+
+.commentContent a[data-fancybox]:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.commentContent > :last-child {
+  margin-bottom: 0.5rem !important;
+}
+
+.commentMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--anzhiyu-fontcolor);
+}
+
+.metaItem {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.metaItem svg {
+  width: 14px;
+  height: 14px;
+}
+
+.commentChildren {
+  display: flex;
+  flex-direction: column;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  margin-left: calc(40px + 0.5rem);
+}
+
+.replyFormWrapper {
+  margin-top: 1rem;
+  margin-left: calc(40px + 0.5rem);
+}
+
+.loadMoreChildrenWrapper {
+  margin-top: 1rem;
+  margin-left: calc(40px + 0.5rem);
+  text-align: center;
+}
+
+.loadMoreChildrenButton {
+  min-width: 120px;
+  padding: 0.5rem 1rem;
+  font-size: 0.7rem;
+  color: var(--anzhiyu-fontcolor);
+  text-align: center;
+  letter-spacing: 3px;
+  cursor: pointer;
+  background-color: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 50px;
+  box-shadow: 0 8px 16px -4px rgb(44 45 48 / 4.7%);
+  transition: all 0.3s;
+}
+
+.loadMoreChildrenButton:hover:not(:disabled) {
+  color: var(--anzhiyu-white);
+  background-color: var(--anzhiyu-main);
+  border: var(--style-border-none);
+}
+
+.loadMoreChildrenButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.loadMoreChildrenLoading {
+  color: var(--anzhiyu-main);
+}
+
+.commentContent pre code.hljs,
+.markdownPreview pre code.hljs {
+  display: block;
+  padding: 1em;
+  overflow-x: auto;
+  background: #1f1f1f;
+  border: var(--style-border);
+  border-radius: 12px;
+}
+
+.commentContent code.hljs,
+.markdownPreview code.hljs {
+  padding: 3px 5px;
+}
+
+.commentContent .hljs,
+.markdownPreview .hljs {
+  color: #abb2bf;
+  background: #282c34;
+}
+
+.commentContent .hljs-comment,
+.commentContent .hljs-quote,
+.markdownPreview .hljs-comment,
+.markdownPreview .hljs-quote {
+  font-style: italic;
+  color: #5c6370;
+}
+
+.commentContent .hljs-doctag,
+.commentContent .hljs-formula,
+.commentContent .hljs-keyword,
+.markdownPreview .hljs-doctag,
+.markdownPreview .hljs-formula,
+.markdownPreview .hljs-keyword {
+  color: #c678dd;
+}
+
+.commentContent .hljs-deletion,
+.commentContent .hljs-name,
+.commentContent .hljs-section,
+.commentContent .hljs-selector-tag,
+.commentContent .hljs-subst,
+.markdownPreview .hljs-deletion,
+.markdownPreview .hljs-name,
+.markdownPreview .hljs-section,
+.markdownPreview .hljs-selector-tag,
+.markdownPreview .hljs-subst {
+  color: #e06c75;
+}
+
+.commentContent .hljs-literal,
+.markdownPreview .hljs-literal {
+  color: #56b6c2;
+}
+
+.commentContent .hljs-addition,
+.commentContent .hljs-attribute,
+.commentContent .hljs-meta .hljs-string,
+.commentContent .hljs-regexp,
+.commentContent .hljs-string,
+.markdownPreview .hljs-addition,
+.markdownPreview .hljs-attribute,
+.markdownPreview .hljs-meta .hljs-string,
+.markdownPreview .hljs-regexp,
+.markdownPreview .hljs-string {
+  color: #98c379;
+}
+
+.commentContent .hljs-attr,
+.commentContent .hljs-number,
+.commentContent .hljs-selector-attr,
+.commentContent .hljs-selector-class,
+.commentContent .hljs-selector-pseudo,
+.commentContent .hljs-template-variable,
+.commentContent .hljs-type,
+.commentContent .hljs-variable,
+.markdownPreview .hljs-attr,
+.markdownPreview .hljs-number,
+.markdownPreview .hljs-selector-attr,
+.markdownPreview .hljs-selector-class,
+.markdownPreview .hljs-selector-pseudo,
+.markdownPreview .hljs-template-variable,
+.markdownPreview .hljs-type,
+.markdownPreview .hljs-variable {
+  color: #d19a66;
+}
+
+.commentContent .hljs-bullet,
+.commentContent .hljs-link,
+.commentContent .hljs-meta,
+.commentContent .hljs-selector-id,
+.commentContent .hljs-symbol,
+.commentContent .hljs-title,
+.markdownPreview .hljs-bullet,
+.markdownPreview .hljs-link,
+.markdownPreview .hljs-meta,
+.markdownPreview .hljs-selector-id,
+.markdownPreview .hljs-symbol,
+.markdownPreview .hljs-title {
+  color: #61aeee;
+}
+
+.commentContent .hljs-built_in,
+.commentContent .hljs-class .hljs-title,
+.commentContent .hljs-title.class_,
+.markdownPreview .hljs-built_in,
+.markdownPreview .hljs-class .hljs-title,
+.markdownPreview .hljs-title.class_ {
+  color: #e6c07b;
+}
+
+.commentContent .hljs-emphasis,
+.markdownPreview .hljs-emphasis {
+  font-style: italic;
+}
+
+.commentContent .hljs-strong,
+.markdownPreview .hljs-strong {
+  font-weight: 700;
+}
+
+.commentContent .hljs-link,
+.markdownPreview .hljs-link {
+  text-decoration: underline;
+}
+
+@media (width <= 768px) {
+  .commentContentCanReply {
+    cursor: pointer;
+  }
+
+  .commentMeta {
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .metaItem {
+    gap: 0.25rem;
+  }
+
+  .metaItem svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .commentChildren,
+  .replyFormWrapper,
+  .loadMoreChildrenWrapper {
+    margin-left: 0;
+  }
+
+  .replyFormWrapper {
+    margin-left: 0;
+  }
+}

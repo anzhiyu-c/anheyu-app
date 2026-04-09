@@ -1,0 +1,102 @@
+.replyItemContainer {
+  padding: 1.25rem 0;
+  padding-right: 0;
+  padding-left: 0;
+  border-top: var(--style-border-dashed);
+}
+
+/* 回复头像使用 32px（与 anheyu-app 一致，区分于顶级评论的 40px） */
+.replyAvatar {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border, #eee);
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.replyAvatar:hover {
+  transform: scale(1.1) rotate(10deg);
+}
+
+/* 回复中的昵称可点击跳转 */
+.replyNickname {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.replyNickname:hover {
+  color: var(--el-color-primary, var(--anzhiyu-main));
+}
+
+.replyFormWrapper {
+  margin-top: 1rem;
+  margin-left: 48px;
+}
+
+.expandRepliesWrapper {
+  margin-top: 0.75rem;
+}
+
+.expandRepliesButton {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  color: var(--anzhiyu-main);
+  background: transparent;
+  border: 1px solid var(--anzhiyu-main);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.expandRepliesButton:hover {
+  background: var(--anzhiyu-main);
+  color: var(--anzhiyu-white);
+}
+
+.replyList {
+  display: flex;
+  flex-direction: column;
+}
+
+.loadMoreReplies {
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.loadMoreRepliesButton {
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  color: var(--anzhiyu-fontcolor);
+  background: var(--anzhiyu-card-bg);
+  border: 1px solid var(--anzhiyu-main);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.loadMoreRepliesButton:hover {
+  background: var(--anzhiyu-main);
+  color: var(--anzhiyu-white);
+}
+
+@media (width <= 768px) {
+  .replyFormWrapper {
+    margin-left: 0;
+  }
+
+  .expandRepliesButton {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .loadMoreRepliesButton {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}

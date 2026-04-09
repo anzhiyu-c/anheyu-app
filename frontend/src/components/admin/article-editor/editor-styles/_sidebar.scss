@@ -1,0 +1,820 @@
+// ============================================
+// 右侧属性面板 (EditorSidebar) — 全自定义
+// ============================================
+
+// ---- 设计 Token ----
+.sb-root {
+  --sb-bg: var(--anzhiyu-card-bg, #fff);
+  --sb-bg2: var(--anzhiyu-card-bg-grey, #f6f7fa);
+  --sb-border: var(--anzhiyu-card-border, #e8eaf0);
+  --sb-text: var(--anzhiyu-fontcolor, #1a1a2e);
+  --sb-text2: var(--anzhiyu-secondtext, #6b7280);
+  --sb-muted: #9ca3af;
+  --sb-accent: var(--anzhiyu-theme, #4259ef);
+  --sb-accent-light: color-mix(in srgb, var(--sb-accent) 8%, transparent);
+  --sb-radius: 8px;
+  --sb-green: #22c55e;
+  --sb-yellow: #f59e0b;
+  --sb-blue: #3b82f6;
+
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--sb-bg);
+  color: var(--sb-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+// 暗色覆盖
+:is(html.dark) .sb-root {
+  --sb-bg: var(--anzhiyu-card-bg, #1d1e22);
+  --sb-bg2: var(--anzhiyu-card-bg-grey, #27282a);
+  --sb-border: var(--anzhiyu-card-border, #3d3d3f);
+  --sb-text: var(--anzhiyu-fontcolor, #f7f7fa);
+  --sb-text2: var(--anzhiyu-secondtext, #a1a2b8);
+  --sb-muted: #6b7280;
+}
+
+// ---- 交互：键盘可见焦点环 + 统一下压反馈 ----
+@mixin sb-focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--sb-accent);
+    outline-offset: 2px;
+  }
+
+  &:focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+@mixin sb-press-pop {
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+@mixin sb-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 3px;
+  }
+
+  :is(html.dark) & {
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+}
+
+// ---- 头部 ----
+.sb-header {
+  padding: 14px 16px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sb-muted);
+  border-bottom: 1px solid var(--sb-border);
+  flex-shrink: 0;
+}
+
+// ---- 滚动区 ----
+.sb-scroll {
+  flex: 1;
+  overflow-y: auto;
+  @include sb-scrollbar;
+}
+
+.sb-body {
+  padding-bottom: 24px;
+}
+
+// ---- 状态选择器 ----
+.sb-status-bar {
+  display: flex;
+  margin: 20px 12px 16px;
+  padding: 3px;
+  background: var(--sb-bg2);
+  border-radius: 10px;
+  gap: 2px;
+}
+
+.sb-status-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 0;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sb-muted);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s,
+    transform 0.12s ease;
+  border: none;
+  position: relative;
+
+  @include sb-focus-ring;
+  @include sb-press-pop;
+
+  &:hover {
+    color: var(--sb-text);
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  :is(html.dark) &:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &:active:not(:disabled) {
+    box-shadow: none;
+  }
+}
+
+// 状态激活态
+.sb-status-published,
+.sb-status-draft,
+.sb-status-scheduled,
+.sb-status-archived {
+  background: var(--sb-bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.sb-status-published {
+  color: var(--sb-green) !important;
+}
+.sb-status-draft {
+  color: var(--sb-text) !important;
+}
+.sb-status-scheduled {
+  color: var(--sb-blue) !important;
+}
+.sb-status-archived {
+  color: var(--sb-yellow) !important;
+}
+
+// ---- 可折叠分区 ----
+.sb-section {
+  border-top: 1px solid var(--sb-border);
+
+  &:first-child {
+    border-top: none;
+  }
+}
+
+.sb-section-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+  border: none;
+  background: none;
+  text-align: left;
+
+  @include sb-focus-ring;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+  :is(html.dark) &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.04);
+  }
+  :is(html.dark) &:active {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.sb-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--sb-text2);
+}
+
+.sb-section-body {
+  overflow: hidden;
+  transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sb-section-content {
+  padding: 0 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// ---- 字段 ----
+.sb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+.sb-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sb-muted);
+}
+
+// ---- 输入框 ----
+.sb-input {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--sb-text);
+  background: var(--sb-bg2);
+  border: 1.5px solid transparent;
+  border-radius: var(--sb-radius);
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+
+  &::placeholder {
+    color: var(--sb-muted);
+    opacity: 0.6;
+  }
+  &:hover {
+    border-color: color-mix(in srgb, var(--sb-accent) 20%, transparent);
+  }
+
+  &:focus {
+    background: var(--sb-bg);
+    border-color: var(--sb-accent);
+    box-shadow: 0 0 0 3px var(--sb-accent-light);
+  }
+}
+
+.sb-textarea {
+  resize: none;
+  overflow-x: hidden;
+  overflow-y: hidden; /* 无上限时由 JS 自适应高度；有 maxHeightPx 时由 JS 设为 auto 以在框内滚动 */
+  min-height: 32px;
+  /* 单行摘要：略收紧行高并微调上下内边距，避免中文字形在框内视觉偏下 */
+  line-height: 1.28;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+// ---- 开关 ----
+.sb-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  margin-left: -8px;
+  margin-right: -8px;
+  width: calc(100% + 16px);
+  border-radius: var(--sb-radius);
+  cursor: pointer;
+  text-align: left;
+  border: none;
+  background: none;
+  transition: background 0.15s;
+
+  @include sb-focus-ring;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+  :is(html.dark) &:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  :is(html.dark) &:active {
+    background: rgba(255, 255, 255, 0.07);
+  }
+}
+
+.sb-toggle-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sb-text);
+}
+
+.sb-toggle-desc {
+  display: block;
+  font-size: 11px;
+  color: var(--sb-muted);
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+.sb-switch {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--sb-border);
+  flex-shrink: 0;
+  transition: background 0.25s;
+}
+
+.sb-switch-on {
+  background: var(--sb-accent);
+}
+
+.sb-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sb-switch-on .sb-switch-thumb {
+  transform: translateX(14px);
+}
+
+// ---- 多选下拉 ----
+.sb-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  background: var(--sb-bg2);
+  border: 1.5px solid transparent;
+  border-radius: var(--sb-radius);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s,
+    transform 0.12s ease;
+  text-align: left;
+  color: var(--sb-text);
+
+  @include sb-focus-ring;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--sb-accent) 20%, transparent);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.995);
+    background: color-mix(in srgb, var(--sb-accent) 4%, var(--sb-bg2));
+  }
+}
+
+.sb-select-value {
+  flex: 1;
+  min-width: 0;
+}
+.sb-select-placeholder {
+  flex: 1;
+  color: var(--sb-muted);
+  opacity: 0.6;
+}
+
+.sb-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 4px;
+  background: var(--sb-bg);
+  border: 1px solid var(--sb-border);
+  border-radius: var(--sb-radius);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  animation: sb-dropdown-in 0.15s ease-out;
+}
+
+.sb-dropdown-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--sb-border);
+}
+
+.sb-dropdown-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  background: transparent;
+  color: var(--sb-text);
+  font-family: inherit;
+
+  &::placeholder {
+    color: var(--sb-muted);
+  }
+}
+
+.sb-dropdown-list {
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 4px;
+  @include sb-scrollbar;
+}
+
+.sb-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    transform 0.1s ease;
+  border: none;
+  background: none;
+  text-align: left;
+  color: var(--sb-text);
+
+  @include sb-focus-ring;
+
+  &:hover {
+    background: var(--sb-bg2);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.99);
+    background: color-mix(in srgb, var(--sb-text) 5%, var(--sb-bg2));
+  }
+}
+
+.sb-dropdown-item-active {
+  color: var(--sb-accent);
+  font-weight: 500;
+}
+
+.sb-dropdown-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--sb-muted);
+}
+
+// 自定义 checkbox
+.sb-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--sb-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.sb-checkbox-checked {
+  background: var(--sb-accent);
+  border-color: var(--sb-accent);
+  color: #fff;
+}
+
+// ---- 标签 pill ----
+.sb-tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sb-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px 2px 9px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sb-accent);
+  background: var(--sb-accent-light);
+  border-radius: 999px;
+  line-height: 1.6;
+  transition: all 0.15s;
+
+  &:hover {
+    background: color-mix(in srgb, var(--sb-accent) 15%, transparent);
+  }
+}
+
+.sb-tag-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--sb-accent);
+  opacity: 0.5;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    transform 0.12s ease;
+
+  @include sb-focus-ring;
+
+  &:hover {
+    opacity: 1;
+    background: color-mix(in srgb, var(--sb-accent) 20%, transparent);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+}
+
+// ---- 封面预览 ----
+.sb-cover-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100px;
+  border-radius: var(--sb-radius);
+  border: 2px dashed var(--sb-border);
+  color: var(--sb-muted);
+  opacity: 0.5;
+  font-size: 11px;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--sb-accent);
+    opacity: 0.7;
+  }
+}
+
+.sb-cover {
+  position: relative;
+  width: 100%;
+  height: 100px;
+  border-radius: var(--sb-radius);
+  overflow: hidden;
+  background: var(--sb-bg2);
+}
+
+.sb-cover-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sb-muted);
+}
+
+.sb-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.sb-cover-img-loaded {
+  opacity: 1;
+}
+
+// ---- 上传按钮 ----
+.sb-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--sb-radius);
+  border: 1.5px solid var(--sb-border);
+  background: var(--sb-bg2);
+  color: var(--sb-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s,
+    transform 0.12s ease,
+    opacity 0.2s;
+
+  @include sb-focus-ring;
+  @include sb-press-pop;
+
+  &:hover:not(:disabled) {
+    border-color: var(--sb-accent);
+    color: var(--sb-accent);
+    background: var(--sb-accent-light);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+// ---- 下拉创建按钮（位于 listbox 外，与选项列表分隔） ----
+.sb-dropdown-list + .sb-dropdown-item.sb-dropdown-create {
+  border-top: 1px solid var(--sb-border);
+  border-radius: 0;
+}
+
+.sb-dropdown-create {
+  color: var(--sb-accent);
+  font-weight: 500;
+
+  &:hover:not(:disabled) {
+    background: var(--sb-accent-light);
+  }
+
+  &:active:not(:disabled) {
+    background: color-mix(in srgb, var(--sb-accent) 18%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+// ---- 颜色选择器 ----
+.sb-color-input {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--sb-radius);
+  border: 2px solid var(--sb-border);
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  appearance: none;
+  background: transparent;
+  flex-shrink: 0;
+  transition:
+    border-color 0.2s,
+    transform 0.12s ease,
+    box-shadow 0.2s;
+
+  @include sb-focus-ring;
+
+  &:hover {
+    border-color: var(--sb-accent);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+  &::-webkit-color-swatch-wrapper {
+    padding: 2px;
+  }
+  &::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+  }
+}
+
+// ---- 小按钮 ----
+.sb-icon-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--sb-muted);
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.12s ease;
+  flex-shrink: 0;
+
+  @include sb-focus-ring;
+  @include sb-press-pop;
+
+  &:hover {
+    background: var(--sb-bg2);
+    color: var(--sb-text2);
+  }
+
+  &:active:not(:disabled) {
+    background: color-mix(in srgb, var(--sb-text) 8%, var(--sb-bg2));
+  }
+}
+
+.sb-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sb-accent);
+  background: var(--sb-accent-light);
+  border: 1.5px dashed color-mix(in srgb, var(--sb-accent) 20%, transparent);
+  border-radius: var(--sb-radius);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.12s ease;
+  font-family: inherit;
+
+  @include sb-focus-ring;
+  @include sb-press-pop;
+
+  &:hover {
+    background: color-mix(in srgb, var(--sb-accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--sb-accent) 35%, transparent);
+  }
+
+  &:active:not(:disabled) {
+    background: color-mix(in srgb, var(--sb-accent) 18%, transparent);
+  }
+}
+
+// ---- 子分组 ----
+.sb-sub-group {
+  padding-left: 12px;
+  border-left: 2px solid color-mix(in srgb, var(--sb-accent) 20%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// ---- 快捷时间按钮 ----
+.sb-quick-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sb-quick-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sb-text2);
+  background: var(--sb-bg2);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.12s ease;
+  font-family: inherit;
+
+  @include sb-focus-ring;
+  @include sb-press-pop;
+
+  &:hover {
+    border-color: var(--sb-accent);
+    color: var(--sb-accent);
+    background: var(--sb-accent-light);
+  }
+
+  &:active:not(:disabled) {
+    border-color: color-mix(in srgb, var(--sb-accent) 50%, transparent);
+  }
+}

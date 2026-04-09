@@ -1,0 +1,52 @@
+.thumbnail-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.thumbnail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.thumbnail-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.loading-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-color: var(--anzhiyu-secondbg);
+  border-radius: 6px;
+}
+
+.spinner {
+  font-size: 28px;
+  color: var(--anzhiyu-theme);
+  animation: spin 1.5s linear infinite;
+}
+
+/* 文件图标回退 - 大尺寸适配网格视图 */
+.file-icon-fallback {
+  width: 64px;
+  height: 64px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

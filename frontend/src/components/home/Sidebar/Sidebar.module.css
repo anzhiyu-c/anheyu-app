@@ -1,0 +1,32 @@
+/* Sidebar - 侧边栏容器 */
+
+.asideContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  width: 300px;
+  transition: all 0.3s;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 卡片基础样式（与 StickyCards.cardWidget 行为一致，供复用时使用） */
+.cardWidget {
+  position: relative;
+  overflow: hidden;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 12px;
+  transition: border-color 0.3s ease;
+}
+
+.cardWidget:hover {
+  border: var(--style-border-hover);
+}
+
+/* 响应式 - 992px 以下隐藏侧边栏 */
+@media (max-width: 992px) {
+  .asideContent {
+    display: none;
+  }
+}

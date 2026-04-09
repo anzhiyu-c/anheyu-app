@@ -1,0 +1,212 @@
+.commentBarrage {
+  position: fixed;
+  right: 60px;
+  bottom: 0;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: end;
+  padding: 0 0 20px 10px;
+  pointer-events: none;
+  transform: translateY(0);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* 滚动到评论区时整体下移滑出视口 */
+.commentBarrage[data-hidden="true"] {
+  transform: translateY(100%);
+}
+
+@media screen and (width <= 768px) {
+  .commentBarrage {
+    display: none !important;
+  }
+}
+
+.commentBarrageItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  min-width: 300px;
+  max-width: 300px;
+  min-height: 80px;
+  max-height: 150px;
+  padding: 8px 14px;
+  margin: 4px;
+  color: var(--anzhiyu-fontcolor);
+  pointer-events: auto;
+  background: rgb(255 255 255 / 85%);
+  backdrop-filter: blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: var(--style-border);
+  border-radius: 8px;
+  box-shadow: var(--anzhiyu-shadow-border);
+  transition: 0.3s;
+  transform: translateZ(0);
+}
+
+.barrageClose {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 8%);
+  color: var(--anzhiyu-fontcolor);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.barrageClose:hover {
+  opacity: 1;
+  background: rgb(0 0 0 / 12%);
+}
+
+.barrageClose:focus-visible {
+  outline: 2px solid var(--anzhiyu-main, currentColor);
+  outline-offset: 2px;
+}
+
+.barrageClose::before,
+.barrageClose::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 1.5px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.barrageClose::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.barrageClose::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+:global([data-theme="dark"]) .commentBarrageItem,
+:global(.dark) .commentBarrageItem {
+  background: rgb(30 30 30 / 80%);
+}
+
+.commentBarrageItem:hover {
+  border: var(--style-border-hover);
+  box-shadow: var(--anzhiyu-shadow-main);
+}
+
+.barrageContent {
+  color: var(--anzhiyu-fontcolor);
+  text-decoration: none;
+}
+
+.barrageContent:hover {
+  color: var(--anzhiyu-main);
+}
+
+.barrageHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  padding: 0;
+  padding-right: 30px; /* 预留关闭按钮区域，避免头像遮挡 */
+  padding-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 30px;
+  border-bottom: var(--style-border);
+}
+
+.barrageTitle {
+  padding: 4px;
+  margin-right: 8px;
+  line-height: 1;
+  color: var(--anzhiyu-card-bg);
+  text-decoration: none;
+  background: var(--anzhiyu-fontcolor);
+  border-radius: 4px;
+}
+
+.barrageBloggerTitle {
+  background: var(--anzhiyu-orange);
+}
+
+.barrageAvatar {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  margin-right: 4px;
+  margin-left: auto;
+  background: var(--anzhiyu-secondbg);
+  border-radius: 50%;
+}
+
+.barrageNick {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barrageContent {
+  height: calc(100% - 30px);
+  margin-top: 6px;
+  overflow: scroll;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  cursor: pointer;
+}
+
+.barrageContent::-webkit-scrollbar {
+  width: 4px;
+  height: 0;
+}
+
+.barrageContent::-webkit-scrollbar-button {
+  display: none;
+}
+
+.barrageContent :global(p) {
+  display: -webkit-box;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.barrageContent :global(blockquote) {
+  padding: 0.5rem 0.8rem;
+  margin: 1rem 0;
+  color: var(--anzhiyu-secondtext);
+  background-color: var(--anzhiyu-secondbg);
+  border: var(--style-border-always);
+  border-radius: 8px;
+}
+
+.barrageContent :global(blockquote p) {
+  margin: 0;
+}
+
+.barrageContent :global(h1),
+.barrageContent :global(h2),
+.barrageContent :global(h3),
+.barrageContent :global(h4) {
+  margin: 8px 0 !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}

@@ -1,0 +1,479 @@
+/* Frontend Header Styles */
+
+/* 主容器 */
+.frontendHeader {
+  position: relative;
+  width: 100%;
+  height: 60px;
+  font-size: 1rem;
+}
+
+/* 文章详情页 - 降低 header 的 z-index，让浏览器可以从 PostHeader 采样颜色 */
+.frontendHeader.isPostDetail {
+  position: fixed;
+  z-index: 99;
+}
+
+.frontendHeader a {
+  color: var(--foreground);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.frontendHeader a:hover {
+  color: var(--primary);
+}
+
+/* Header 包装器 */
+.headerWrapper {
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background-color: var(--card);
+  outline: 1px solid var(--border);
+  will-change: background-color, outline-color;
+  transition:
+    background-color 0.3s,
+    outline-color 0.3s;
+}
+
+/* 路由切换时禁用所有过渡动画 */
+.headerWrapper.isRouteChanging,
+.headerWrapper.isRouteChanging * {
+  transition: none !important;
+}
+
+/* Header 内容区 */
+.headerContent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 60px;
+  max-width: 1400px;
+  padding: 0 1.5rem;
+}
+
+/* 左侧区域 */
+.headerLeft {
+  z-index: 102;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  height: 60px;
+  transition: 0.3s;
+}
+
+/* 站点名称链接 */
+.siteNameLink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 35px;
+  padding: 0 2px;
+  overflow: hidden;
+  line-height: 35px;
+  white-space: nowrap;
+  border-radius: 50px;
+  transition: 0.3s;
+}
+
+.siteNameLink svg {
+  position: absolute;
+  left: 50%;
+  display: inline;
+  width: 22px;
+  height: 38px;
+  font-weight: 700;
+  line-height: 38px;
+  opacity: 0;
+  transition: 0.3s;
+  transform: translateX(-50%);
+}
+
+.siteNameLink:hover {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.siteNameLink:hover svg {
+  color: var(--primary-foreground);
+  filter: none;
+  opacity: 1;
+}
+
+.siteNameLink:hover .siteTitle {
+  opacity: 0;
+}
+
+.siteTitle {
+  padding: 0 5px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 2;
+  letter-spacing: normal;
+  cursor: pointer;
+  transition:
+    all 0.3s,
+    color 0s,
+    opacity 0.3s;
+}
+
+/* 页面名称遮罩 */
+.pageNameMask {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pageNameContainer {
+  position: absolute;
+  top: 62px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  height: 40px;
+  pointer-events: none;
+  cursor: pointer;
+  border-radius: 12px;
+  opacity: 0;
+  transition:
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(-50%) translateY(10px) translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.pageNameContainer:hover .pageName {
+  color: var(--primary);
+}
+
+.pageName {
+  position: relative;
+  top: 0;
+  display: inline;
+  padding: 4px 8px;
+  overflow: hidden;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  filter: none;
+  opacity: 1;
+  transition: color 0.3s;
+  animation-timing-function: ease-in;
+}
+
+/* 主导航 */
+.mainNav {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 60px;
+  margin: 0;
+  transform: translateZ(0);
+}
+
+.menusItems {
+  position: relative;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  width: fit-content;
+  text-align: center;
+  pointer-events: auto;
+  opacity: 1;
+  transition:
+    transform 0.2s ease-out,
+    opacity 0.2s ease-out;
+  transform: translateY(0) scale(1);
+}
+
+.menusItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0.4rem;
+  margin: auto;
+  border-radius: 30px;
+}
+
+.menusItem:first-child .menusItemChild::after {
+  position: absolute;
+  top: -60px;
+  left: 0;
+  width: 50%;
+  height: 60px;
+  content: "";
+}
+
+.menusItem:last-child .menusItemChild::after {
+  position: absolute;
+  top: -60px;
+  right: 0;
+  width: 50%;
+  height: 60px;
+  content: "";
+}
+
+.menuTitle {
+  height: 35px;
+  padding: 0 0.8em 0 1em;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 35px;
+  letter-spacing: 0.3rem;
+  cursor: pointer;
+  border-radius: 50px;
+  transition: all 0.3s;
+}
+
+.menusItemChild {
+  position: absolute;
+  top: 35px;
+  right: auto;
+  left: auto;
+  box-sizing: content-box;
+  width: max-content;
+  padding: 6px 4px;
+  margin-top: 8px;
+  line-height: 35px;
+  pointer-events: none;
+  background-color: var(--card);
+  filter: alpha(opacity=0);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  box-shadow: 0 0 12px 4px rgb(0 0 0 / 5%);
+  opacity: 0;
+  transition: 0.3s;
+  transform: translateY(-10px) scale(0);
+  transform-origin: top;
+}
+
+.menusItemChild li {
+  display: inline-block;
+  margin: 0 3px;
+  border-radius: 50px;
+  transition: all 0.3s;
+}
+
+.menusItemChild::before {
+  position: absolute;
+  top: -12px;
+  left: 0;
+  width: 100%;
+  height: 16px;
+  content: "";
+}
+
+/* 下拉菜单项样式 */
+.menusItemChild .sitePage {
+  display: flex;
+  align-items: center;
+  min-height: 35px;
+  padding: 0.3rem 0.8rem;
+  color: var(--foreground);
+  text-shadow: none;
+  letter-spacing: 0;
+  border-radius: 100px;
+  transition: 0.3s;
+}
+
+.menusItemChild .sitePage:hover {
+  padding: 0.3rem 1rem;
+  margin: 0 auto;
+  color: var(--primary-foreground) !important;
+  background: var(--primary);
+  transform: scale(1);
+}
+
+.menuIcon {
+  margin-right: 6px;
+  font-size: 0.9rem;
+}
+
+.menuIconImg {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.menuIconIconify {
+  font-size: 1.1875rem;
+  vertical-align: -0.125em;
+}
+
+.menusItem:hover .menuTitle {
+  color: var(--primary-foreground) !important;
+  background: var(--primary);
+}
+
+.menusItem:hover .menusItemChild {
+  pointer-events: all;
+  filter: none;
+  border-color: var(--primary);
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* 滚动状态 */
+.headerWrapper.isScrolled .menusItems {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-50px) scale(1.1);
+}
+
+.headerWrapper.isScrolled .pageNameContainer {
+  z-index: 1;
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-52px) translateZ(0);
+}
+
+/* 透明状态 - 普通页面在顶部时 */
+.headerWrapper.isTransparent {
+  background-color: var(--background);
+  outline-color: transparent;
+}
+
+.headerWrapper.isTransparent.textIsWhite {
+  background-color: transparent;
+}
+
+/* 白色文字状态 - 只影响 Header 主内容区的直接元素，不影响下拉菜单 */
+.headerWrapper.textIsWhite .siteNameLink,
+.headerWrapper.textIsWhite .navButton,
+.headerWrapper.textIsWhite .backMenuButton {
+  transition: color 0.2s ease-out;
+  color: #fff;
+}
+
+.headerWrapper.textIsWhite .siteNameLink svg,
+.headerWrapper.textIsWhite .siteTitle {
+  color: #fff;
+}
+
+.headerWrapper.textIsWhite .siteNameLink:hover,
+.headerWrapper.textIsWhite .navButton:hover,
+.headerWrapper.textIsWhite .navButton[data-hover="true"],
+.headerWrapper.textIsWhite .backMenuButton:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.headerWrapper.textIsWhite .toggleMenu {
+  transition: color 0.2s ease-out;
+  color: #fff;
+}
+
+/* 主菜单项 - 只影响一级菜单，不影响下拉菜单 */
+.headerWrapper.textIsWhite .menusItem > .menuTitle {
+  transition: color 0.2s ease-out;
+  color: #fff;
+}
+
+.headerWrapper.textIsWhite .menusItem > .menuTitle:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 切换菜单按钮 */
+.toggleMenu {
+  display: block;
+  font-size: 1.2rem;
+}
+
+@media (min-width: 992px) {
+  .toggleMenu {
+    display: none;
+  }
+}
+
+/* 直接链接样式 */
+.directLink {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.directLink:hover {
+  color: var(--primary);
+}
+
+.directLink .menuIcon {
+  font-size: 14px;
+}
+
+/* 控制台打开状态 - 隐藏 header 内容，只保留关闭按钮 */
+.headerWrapper.consoleOpen {
+  background-color: transparent;
+  outline-color: transparent;
+  pointer-events: none;
+}
+
+.headerWrapper.consoleOpen .headerLeft,
+.headerWrapper.consoleOpen .pageNameMask,
+.headerWrapper.consoleOpen .mainNav {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .pageNameMask {
+    display: none;
+  }
+
+  .mainNav {
+    display: none !important;
+  }
+
+  .headerContent {
+    padding: 0 1rem;
+  }
+
+  /* 移动端禁用 site-name-link 的 hover 效果 */
+  .siteNameLink:hover {
+    color: inherit !important;
+    background: transparent !important;
+  }
+
+  .siteNameLink:hover svg {
+    color: inherit !important;
+    opacity: 0 !important;
+  }
+
+  .siteNameLink:hover .siteTitle {
+    opacity: 1 !important;
+  }
+
+  /* 禁用透明状态下的 hover 效果 */
+  .headerWrapper.textIsWhite .siteNameLink:hover {
+    color: #fff !important;
+    background: transparent !important;
+  }
+}

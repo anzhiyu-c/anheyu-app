@@ -1,0 +1,76 @@
+/* CardWechat - 微信公众号卡片 */
+
+.cardWechat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 110px;
+  padding: 0;
+  cursor: pointer;
+  background: #57bd6a;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cardWechat:hover::before {
+  top: 100%;
+  opacity: 0;
+  transition: 0.3s ease-out;
+}
+
+.cardWechat::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  content: "";
+  background-image: var(--blur-background);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  transition: 0.2s cubic-bezier(0.45, 0.04, 0.43, 1.21);
+}
+
+/* 深色模式 */
+:global([data-theme="dark"]) .cardWechat {
+  background-color: #121121;
+}
+
+/* 翻转容器 */
+.flipWrapper {
+  position: relative;
+  z-index: 1;
+  width: 235px;
+  height: 110px;
+  perspective: 1000px;
+}
+
+.flipContent {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: cubic-bezier(0, 0, 0, 1.29) 0.3s;
+}
+
+.face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  background-size: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.face.back {
+  box-sizing: border-box;
+  display: block;
+  background-size: 100%;
+  transform: rotateY(180deg);
+}
+
+.flipWrapper:hover .flipContent {
+  transform: rotateY(180deg);
+}

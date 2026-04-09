@@ -1,0 +1,132 @@
+.file-management-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 135px);
+  margin: 0 auto !important;
+}
+
+.file-management-main {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background-color: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 12px;
+}
+
+.breadcrumb-toolbar-row {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  align-items: stretch;
+  margin-bottom: 6px;
+}
+
+.file-content-area {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 拖拽上传覆盖层 - 高级毛玻璃效果 */
+.drag-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgb(var(--anzhiyu-theme-rgb, 22, 59, 242) / 85%),
+    rgb(var(--anzhiyu-theme-rgb, 22, 59, 242) / 70%)
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: inherit;
+}
+
+.drag-content {
+  text-align: center;
+}
+
+.drag-icon {
+  font-size: 64px;
+  filter: drop-shadow(0 4px 12px rgb(255 255 255 / 30%));
+}
+
+.drag-title {
+  display: block;
+  margin-top: 16px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 20%);
+}
+
+.drag-desc {
+  margin-top: 8px;
+  font-size: 14px;
+  color: rgb(255 255 255 / 80%);
+  font-weight: 400;
+}
+
+/* 加载覆盖层 */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: var(--anzhiyu-card-bg);
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--anzhiyu-theme-op);
+  border-top-color: var(--anzhiyu-theme);
+  border-radius: 50%;
+  animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 响应式布局 */
+@media screen and (width <= 768px) {
+  .breadcrumb-toolbar-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .breadcrumb-toolbar-row > :global(.flex-1) {
+    width: 100%;
+  }
+
+  .breadcrumb-toolbar-row > :global(.ml-2) {
+    margin-left: 0 !important;
+  }
+}
+
+@media screen and (width <= 576px) {
+  .drag-title {
+    font-size: 18px;
+  }
+
+  .drag-desc {
+    font-size: 13px;
+  }
+}

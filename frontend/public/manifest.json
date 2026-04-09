@@ -1,0 +1,23 @@
+{
+  "name": "AnHeYu Blog",
+  "short_name": "AnHeYu",
+  "description": "现代化博客主题，基于 Next.js 构建",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f9fe",
+  "theme_color": "#163bf2",
+  "icons": [
+    {
+      "src": "/static/img/logo-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/img/logo-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

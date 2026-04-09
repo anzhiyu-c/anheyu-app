@@ -1,0 +1,807 @@
+// ============================================
+// 按钮编辑面板 + 图标选择器 + 按钮样式
+// ============================================
+
+// ---- 面板容器 ----
+.editor-btn-edit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  animation: editorCalloutPanelIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+// ---- 头部 ----
+.editor-btn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border-bottom: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 12px 12px 0 0;
+
+  :root.dark & {
+    background: var(--anzhiyu-card-bg-grey, #27282a);
+  }
+}
+
+.editor-btn-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+}
+
+.editor-btn-done {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--anzhiyu-theme, #3b82f6);
+  border: none;
+  cursor: pointer;
+  padding: 5px 16px;
+  border-radius: 6px;
+  transition: all 0.2s;
+
+  &::selection {
+    background: transparent;
+    color: #fff;
+  }
+  &:hover {
+    opacity: 0.85;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// 实时预览区
+.editor-btn-preview-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  background: var(--anzhiyu-background, #f7f9fe);
+  border-bottom: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+
+  :root.dark & {
+    background: var(--anzhiyu-secondbg, #21232a);
+  }
+}
+
+// 表单区
+.editor-btn-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 0 0 12px 12px;
+}
+
+// 预览包裹器
+.editor-btn-preview-wrap {
+  display: inline-block;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 2px;
+  transition: box-shadow 0.2s;
+
+  &.is-selected {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 30%, transparent);
+  }
+}
+
+// 按钮组预览需要占满宽度
+.button-block-wrapper[data-type="group"] .editor-btn-preview-wrap {
+  display: block;
+}
+
+// 覆盖 ProseMirror 对按钮节点的选中样式
+.tiptap {
+  .node-buttonBlock,
+  .node-buttonBlock.ProseMirror-selectednode {
+    outline: none !important;
+  }
+
+  // 阻止选区高亮影响按钮
+  .btn-anzhiyu:not(.btn-outline)::selection,
+  .btn-anzhiyu:not(.btn-outline) *::selection {
+    background: transparent;
+    color: #fff;
+  }
+
+  .hide-button::selection {
+    background: transparent;
+    color: #fff;
+  }
+
+  .editor-callout-text::selection {
+    background: transparent;
+    color: var(--anzhiyu-theme, #3b82f6);
+  }
+}
+
+// 行：两列并排
+.editor-btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+// 字段
+.editor-btn-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+.editor-btn-icon-selector {
+  width: 100%;
+}
+
+.editor-btn-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+}
+
+// 输入框
+.editor-btn-input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+
+  :root.dark & {
+    background: var(--anzhiyu-card-bg-grey, #27282a);
+  }
+  &::placeholder {
+    color: var(--anzhiyu-secondtext, #9ca3af);
+    opacity: 0.6;
+  }
+  &:hover {
+    border-color: color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 20%, transparent);
+  }
+
+  &:focus {
+    background: var(--anzhiyu-card-bg, #fff);
+    border-color: var(--anzhiyu-theme, #3b82f6);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 8%, transparent);
+
+    :root.dark & {
+      background: var(--anzhiyu-card-bg, #1d1e22);
+    }
+  }
+}
+
+// 文本域
+.editor-btn-textarea {
+  min-height: 80px;
+  resize: vertical;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.editor-btn-helper {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+}
+
+// ---- 按钮组逐项编辑 ----
+.editor-btngroup-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editor-btngroup-item {
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 30%, transparent);
+
+    .editor-btngroup-item-remove {
+      opacity: 1;
+    }
+  }
+}
+
+.editor-btngroup-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border-bottom: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+
+  :root.dark & {
+    background: var(--anzhiyu-card-bg-grey, #27282a);
+  }
+}
+
+.editor-btngroup-item-index {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--anzhiyu-card-bg, #fff);
+  border-radius: 5px;
+
+  :root.dark & {
+    background: var(--anzhiyu-card-bg, #1d1e22);
+  }
+}
+
+.editor-btngroup-item-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  opacity: 0;
+
+  &:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
+}
+
+.editor-btngroup-item-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.editor-btn-color-dot-sm {
+  width: 20px;
+  height: 20px;
+}
+
+// 添加按钮
+.editor-btngroup-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--anzhiyu-theme, #3b82f6);
+  background: color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 6%, transparent);
+  border: 1.5px dashed color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 25%, transparent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+
+  &:hover {
+    background: color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 12%, transparent);
+    border-color: color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 40%, transparent);
+  }
+}
+
+// 颜色选择列表
+.editor-btn-color-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.editor-btn-color-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+
+  &:hover {
+    transform: scale(1.15);
+  }
+
+  &.is-active {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px var(--anzhiyu-theme, #3b82f6);
+    transform: scale(1.1);
+  }
+}
+
+// 切换按钮组
+.editor-btn-toggle-group {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+}
+
+.editor-btn-toggle {
+  flex: 1;
+  padding: 5px 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  :root.dark & {
+    background: var(--anzhiyu-card-bg-grey, #27282a);
+  }
+  &:not(:last-child) {
+    border-right: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  }
+  &:hover {
+    color: var(--anzhiyu-fontcolor, var(--foreground));
+  }
+  &.is-active {
+    color: #fff;
+    background: var(--anzhiyu-theme, #3b82f6);
+  }
+}
+
+// ============================================
+// 图标选择器
+// ============================================
+
+.editor-icon-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+
+  :root.dark & {
+    background: var(--anzhiyu-card-bg-grey, #27282a);
+  }
+  &:hover {
+    border-color: color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 20%, transparent);
+  }
+}
+
+.editor-icon-trigger-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.editor-icon-trigger-text {
+  font-size: 12px;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-icon-trigger-placeholder {
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  opacity: 0.6;
+}
+
+.editor-icon-trigger-arrow {
+  flex-shrink: 0;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  transition: transform 0.2s;
+}
+
+// 下拉面板
+.editor-icon-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 10px;
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  animation: ecsmFadeIn 0.15s ease-out;
+
+  :root.dark & {
+    background: var(--anzhiyu-card-bg, #1d1e22);
+  }
+}
+
+// 搜索栏
+.editor-icon-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+}
+
+.editor-icon-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+
+  :root.dark & {
+    background: var(--anzhiyu-card-bg-grey, #27282a);
+  }
+  &:focus {
+    border-color: var(--anzhiyu-theme, #3b82f6);
+  }
+  &::placeholder {
+    color: var(--anzhiyu-secondtext, #9ca3af);
+    opacity: 0.6;
+  }
+}
+
+// 手动/网格 切换按钮
+.editor-icon-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  background: none;
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    color: var(--anzhiyu-theme, #3b82f6);
+    border-color: var(--anzhiyu-theme, #3b82f6);
+  }
+
+  &.is-active {
+    color: var(--anzhiyu-theme, #3b82f6);
+    background: color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 8%, transparent);
+    border-color: var(--anzhiyu-theme, #3b82f6);
+  }
+}
+
+// 分类标签
+.editor-icon-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  overflow-x: auto;
+}
+
+.editor-icon-tab {
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  background: none;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+
+  &:hover {
+    color: var(--anzhiyu-fontcolor, var(--foreground));
+    background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  }
+  &.is-active {
+    color: var(--anzhiyu-theme, #3b82f6);
+    background: color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 10%, transparent);
+  }
+}
+
+.editor-icon-search-hint {
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  border-bottom: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+}
+
+// 图标网格
+.editor-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap: 4px;
+  padding: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 3px;
+  }
+}
+
+.editor-icon-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: none;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+    color: var(--anzhiyu-theme, #3b82f6);
+
+    :root.dark & {
+      background: var(--anzhiyu-card-bg-grey, #27282a);
+    }
+  }
+
+  &.is-active {
+    background: color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 10%, transparent);
+    border-color: var(--anzhiyu-theme, #3b82f6);
+    color: var(--anzhiyu-theme, #3b82f6);
+  }
+}
+
+.editor-icon-empty {
+  grid-column: 1 / -1;
+  padding: 16px;
+  font-size: 12px;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  text-align: center;
+}
+
+// ============================================
+// 按钮（与文章详情一致）
+// ============================================
+
+.tiptap {
+  .btn-anzhiyu,
+  .button-block-wrapper .btn-preview {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    padding: 8px 16px;
+    margin: 4px 8px 4px 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #fff !important;
+    text-decoration: none !important;
+    cursor: pointer;
+    background: var(--anzhiyu-theme);
+    border: 2px solid var(--anzhiyu-theme);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: var(--anzhiyu-theme-op-deep, var(--anzhiyu-theme));
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  .btn-anzhiyu {
+    i,
+    .iconify {
+      font-size: 1em;
+      transition: transform 0.3s ease;
+    }
+
+    // 颜色变体
+    &.btn-blue {
+      --btn-color: #409eff;
+      --btn-hover: #66b1ff;
+    }
+    &.btn-pink {
+      --btn-color: #ff69b4;
+      --btn-hover: #ff85c0;
+    }
+    &.btn-red {
+      --btn-color: #f56c6c;
+      --btn-hover: #f78989;
+    }
+    &.btn-purple {
+      --btn-color: #9d5cff;
+      --btn-hover: #b07dff;
+    }
+    &.btn-orange {
+      --btn-color: #ff9800;
+      --btn-hover: #ffad33;
+    }
+    &.btn-green {
+      --btn-color: #67c23a;
+      --btn-hover: #85ce61;
+    }
+
+    &[class*="btn-"]:not(.btn-outline):not(.btn-container):not(.btn-larger) {
+      background: var(--btn-color, var(--anzhiyu-theme));
+      border-color: var(--btn-color, var(--anzhiyu-theme));
+
+      &:hover {
+        background: var(--btn-hover, var(--anzhiyu-theme-op-deep, var(--anzhiyu-theme)));
+        border-color: var(--btn-hover, var(--anzhiyu-theme-op-deep, var(--anzhiyu-theme)));
+      }
+    }
+
+    // Outline 变体
+    &.btn-outline {
+      color: var(--btn-color, var(--anzhiyu-theme)) !important;
+      background: transparent;
+      border: 2px solid var(--btn-color, var(--anzhiyu-theme));
+
+      &:hover {
+        color: #fff !important;
+        background: var(--btn-color, var(--anzhiyu-theme));
+      }
+    }
+
+    &.btn-larger {
+      padding: 12px 24px !important;
+      font-size: 1.1rem;
+    }
+  }
+
+  .btn-container {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+    margin: 8px 0;
+
+    &.btn-container-center {
+      justify-content: center;
+    }
+    &.btn-container-right {
+      justify-content: flex-end;
+    }
+  }
+
+  // 按钮组
+  .btns-container {
+    display: grid;
+    gap: 16px;
+    margin: 1.5rem 0;
+
+    @for $i from 1 through 6 {
+      &.btns-cols-#{$i} {
+        grid-template-columns: repeat($i, 1fr);
+      }
+    }
+
+    .btn-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px !important;
+      text-decoration: none;
+      cursor: pointer;
+      background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+      border-radius: 12px;
+      border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: var(--anzhiyu-card-bg, #fff);
+        border-color: var(--anzhiyu-theme);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+
+        .btn-icon {
+          transform: scale(1.1);
+        }
+      }
+
+      .btn-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        margin-bottom: 12px;
+        background: var(--anzhiyu-card-bg, #fff);
+        border: 3px solid var(--anzhiyu-background, #f7f9fe);
+        border-radius: 50%;
+        transition: all 0.3s ease;
+        overflow: hidden;
+
+        i {
+          font-size: 32px;
+          color: var(--anzhiyu-fontcolor, var(--foreground));
+        }
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          margin: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+      }
+
+      .btn-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--anzhiyu-fontcolor, var(--foreground));
+        text-align: center;
+      }
+      .btn-desc {
+        font-size: 12px;
+        color: var(--anzhiyu-secondtext, #9ca3af);
+        text-align: center;
+        line-height: 1.4;
+        opacity: 0.8;
+      }
+
+      // 颜色主题
+      &.btn-color-blue {
+        --icon-color: #409eff;
+      }
+      &.btn-color-pink {
+        --icon-color: #ff69b4;
+      }
+      &.btn-color-red {
+        --icon-color: #f56c6c;
+      }
+      &.btn-color-purple {
+        --icon-color: #9d5cff;
+      }
+      &.btn-color-orange {
+        --icon-color: #ff9800;
+      }
+      &.btn-color-green {
+        --icon-color: #67c23a;
+      }
+
+      &[class*="btn-color-"] .btn-icon {
+        border-color: var(--icon-color);
+        background: color-mix(in srgb, var(--icon-color) 10%, transparent);
+      }
+    }
+  }
+}

@@ -1,0 +1,455 @@
+/* Footer - 页脚组件 */
+
+.footerContainer {
+  position: relative;
+  margin-top: 1rem;
+  color: var(--anzhiyu-fontcolor);
+  background: linear-gradient(180deg, transparent 0, var(--anzhiyu-card-bg) 25%);
+}
+
+.footerWrap {
+  position: relative;
+  max-width: 1200px;
+  min-height: 17.875rem;
+  margin: 0 auto;
+}
+
+/* 社交图标栏 */
+.footerSocialBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.socialLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 1rem 27px;
+  font-size: 1.5rem;
+  color: var(--anzhiyu-card-bg);
+  text-decoration: none;
+  background: var(--anzhiyu-fontcolor);
+  border-radius: 3rem;
+  transition: 0.3s;
+}
+
+.socialLink:hover {
+  color: var(--anzhiyu-white);
+  background: var(--anzhiyu-main);
+  transform: scale(1.2);
+}
+
+.socialIconImg {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.socialIconIconify {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.footerBackToTop {
+  width: 50px;
+  height: 50px;
+  margin: 0 1rem;
+  cursor: pointer;
+  user-select: none;
+  object-fit: cover;
+  border-radius: 50%;
+  transition: cubic-bezier(0, 0, 0, 1.29) 0.5s;
+}
+
+.footerBackToTop:hover {
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transform: scale(1.2);
+}
+
+/* 链接分组区域 */
+.footerLinkGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  padding: 0 2rem;
+  gap: 1.5rem 0;
+}
+
+.footerGroup {
+  min-width: 130px;
+  text-align: left;
+}
+
+.footerTitleGroup {
+  display: flex;
+  align-items: center;
+}
+
+.footerTitle {
+  margin-bottom: 0.8rem;
+  margin-left: 4px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--anzhiyu-secondtext);
+}
+
+.randomFriendsBtn {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  margin-left: 0.5rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: var(--anzhiyu-fontcolor);
+  transition: color 0.3s;
+}
+
+.randomFriendsBtn:hover {
+  color: var(--anzhiyu-main);
+}
+
+.randomFriendsBtn svg {
+  display: inline-block;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.randomFriendsBtn .isAnimating {
+  opacity: 0.2;
+}
+
+.footerLinks {
+  display: flex;
+  flex-direction: column;
+}
+
+.footerItem {
+  display: block;
+  width: fit-content;
+  max-width: 120px;
+  padding: 0 4px;
+  margin-right: 10px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  font-size: 0.95rem;
+  color: var(--anzhiyu-fontcolor);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 7px;
+  transition: all 0.2s;
+}
+
+.footerItem:hover {
+  color: white;
+  background: var(--anzhiyu-main);
+}
+
+/* 底部徽章 */
+.footerBadges {
+  padding: 1.5rem 0;
+  margin: 0;
+  text-align: center;
+}
+
+.badgeLink {
+  display: inline-block;
+  margin: 5px;
+}
+
+.badgeLink img {
+  height: 20px;
+  vertical-align: middle;
+}
+
+/* Footer Bottom Bar */
+.footerBottomBar {
+  display: flex;
+  padding: 1.5rem 1rem;
+  margin-top: 1rem;
+  overflow: hidden;
+  color: var(--anzhiyu-fontcolor);
+  background: var(--anzhiyu-secondbg);
+  transition: 0.3s;
+}
+
+.barContent {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  line-height: 1;
+}
+
+.barLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+  min-height: 32px;
+}
+
+.barRight {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  min-height: 32px;
+}
+
+.copyrightInfo {
+  font-size: 0.9rem;
+}
+
+.copyrightInfo a:hover {
+  color: var(--anzhiyu-main);
+}
+
+.barLink {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--anzhiyu-fontcolor);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.barLink:hover {
+  color: var(--anzhiyu-main);
+}
+
+.recordInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.recordLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--anzhiyu-secondtext);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.recordLink:hover {
+  color: var(--anzhiyu-main);
+}
+
+.policeRecordLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.policeRecordIcon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.ccLink {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ccLink svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+/* Uptime Kuma 状态样式 */
+.uptimeStatusIndicator {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  font-size: 0.8rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.uptimeStatusIndicator:hover {
+  transform: scale(1.05);
+}
+
+.uptimeStatusIndicator:hover .statusDot {
+  transform: scale(1.2);
+}
+
+.statusDot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background-color 0.3s, transform 0.2s ease, box-shadow 0.3s;
+}
+
+.statusText {
+  color: var(--anzhiyu-secondtext);
+  transition: color 0.3s;
+}
+
+/* 状态：加载中 */
+.statusLoading .statusDot {
+  background-color: #9ca3af;
+  animation: statusPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 状态：正常 */
+.statusOk .statusDot {
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  animation: statusGlow 2s ease-in-out infinite;
+}
+
+.statusOk .statusText {
+  color: #10b981;
+}
+
+.statusOk:hover .statusDot {
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+}
+
+/* 状态：部分异常 */
+.statusPartial .statusDot {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+  animation: statusBlink 1.5s ease-in-out infinite;
+}
+
+.statusPartial .statusText {
+  color: #f59e0b;
+}
+
+.statusPartial:hover .statusDot {
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.8);
+}
+
+/* 状态：错误 */
+.statusError .statusDot {
+  background-color: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  animation: statusBlink 1s ease-in-out infinite;
+}
+
+.statusError .statusText {
+  color: #ef4444;
+}
+
+.statusError:hover .statusDot {
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+}
+
+/* 状态正常时的柔和呼吸动画 */
+@keyframes statusGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+    opacity: 0.9;
+  }
+}
+
+/* 加载中的脉冲动画 */
+@keyframes statusPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+}
+
+/* 异常/错误时的闪烁动画 */
+@keyframes statusBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* 响应式 - 大屏幕不换行 */
+@media (min-width: 992px) {
+  .footerLinkGrid {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+}
+
+@media (min-width: 1200px) {
+  .footerLinkGrid {
+    gap: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .footerBackToTop {
+    display: none;
+  }
+
+  .footerContainer {
+    z-index: 99;
+    margin-top: -1px;
+    background: var(--anzhiyu-card-bg);
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .footerLinkGrid {
+    padding: 0 1rem;
+    gap: 1.5rem 2rem;
+  }
+
+  .footerGroup {
+    min-width: 100px;
+  }
+
+  /* 移动端 Bottom Bar 适配 */
+  .footerBottomBar .barContent {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .footerBottomBar .barLeft {
+    align-items: center;
+    text-align: center;
+  }
+
+  .footerBottomBar .barRight {
+    justify-content: center;
+  }
+
+  .footerBottomBar .recordInfo {
+    justify-content: center;
+  }
+}

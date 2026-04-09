@@ -1,0 +1,59 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  background: var(--anzhiyu-maskbgdeep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  width: 520px;
+  max-width: 90vw;
+  background: var(--anzhiyu-card-bg);
+  border-radius: 16px;
+  border: var(--style-border);
+  padding: 16px;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.link-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.link-label {
+  font-size: 12px;
+  color: var(--anzhiyu-secondtext);
+}
+
+.link-input {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: var(--style-border);
+  background: var(--anzhiyu-secondbg);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.close-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  background: var(--anzhiyu-theme);
+  color: #fff;
+  cursor: pointer;
+}

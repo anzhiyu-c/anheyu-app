@@ -1,0 +1,347 @@
+/* PostHeader 样式 */
+
+.postHeaderContainer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  /* 30rem + 60px(header高度) 来补偿 padding-top 占用的空间 */
+  height: calc(30rem + 60px);
+  min-height: 360px;
+  margin-top: -60px;
+  padding-top: 60px;
+  overflow: hidden;
+  color: white;
+}
+
+.postHeaderContainer::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  content: "";
+  background-color: var(--primary-color, var(--primary));
+  opacity: 1;
+  transition: 0s;
+}
+
+/* 文章信息外层容器 - 只处理滚动缩放动画 */
+.postInfoWrapper {
+  position: absolute;
+  top: 60px; /* 补偿容器的 padding-top */
+  z-index: 10;
+  width: 100%;
+  max-width: 1400px;
+  height: calc(100% - 60px); /* 减去顶部偏移 */
+  margin: 0 auto;
+  transform-origin: top left;
+  will-change: transform;
+}
+
+/* 文章信息区域 - 处理入场动画 */
+.postInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0 3.75rem;
+  color: white;
+  text-align: center;
+}
+
+/* 封面图片区域 */
+.postTopCover {
+  position: relative;
+  width: 70%;
+  height: 100%;
+  margin: 0 -20% 0 auto;
+  margin-bottom: 0;
+  overflow: hidden;
+  filter: blur(30px);
+  opacity: 0.5;
+}
+
+.postTopBg {
+  position: relative;
+  width: 100%;
+  min-width: 50vw;
+  height: 100%;
+  min-height: 25rem;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+
+.postTopBg.isLoaded {
+  opacity: 0.8;
+}
+
+/* 
+ * 注意：anheyu-app 的 ::after 是在 img 元素上的，但 img 元素不能有伪元素，
+ * 所以这个效果在 anheyu-app 实际上是无效的。
+ * 桌面端不需要这个遮罩，让图片自然显示模糊效果。
+ */
+
+/* 文章第一行信息 */
+.postFirstinfo .metaFirstlineTop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.postMetaOriginal,
+.postMetaCategory {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.postMetaCategory:hover {
+  color: var(--primary-color, var(--primary));
+  background: white;
+}
+
+/* 标签区域 */
+.tagShare .postMetaTagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.postMetaTag {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px 0 8px;
+  font-size: 1rem;
+  white-space: nowrap;
+  border-radius: 12px;
+  opacity: 0.8;
+  transition: all 0.3s;
+}
+
+.postMetaTag:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+}
+
+.tagIcon {
+  opacity: 0.6;
+}
+
+.tagName {
+  margin-left: 4px;
+  font-size: 1rem;
+  color: white;
+  transition: color 0.3s;
+}
+
+/* 标题 */
+.postTitle {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+}
+
+/* 元信息 */
+.postMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.metaSecondline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0;
+  align-items: center;
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  opacity: 0.6;
+  transition: 0.3s;
+  border-radius: 12px;
+  cursor: default;
+}
+
+.metaItem:hover {
+  opacity: 1;
+}
+
+.metaClickable {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.metaClickable:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.metaIcon {
+  flex-shrink: 0;
+  margin-right: 0.4rem;
+}
+
+.metaSeparator {
+  display: inline-block;
+  margin: 0 0.15rem;
+}
+
+/* 波浪动画区域 */
+.wavesArea {
+  position: absolute;
+  bottom: -11px;
+  left: 0;
+  z-index: 5;
+  width: 100%;
+  pointer-events: none;
+}
+
+.wavesSvg {
+  width: 100%;
+  height: 3.75rem;
+}
+
+.parallax > use {
+  animation: moveForever 25s cubic-bezier(0.55, 0.5, 0.45, 0.5) infinite;
+  will-change: transform;
+}
+
+/* 浅色模式波浪 - 使用 var(--background) 相关颜色 */
+.parallax > use:nth-child(1) {
+  fill: color-mix(in srgb, var(--background) 74%, transparent);
+  animation-duration: 7s;
+  animation-delay: -2s;
+}
+
+.parallax > use:nth-child(2) {
+  fill: color-mix(in srgb, var(--background) 51%, transparent);
+  animation-duration: 10s;
+  animation-delay: -3s;
+}
+
+.parallax > use:nth-child(3) {
+  fill: color-mix(in srgb, var(--background) 21%, transparent);
+  animation-duration: 13s;
+  animation-delay: -4s;
+}
+
+.parallax > use:nth-child(4) {
+  fill: var(--background);
+  animation-duration: 20s;
+  animation-delay: -5s;
+}
+
+@keyframes moveForever {
+  0% {
+    transform: translate3d(-90px, 0, 0);
+  }
+  100% {
+    transform: translate3d(85px, 0, 0);
+  }
+}
+
+/* 移动端样式 */
+@media (max-width: 768px) {
+  .wavesArea {
+    display: none;
+    visibility: hidden;
+  }
+
+  .postInfoWrapper {
+    position: absolute;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    height: fit-content;
+  }
+
+  .postInfo {
+    gap: 0;
+    align-items: center;
+    justify-content: normal;
+    height: fit-content;
+    padding: 11rem 6% 1rem;
+    background-image: linear-gradient(to bottom, transparent, var(--primary-color, var(--primary)));
+  }
+
+  .postInfo .tagShare {
+    display: none;
+  }
+
+  .postMeta {
+    align-items: center;
+    margin-top: 1rem;
+  }
+
+  .metaSecondline {
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+
+  .postTopCover {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    width: 100%;
+    height: 30rem;
+    margin: 0;
+    filter: blur(0);
+    opacity: 1;
+    transform: none !important;
+  }
+
+  .postTopCover::after {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70%;
+    content: "";
+    box-shadow: 0 0 105px 99px var(--primary-color, var(--primary)) inset;
+  }
+
+  .postTopBg {
+    height: 70%;
+    min-height: 18.75rem;
+    filter: none;
+    border-radius: 0;
+    opacity: 1;
+  }
+
+  .postHeaderContainer {
+    z-index: 1;
+    height: 30rem;
+    background-color: var(--primary-color, var(--primary));
+  }
+
+  .postHeaderContainer::before {
+    display: none;
+  }
+}

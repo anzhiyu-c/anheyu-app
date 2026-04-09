@@ -1,0 +1,212 @@
+/* Pagination - 分页组件 */
+
+.paginationNav {
+  position: relative;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  margin: 1rem 0 0;
+}
+
+/* 上一页/下一页按钮 */
+.extend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--anzhiyu-fontcolor);
+  cursor: pointer;
+  background-color: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.extend:hover {
+  color: var(--anzhiyu-main);
+  border: var(--style-border-hover);
+  box-shadow: var(--anzhiyu-shadow-main);
+  transform: scale(1.03);
+}
+
+/* 上一页 - 绝对定位左侧 */
+.prev {
+  position: absolute;
+  left: 0;
+  width: 5rem;
+}
+
+.paginationTipsPrev {
+  margin-right: -32px;
+  opacity: 0;
+  transition: 0.3s;
+}
+
+.prev:hover .paginationTipsPrev {
+  margin-right: 2px;
+  white-space: nowrap;
+  filter: none;
+  opacity: 1;
+}
+
+/* 下一页 - 绝对定位右侧 */
+.next {
+  position: absolute;
+  right: 0;
+  width: 5rem;
+}
+
+.paginationTipsNext {
+  margin-left: -32px;
+  opacity: 0;
+  transition: 0.3s;
+}
+
+.next:hover .paginationTipsNext {
+  margin-left: 2px;
+  white-space: nowrap;
+  filter: none;
+  opacity: 1;
+}
+
+/* 页码区域 */
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+/* 页码按钮 */
+.pageNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--anzhiyu-fontcolor);
+  cursor: pointer;
+  background-color: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.pageNumber:hover {
+  color: var(--anzhiyu-main);
+  border: var(--style-border-hover);
+  box-shadow: var(--anzhiyu-shadow-main);
+}
+
+.pageNumber.current {
+  color: var(--anzhiyu-white);
+  pointer-events: none;
+  background: var(--anzhiyu-main);
+  border-color: var(--anzhiyu-main);
+}
+
+/* 省略号 */
+.space {
+  padding: 0 0.2rem;
+}
+
+/* 跳转页码组件 */
+.toPageGroup {
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  overflow: hidden;
+  border: var(--style-border-always);
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
+.toPageExtend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--anzhiyu-fontcolor);
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.toPageText {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 2.5rem 0 1rem;
+  font-size: 1rem;
+  color: var(--anzhiyu-fontcolor);
+  background: var(--anzhiyu-card-bg);
+  border: none;
+  outline: none;
+}
+
+.toPageButton {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.865rem;
+  height: 100%;
+  color: var(--anzhiyu-fontcolor);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: all 0.3s;
+}
+
+.toPageGroup:hover {
+  width: 6rem;
+  border-color: var(--anzhiyu-main);
+  box-shadow: var(--anzhiyu-shadow-main);
+}
+
+.toPageGroup:hover .toPageButton {
+  height: 30px;
+  background: var(--anzhiyu-secondbg);
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.toPageGroup:hover .toPageExtend {
+  opacity: 0;
+}
+
+/* 响应式 - 移动端 */
+@media (max-width: 768px) {
+  .paginationNav .pagination {
+    display: none;
+  }
+
+  .paginationNav .extend {
+    position: static;
+    width: 100%;
+    height: 3.125rem;
+    line-height: 3.125rem;
+    background: var(--anzhiyu-card-bg);
+    border: var(--style-border-always);
+    border-radius: 12px;
+    box-shadow: var(--anzhiyu-shadow-border);
+  }
+
+  .paginationNav .extend svg {
+    display: none;
+  }
+
+  .paginationTipsNext,
+  .paginationTipsPrev {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    opacity: 1 !important;
+  }
+}

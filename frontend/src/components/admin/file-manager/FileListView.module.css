@@ -1,0 +1,287 @@
+/* 列表视图容器 */
+.file-list-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 表头 - 不设自身 padding，由列提供（匹配 anheyu-app） */
+.list-header {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: fit-content;
+  min-width: 100%;
+  font-weight: 500;
+  color: var(--anzhiyu-secondtext);
+  user-select: none;
+  border-bottom: var(--style-border);
+  background: var(--anzhiyu-card-bg);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.column {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--anzhiyu-secondtext);
+  padding: 12px 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 表头列通用hover - 匹配 anheyu-app */
+.list-header .column {
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.list-header .column:hover {
+  color: var(--anzhiyu-white, #fff);
+  background-color: var(--anzhiyu-main, var(--anzhiyu-theme));
+}
+
+.list-header .column:hover .sort-indicator {
+  color: var(--anzhiyu-white, #fff);
+}
+
+.sortable {
+  cursor: pointer;
+}
+
+.column-resizer {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 3px;
+  height: 60%;
+  cursor: col-resize;
+  background: transparent;
+  border-radius: 8px;
+  transform: translateY(-50%);
+  transition:
+    background-color 0.2s ease-in-out,
+    width 0.2s ease-in-out;
+  z-index: 10;
+}
+
+.column-resizer:hover {
+  width: 5px;
+  background-color: var(--anzhiyu-theme);
+}
+
+/* ── 设置按钮容器 - "+" 圆形按钮（匹配 anheyu-app） ── */
+.settings-container {
+  position: relative;
+  flex-grow: 1;
+  min-width: 50px;
+}
+
+.settings-button {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  width: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--anzhiyu-card-bg);
+  box-shadow: var(--anzhiyu-shadow-border, 0 8px 16px -4px rgba(44, 45, 48, 0.05));
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--anzhiyu-fontcolor);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.2s ease;
+  transform: translateY(-50%) translateX(20px);
+}
+
+.list-header:hover .settings-button {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+
+.settings-button:hover {
+  background: var(--anzhiyu-theme);
+  color: var(--anzhiyu-card-bg, #fff);
+}
+
+/* 列表内容区 */
+.list-body {
+  flex: 1;
+  overflow: auto;
+  padding: 0 0.5rem;
+}
+
+.list-body ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── 文件行：仅由 list-item 控制四边距，内部列不再叠加水平 padding，选中态左右一致 ── */
+.list-item {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  margin: 0.25rem 0;
+  padding: 8px;
+  user-select: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* 行内列不再叠加 padding，由 list-item 统一提供四边 8px，选中态四边距一致 */
+.list-item .column {
+  padding: 0;
+}
+
+/* hover 效果 */
+.list-item:hover {
+  background-color: var(--anzhiyu-secondbg);
+}
+
+/* ── 选中状态 - 主题色实底 + 白色文字（匹配 pro） ── */
+.selected {
+  color: #fff;
+  background-color: var(--anzhiyu-theme) !important;
+}
+
+.selected .column {
+  color: #fff !important;
+}
+
+.selected .file-name {
+  color: #fff !important;
+}
+
+.selected .file-icon {
+  /* 选中时让 SVG 图标变白 */
+  filter: brightness(0) invert(1);
+}
+
+/* 禁用状态 */
+.is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* 文件名列 */
+.file-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.file-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--anzhiyu-fontcolor);
+  transition: color 0.15s ease;
+}
+
+/* 文件图标 - 24x24 匹配 pro */
+.file-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: gold;
+  cursor: pointer;
+}
+
+/* 上传中标记 */
+.uploading-badge {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--anzhiyu-theme);
+}
+
+.uploading-badge svg {
+  animation: spin 1s linear infinite;
+}
+
+.sort-indicator {
+  color: var(--anzhiyu-secondtext);
+}
+
+/* 底部状态 */
+.list-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--anzhiyu-secondtext);
+}
+
+.loading-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── 深色模式 - 匹配 anheyu-app ── */
+:global(html.dark) .list-header .column:hover {
+  color: rgb(0 0 0 / 90%);
+  background-color: var(--anzhiyu-theme);
+}
+
+:global(html.dark) .list-header .column:hover .sort-indicator {
+  color: rgb(0 0 0 / 85%);
+}
+
+:global(html.dark) .settings-button {
+  background-color: var(--anzhiyu-secondbg);
+  border: 1px solid var(--anzhiyu-card-border);
+}
+
+:global(html.dark) .settings-button:hover {
+  background-color: var(--anzhiyu-theme);
+  border-color: var(--anzhiyu-theme);
+  color: rgb(0 0 0 / 85%);
+}
+
+:global(html.dark) .column-resizer:hover {
+  background-color: var(--anzhiyu-theme);
+}
+
+:global(html.dark) .list-item:hover {
+  background-color: rgb(255 255 255 / 6%);
+}
+
+:global(html.dark) .selected {
+  background-color: var(--anzhiyu-theme) !important;
+}
+
+:global(html.dark) .selected .column,
+:global(html.dark) .selected .file-name {
+  color: rgb(0 0 0 / 90%) !important;
+}
+
+:global(html.dark) .selected .file-icon {
+  filter: brightness(0);
+}

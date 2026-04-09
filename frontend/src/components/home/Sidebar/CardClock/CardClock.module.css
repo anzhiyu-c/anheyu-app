@@ -1,0 +1,160 @@
+/* CardClock - 天气时钟组件样式 */
+/* 参考 anheyu-app CardClock.vue */
+
+/* 字体声明（@font-face 在 CSS Modules 中始终是全局的） */
+@font-face {
+  font-family: UnidreamLED;
+  src: url(https://cdn.cbd.int/anzhiyu-blog@1.1.6/fonts/UnidreamLED.ttf);
+  font-display: swap;
+}
+
+@font-face {
+  font-family: ZhuZiAYuanJWD;
+  src: url(https://npm.elemecdn.com/anzhiyu-blog@1.1.6/fonts/ZhuZiAWan.woff2);
+  font-display: swap;
+  font-weight: lighter;
+}
+
+@font-face {
+  font-family: "qweather-icons";
+  src:
+    url("https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/fonts/qweather-icons.woff2") format("woff2"),
+    url("https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/fonts/qweather-icons.woff") format("woff"),
+    url("https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/fonts/qweather-icons.ttf") format("truetype");
+  font-display: swap;
+}
+
+/* 卡片容器 */
+.cardClock {
+  position: relative;
+  overflow: hidden;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+/* 加载状态 */
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 153px;
+  padding: 20px;
+}
+
+.loadingImg {
+  max-height: 120px;
+  max-width: 100%;
+}
+
+/* 时钟背景 */
+.cardBackground {
+  height: 120px;
+  margin: 15px;
+  border-radius: 8px;
+  z-index: 2;
+}
+
+:global([data-theme="dark"]) .cardBackground {
+  background-color: #212121;
+}
+
+/* 时钟内容 */
+.clockContent {
+  width: 100%;
+  height: 100%;
+}
+
+.clockInner {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* 时钟行 */
+.clockRow {
+  font-family: UnidreamLED;
+  font-weight: 400;
+  color: #000;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+:global([data-theme="dark"]) .clockRow,
+:global(.dark) .clockRow {
+  color: #fff;
+}
+
+/* 日期 */
+.clockDate {
+  text-align: left;
+}
+
+/* 天气信息 */
+.weather {
+  font-family: "ZhuZiAYuanJWD";
+  text-align: center;
+}
+
+.weatherIcon {
+  display: inline-block;
+  width: 20px;
+  font-family: "qweather-icons";
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  vertical-align: -0.125em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.temp {
+  font-family: UnidreamLED;
+}
+
+/* 时间 */
+.clockTime {
+  flex: 1;
+  font-family: UnidreamLED;
+  font-size: 38px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* 风向 */
+.windDir {
+  font-family: "ZhuZiAYuanJWD";
+}
+
+.windIcon {
+  display: inline-block;
+  font-family: "qweather-icons";
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  vertical-align: -0.125em;
+}
+
+/* 城市 */
+.location {
+  font-family: "ZhuZiAYuanJWD";
+  text-align: center;
+}
+
+/* AM/PM */
+.period {
+  text-align: right;
+}
+
+/* 响应式 */
+@media (max-width: 992px) {
+  .cardClock {
+    display: none;
+  }
+}

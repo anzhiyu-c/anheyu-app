@@ -1,0 +1,89 @@
+/* Snackbar — 对齐 anheyu-app node-snackbar 顶部居中深色条样式 */
+
+.snackbar {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 99999;
+  transform: translate(-50%, -100%);
+  opacity: 0;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.snackbar.show {
+  transform: translate(-50%, 12px);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.snackbar.exit {
+  transform: translate(-50%, -100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  background: #1f1f1f;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* 暗色模式使用主色调 */
+:global([data-theme="dark"]) .inner,
+:global(.dark) .inner {
+  background: #425aef;
+}
+
+.text {
+  flex: 1;
+}
+
+.action {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.action:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 底部进度条 */
+.progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 0 0 10px 10px;
+  animation: snackbar-progress linear forwards;
+  width: 100%;
+}
+
+@keyframes snackbar-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}

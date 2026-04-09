@@ -1,0 +1,196 @@
+/**
+ * 代码高亮样式
+ * 基于 highlight.js 的 One Dark 主题
+ */
+
+/* Highlight.js 基础样式 */
+.hljs {
+  color: #abb2bf;
+  background: transparent;
+}
+
+/* 注释 */
+.hljs-comment,
+.hljs-quote {
+  font-style: italic;
+  color: #5c6370;
+}
+
+/* 关键字 */
+.hljs-doctag,
+.hljs-formula,
+.hljs-keyword {
+  color: #c678dd;
+}
+
+/* 标签名、删除 */
+.hljs-deletion,
+.hljs-name,
+.hljs-section,
+.hljs-selector-tag,
+.hljs-subst {
+  color: #e06c75;
+}
+
+/* 字面量 */
+.hljs-literal {
+  color: #56b6c2;
+}
+
+/* 字符串 */
+.hljs-addition,
+.hljs-attribute,
+.hljs-meta .hljs-string,
+.hljs-regexp,
+.hljs-string {
+  color: #98c379;
+}
+
+/* 数字、变量 */
+.hljs-attr,
+.hljs-number,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-pseudo,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable {
+  color: #d19a66;
+}
+
+/* 函数名、标题 */
+.hljs-bullet,
+.hljs-link,
+.hljs-meta,
+.hljs-selector-id,
+.hljs-symbol,
+.hljs-title {
+  color: #61aeee;
+}
+
+/* 内置函数、类名 */
+.hljs-built_in,
+.hljs-class .hljs-title,
+.hljs-title.class_ {
+  color: #e6c07b;
+}
+
+/* 强调 */
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}
+
+.hljs-link {
+  text-decoration: underline;
+}
+
+/* 函数参数 */
+.hljs-params {
+  color: #abb2bf;
+}
+
+/* 函数名 */
+.hljs-title.function_,
+.hljs-title.function_.inherited__ {
+  color: #61afef;
+}
+
+/* 属性 */
+.hljs-property {
+  color: #e06c75;
+}
+
+/* 操作符 */
+.hljs-operator {
+  color: #56b6c2;
+}
+
+/* 标点符号 */
+.hljs-punctuation {
+  color: #abb2bf;
+}
+
+/* 模板表达式 */
+.hljs-template-tag {
+  color: #c678dd;
+}
+
+/* CSS 特定 */
+.hljs-selector-class {
+  color: #e6c07b;
+}
+
+.hljs-selector-id {
+  color: #61aeee;
+}
+
+.hljs-selector-pseudo {
+  color: #d19a66;
+}
+
+/* XML/HTML 特定 */
+.hljs-tag {
+  color: #e06c75;
+}
+
+.hljs-tag .hljs-attr {
+  color: #d19a66;
+}
+
+.hljs-tag .hljs-string {
+  color: #98c379;
+}
+
+/* Shell/Bash 特定 */
+.hljs-variable.language_ {
+  color: #e06c75;
+}
+
+/* TypeScript 特定 */
+.hljs-type {
+  color: #e6c07b;
+}
+
+/* Go 特定 */
+.hljs-function .hljs-keyword {
+  color: #c678dd;
+}
+
+/* JSON 特定 */
+.hljs-attr {
+  color: #e06c75;
+}
+
+/* Markdown 特定 */
+.hljs-code,
+.hljs-formula {
+  color: #98c379;
+}
+
+/* Diff 特定 */
+.hljs-addition {
+  color: #98c379;
+  background-color: rgba(152, 195, 121, 0.1);
+}
+
+.hljs-deletion {
+  color: #e06c75;
+  background-color: rgba(224, 108, 117, 0.1);
+}
+
+/* ================================
+   暗色模式适配
+   ================================ */
+:root {
+  --hljs-bg: #282c34;
+  --hljs-color: #abb2bf;
+}
+
+/* 亮色模式下的代码高亮（可选） */
+@media (prefers-color-scheme: light) {
+  /* 如果需要亮色主题，可以在这里覆盖 */
+}

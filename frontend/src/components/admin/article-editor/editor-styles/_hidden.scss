@@ -1,0 +1,201 @@
+// ============================================
+// 隐藏内容（与文章详情一致）
+// ============================================
+
+.tiptap {
+  .hide-block,
+  .hidden-block-wrapper {
+    margin: 1rem 0;
+
+    .hide-button {
+      display: inline-block;
+      padding: 8px 16px !important;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #fff;
+      cursor: pointer;
+      user-select: none;
+      background: var(--anzhiyu-theme);
+      border: none;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        opacity: 0.9;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+
+  .hide-block .hide-content,
+  .hidden-block-wrapper .hidden-content {
+    margin-top: 1rem;
+    min-height: 1.5em;
+    transition:
+      filter 0.3s,
+      opacity 0.3s;
+  }
+
+  .hide-block .hide-content > :first-child {
+    margin-top: 0 !important;
+  }
+  .hide-block .hide-content > :last-child {
+    margin-bottom: 0 !important;
+  }
+
+  .hide-inline {
+    display: inline;
+
+    .hide-button {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #fff;
+      vertical-align: baseline;
+      cursor: pointer;
+      user-select: none;
+      background: var(--anzhiyu-theme);
+      border: none;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+
+    .hide-content {
+      display: inline;
+    }
+  }
+}
+
+// 编辑器隐藏块专用样式
+.editor-hide-block {
+  border: 1px dashed var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.editor-hide-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border-bottom: 1px dashed var(--anzhiyu-card-border, #e3e8f7);
+}
+
+.editor-hide-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+}
+
+.editor-hide-toolbar-label {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.editor-hide-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-hide-btn-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+}
+
+.editor-hide-btn-input {
+  width: 120px;
+  height: 24px;
+  padding: 0 6px;
+  font-size: 12px;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: var(--anzhiyu-theme, #3b82f6);
+  }
+}
+
+.editor-hide-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--anzhiyu-theme, #3b82f6);
+    color: var(--anzhiyu-theme, #3b82f6);
+  }
+
+  &.is-on {
+    color: var(--anzhiyu-theme, #3b82f6);
+  }
+}
+
+.editor-hide-content-area {
+  padding: 12px 16px;
+
+  > .hidden-content > :first-child {
+    margin-top: 0 !important;
+  }
+  > .hidden-content > :last-child {
+    margin-bottom: 0 !important;
+  }
+}
+
+.editor-hide-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border-top: 1px dashed var(--anzhiyu-card-border, #e3e8f7);
+  font-size: 11px;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+}
+
+.editor-hide-footer-label {
+  opacity: 0.7;
+}
+
+.editor-hide-footer-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--anzhiyu-theme, #3b82f6);
+  border-radius: 4px;
+}
+
+.editor-hide-blurred {
+  filter: blur(6px);
+  opacity: 0.3;
+  user-select: none;
+  pointer-events: none;
+  transition:
+    filter 0.3s,
+    opacity 0.3s;
+}

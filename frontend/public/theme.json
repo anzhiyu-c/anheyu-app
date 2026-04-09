@@ -1,0 +1,151 @@
+{
+  "name": "theme-anheyu-next",
+  "displayName": "AnHeYu Next",
+  "version": "1.0.0",
+  "engineVersion": 2,
+  "description": "AnHeYu Next - 现代化博客主题，基于 Next.js 和 Tailwind CSS 构建，支持深色模式、响应式设计、高级动画效果",
+  "author": {
+    "name": "安知鱼",
+    "email": "anzhiyu@anheyu.com",
+    "url": "https://anheyu.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/anzhiyu-c/theme-anheyu-next",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anzhiyu-c/theme-anheyu-next.git"
+  },
+  "keywords": ["博客", "主题", "Next.js", "Tailwind CSS", "SSR", "SEO", "响应式", "现代化", "深色模式"],
+  "category": "blog",
+  "renderMode": "ssr",
+  "compatibility": {
+    "minAppVersion": "1.7.0",
+    "renderMode": "ssr"
+  },
+  "screenshots": [],
+  "themeType": "pro",
+  "demoUrl": "https://anheyu.com",
+  "instructionUrl": "https://docs.anheyu.com/themes/next",
+  "price": 0,
+  "isOfficial": true,
+  "engines": {
+    "anheyu-app": ">=1.7.0"
+  },
+  "features": [
+    "深色/浅色主题切换",
+    "响应式布局",
+    "SEO 优化",
+    "高级动画效果",
+    "粒子背景",
+    "3D 透视卡片",
+    "滚动视差",
+    "数字计数动画"
+  ],
+  "settings": [
+    {
+      "group": "homepage",
+      "label": "首页设置",
+      "fields": [
+        {
+          "name": "homepage.heroStyle",
+          "label": "首页 Hero 样式",
+          "type": "select",
+          "default": "default",
+          "options": [
+            { "label": "默认样式", "value": "default" },
+            { "label": "简约样式", "value": "minimal" },
+            { "label": "全屏样式", "value": "fullscreen" }
+          ],
+          "description": "首页顶部区域的展示样式"
+        },
+        {
+          "name": "homepage.showParticles",
+          "label": "显示粒子背景",
+          "type": "switch",
+          "default": true,
+          "description": "是否在首页 Hero 区域显示粒子动画背景"
+        },
+        {
+          "name": "homepage.showStats",
+          "label": "显示统计数据",
+          "type": "switch",
+          "default": true,
+          "description": "是否在首页显示文章、评论等统计数据"
+        },
+        {
+          "name": "homepage.postsCount",
+          "label": "首页文章数量",
+          "type": "number",
+          "default": 6,
+          "validation": {
+            "min": 3,
+            "max": 12,
+            "message": "首页文章数量应在 3-12 之间"
+          },
+          "description": "首页显示的最新文章数量"
+        }
+      ]
+    },
+    {
+      "group": "article",
+      "label": "文章页面",
+      "fields": [
+        {
+          "name": "article.showToc",
+          "label": "显示目录",
+          "type": "switch",
+          "default": true,
+          "description": "是否在文章页面显示目录导航"
+        },
+        {
+          "name": "article.showAuthor",
+          "label": "显示作者信息",
+          "type": "switch",
+          "default": true,
+          "description": "是否在文章末尾显示作者信息卡片"
+        },
+        {
+          "name": "article.showRelated",
+          "label": "显示相关文章",
+          "type": "switch",
+          "default": true,
+          "description": "是否在文章末尾显示相关文章推荐"
+        },
+        {
+          "name": "article.enable3DCard",
+          "label": "启用 3D 卡片效果",
+          "type": "switch",
+          "default": true,
+          "description": "是否启用文章卡片的 3D 透视效果"
+        }
+      ]
+    },
+    {
+      "group": "effects",
+      "label": "视觉效果",
+      "fields": [
+        {
+          "name": "effects.enableGlowOrbs",
+          "label": "启用发光效果",
+          "type": "switch",
+          "default": true,
+          "description": "是否启用背景发光球体效果"
+        },
+        {
+          "name": "effects.enableNoiseTexture",
+          "label": "启用噪点纹理",
+          "type": "switch",
+          "default": true,
+          "description": "是否启用微妙的噪点纹理覆盖"
+        },
+        {
+          "name": "effects.enableScrollParallax",
+          "label": "启用滚动视差",
+          "type": "switch",
+          "default": true,
+          "description": "是否启用页面滚动时的视差效果"
+        }
+      ]
+    }
+  ]
+}

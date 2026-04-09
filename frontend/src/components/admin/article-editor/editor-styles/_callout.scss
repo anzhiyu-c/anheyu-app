@@ -1,0 +1,229 @@
+// ============================================
+// 提示块 Callout / Tooltip（与文章详情一致）
+// ============================================
+
+// 编辑器 Callout trigger
+.editor-callout-trigger {
+  position: relative;
+  display: inline-block;
+  padding: 0 2px;
+  cursor: help;
+  transition: all 0.3s ease;
+  border-bottom: none;
+  background: transparent !important;
+  background-color: transparent !important;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.editor-callout-text {
+  color: var(--anzhiyu-theme, #3b82f6);
+  -webkit-text-fill-color: var(--anzhiyu-theme, #3b82f6);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+
+// 覆盖 ProseMirror 选中节点的所有默认样式
+.tiptap {
+  .callout-inline-wrapper,
+  .callout-inline-editor,
+  [data-type="calloutBlock"],
+  .node-calloutBlock,
+  .ProseMirror-selectednode.callout-inline-wrapper,
+  .ProseMirror-selectednode[data-type="calloutBlock"],
+  span.ProseMirror-selectednode.node-calloutBlock,
+  span.react-renderer.node-calloutBlock {
+    outline: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  // 行内提示块结构
+  .callout-inline-wrapper {
+    display: inline;
+  }
+  .callout-inline-editor {
+    display: inline;
+  }
+}
+
+// Tooltip 弹出层
+.editor-callout-tooltip {
+  &,
+  & * {
+    color: inherit;
+  }
+
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  min-width: 40px;
+  max-width: 400px;
+  border: none;
+  border-radius: 6px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  pointer-events: none;
+  animation: editorCalloutFadeIn 0.15s ease-out;
+}
+
+// 编辑面板
+.editor-callout-edit-panel {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 12px;
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  min-width: 300px;
+  animation: editorCalloutPanelIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom center;
+}
+
+// Tooltip 包装器
+.tiptap .anzhiyu-tip-wrapper {
+  position: relative;
+  display: inline-block;
+  content-visibility: visible !important;
+}
+
+.tiptap .anzhiyu-tip-text {
+  position: relative;
+  display: inline-block;
+  padding: 0 2px;
+  color: var(--anzhiyu-theme, #3b82f6);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+  transition: all 0.3s ease;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.tiptap .anzhiyu-tip {
+  position: absolute;
+  z-index: 9999;
+  min-width: 120px;
+  max-width: 300px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #fff;
+  white-space: nowrap;
+  pointer-events: none;
+  visibility: hidden;
+  background: transparent;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .tip-content {
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 6px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  // Tip 位置样式
+  &.tip-top {
+    bottom: 100%;
+    left: 50%;
+    margin-bottom: 8px;
+    transform: translateX(-50%);
+  }
+  &.tip-bottom {
+    top: 100%;
+    left: 50%;
+    margin-top: 8px;
+    transform: translateX(-50%);
+  }
+  &.tip-left {
+    top: 50%;
+    right: 100%;
+    margin-right: 8px;
+    transform: translateY(-50%);
+  }
+  &.tip-right {
+    top: 50%;
+    left: 100%;
+    margin-left: 8px;
+    transform: translateY(-50%);
+  }
+
+  // 显示状态
+  &.show,
+  &[data-visible="true"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  // 主题样式
+  &.tip-info .tip-content {
+    background: #3b82f6;
+  }
+  &.tip-warning .tip-content {
+    background: #f59e0b;
+  }
+  &.tip-error .tip-content {
+    background: #ef4444;
+  }
+  &.tip-success .tip-content {
+    background: #10b981;
+  }
+  &.tip-light .tip-content {
+    color: var(--anzhiyu-fontcolor, var(--foreground));
+    background: var(--anzhiyu-card-bg, #fff);
+    border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  }
+}
+
+// Admonition 警告框样式
+.tiptap .admonition {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid;
+
+  &.note {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+  }
+  &.tip {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: #10b981;
+  }
+  &.warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: #f59e0b;
+  }
+  &.danger {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+  }
+}
+
+.tiptap .admonition-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}

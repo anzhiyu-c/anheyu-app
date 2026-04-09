@@ -1,0 +1,237 @@
+@keyframes pulse {
+  from {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  to {
+    opacity: 0.5;
+    transform: scaleY(0.3);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.musicCapsuleContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 240px;
+  height: 40px;
+  overflow: hidden;
+  cursor: pointer;
+  background-color: var(--anzhiyu-card-bg);
+  backdrop-filter: blur(20px);
+  border: var(--style-border);
+  border-radius: 20px;
+  transition:
+    all 0s,
+    color 0.3s;
+}
+
+.musicCapsuleContainer:hover {
+  box-shadow: 0 8px 30px rgb(0 0 0 / 25%);
+  transform: scale(1.02);
+}
+
+/* 收起状态hover时显示主色调背景 */
+.musicCapsuleContainer:hover:not(.expanded) {
+  background-color: var(--dominant-color) !important;
+}
+
+/* 展开状态 */
+.musicCapsuleContainer.expanded {
+  width: 280px;
+  max-width: 280px;
+}
+
+.musicCapsuleContainer.expanded:hover {
+  transform: scale(1);
+}
+
+.collapsedInfo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  padding: 0 15px 0 45px;
+  opacity: 1;
+  transition: all 0.3s;
+}
+
+.collapsedInfo.hidden {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.collapsedTitle {
+  flex: 1;
+  min-width: 0;
+  max-width: 60px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor);
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+  white-space: nowrap;
+  transition: all 0.3s;
+}
+
+.collapsedIcon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform: translate(-50%, -50%) scale(0.8);
+}
+
+.collapsedIcon svg {
+  width: 14px;
+  height: 14px;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 30%));
+}
+
+.pauseBars {
+  display: flex;
+  gap: 2px;
+}
+
+.pauseBar {
+  width: 2px;
+  height: 10px;
+  background: white;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 30%));
+  border-radius: 1px;
+}
+
+.pauseBarsPlaying .pauseBar {
+  animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+.pauseBarsPlaying .pauseBar:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.loadingSpinnerWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.spinnerRing {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgb(255 255 255 / 30%);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 30%));
+}
+
+/* 播放状态下展开时的封面边框 */
+.musicCapsuleContainer.expanded.playing [data-album-cover] {
+  border-color: var(--anzhiyu-card-bg);
+}
+
+/* 收起状态hover时的特殊样式 */
+.musicCapsuleContainer:hover:not(.expanded) [data-album-cover] {
+  opacity: 0.3;
+}
+
+.musicCapsuleContainer:hover:not(.expanded) .collapsedTitle {
+  opacity: 0.3;
+}
+
+.musicCapsuleContainer:hover:not(.expanded) .collapsedIcon {
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  pointer-events: auto;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border-radius: 50%;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+.musicCapsuleContainer:hover:not(.expanded) .collapsedIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.musicCapsuleContainer:hover:not(.expanded) .collapsedIcon .pauseBar {
+  width: 3px;
+  height: 10px;
+}
+
+/* 歌曲信息 - 展开状态 */
+.songInfo {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  left: 50px;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: center;
+  color: white;
+  pointer-events: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform: translateY(-50%) translateX(-20px);
+}
+
+.songInfo.visible {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.songInfo:hover {
+  opacity: 0.9;
+}
+
+.songTitle {
+  flex-shrink: 0;
+  width: 50px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: rgb(255 255 255 / 90%);
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 30%);
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* 进度条覆盖层 */
+.progressOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  height: 100%;
+  pointer-events: none;
+  background: rgb(255 255 255 / 15%);
+  transition: width 0.3s ease;
+}

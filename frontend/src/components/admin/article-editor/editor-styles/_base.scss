@@ -1,0 +1,514 @@
+// ============================================
+// Tiptap / ProseMirror 编辑器基础样式
+// ============================================
+
+// 编辑器基础样式
+.tiptap.ProseMirror {
+  outline: none;
+  caret-color: var(--anzhiyu-theme, #3b82f6);
+}
+
+// ============================================
+// 统一 atom 节点交互样式
+// ============================================
+
+// 去掉 ProseMirror 默认的 outline 选中样式
+.tiptap .ProseMirror-selectednode {
+  outline: none !important;
+}
+
+// hover 包裹器 — hover 时蓝色边框 + 编辑按钮
+.editor-node-hover-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: visible;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 0 0 2px var(--anzhiyu-theme, #3b82f6);
+
+    .editor-node-edit-btn {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+}
+
+// 浮动编辑按钮 — hover 时出现在顶部中间
+.editor-node-edit-btn {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 10;
+  white-space: nowrap;
+  user-select: none;
+
+  &:hover {
+    background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+// 编辑器内容样式
+.tiptap {
+  // 占位符
+  p.is-editor-empty:first-child::before {
+    color: var(--anzhiyu-secondtext, #9ca3af);
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+
+  // ---- 标题 ----
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 1.5em 0 0.8em;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+  h4 {
+    font-size: 1.125rem;
+  }
+  h5,
+  h6 {
+    font-size: 1rem;
+  }
+
+  // ---- 段落 ----
+  p {
+    margin: 4px 0;
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.7;
+    color: var(--anzhiyu-fontcolor, var(--foreground));
+    letter-spacing: 0.6px;
+  }
+
+  // ---- 加粗 ----
+  // 默认用主题色；若文字颜色在父级 span（TipTap textStyle），strong 继承该行内色（选择器避开 background-color）
+  &.ProseMirror b,
+  &.ProseMirror strong {
+    font-weight: 700;
+    color: var(--anzhiyu-theme, var(--primary));
+  }
+
+  &.ProseMirror span[style^="color:"] b,
+  &.ProseMirror span[style^="color:"] strong,
+  &.ProseMirror span[style*="; color:"] b,
+  &.ProseMirror span[style*="; color:"] strong,
+  &.ProseMirror span[style*=";color:"] b,
+  &.ProseMirror span[style*=";color:"] strong {
+    color: inherit;
+  }
+
+  // ---- 引用块 ----
+  blockquote {
+    padding: 0.5rem 0.8rem;
+    margin: 1rem 0;
+    color: hsl(var(--muted-foreground));
+    background-color: #f1f3f8;
+    border: 1px solid #e3e8f7;
+    border-radius: 8px;
+
+    :root.dark & {
+      background-color: #21232a;
+      border-color: #3d3d3f;
+    }
+
+    p {
+      margin: 0.5rem;
+    }
+  }
+
+  // ---- 列表 ----
+  ul:not([data-type="taskList"]) {
+    list-style: none;
+    padding-left: 0;
+    margin: 1em 0;
+
+    li {
+      position: relative;
+      padding-left: 1.2em;
+
+      &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.85em;
+        width: 0.6em;
+        height: 0.6em;
+        margin-top: -0.3em;
+        border: 2px solid var(--anzhiyu-theme, var(--primary));
+        border-radius: 50%;
+        background: transparent;
+      }
+    }
+  }
+
+  ol {
+    list-style: none;
+    padding-left: 0;
+    margin: 1em 0;
+    counter-reset: ol-counter;
+
+    ol {
+      counter-reset: ol-counter;
+    }
+
+    li {
+      position: relative;
+      padding-left: 1.75em;
+      counter-increment: ol-counter;
+
+      &::before {
+        content: counter(ol-counter);
+        position: absolute;
+        left: 0.05em;
+        top: 1.05em;
+        margin-top: -0.675em;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.35em;
+        height: 1.35em;
+        font-size: 0.8em;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: #fff;
+        background: var(--anzhiyu-theme, var(--primary));
+        border-radius: 50%;
+      }
+    }
+  }
+
+  li {
+    margin: 0.5em 0;
+    line-height: 1.7;
+  }
+
+  // 任务列表
+  ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 4px;
+    margin: 0.75em 0;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 2px 0;
+
+      > label {
+        flex-shrink: 0;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: auto;
+
+        input[type="checkbox"] {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 18px;
+          height: 18px;
+          border: 2px solid #d4d4d8;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+          background: transparent;
+          margin: 0;
+          vertical-align: middle;
+
+          &:hover {
+            border-color: var(--anzhiyu-theme, var(--primary));
+          }
+
+          &:checked {
+            background: var(--anzhiyu-theme, var(--primary));
+            border-color: var(--anzhiyu-theme, var(--primary));
+
+            &::after {
+              content: "";
+              position: absolute;
+              top: 2px;
+              left: 5px;
+              width: 5px;
+              height: 9px;
+              border: solid #fff;
+              border-width: 0 2px 2px 0;
+              transform: rotate(45deg);
+            }
+          }
+        }
+      }
+
+      &[data-checked="true"] > div {
+        text-decoration: line-through;
+        color: var(--anzhiyu-secondtext, #9ca3af);
+      }
+
+      > div {
+        flex: 1;
+        min-width: 0;
+        line-height: 1.7;
+
+        > p {
+          margin: 0;
+        }
+      }
+    }
+
+    // 嵌套任务列表
+    ul[data-type="taskList"] {
+      margin: 4px 0 4px 8px;
+    }
+  }
+
+  // ---- 行内代码 ----
+  code:not(pre code) {
+    padding: 2px 4px;
+    margin: 0 4px;
+    font-weight: 500;
+    line-height: 2;
+    color: #fff;
+    background: var(--anzhiyu-theme, var(--primary));
+    border-radius: 4px;
+    box-shadow: 0 8px 16px -4px rgba(44, 45, 48, 0.05);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  // ---- 代码块基础 ----
+  pre {
+    background: var(--anzhiyu-card-bg, #fff);
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    overflow-x: auto;
+
+    code {
+      background: none;
+      padding: 0;
+      margin: 0;
+      border-radius: 0;
+      font-size: 14px;
+      font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+      color: #a9b7c6;
+      box-shadow: none;
+    }
+  }
+
+  // ---- 链接 ----
+  a {
+    padding: 0 0.2rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    color: var(--anzhiyu-fontcolor, var(--foreground));
+    text-decoration: none;
+    border-bottom: dotted 2px var(--anzhiyu-theme, var(--primary));
+    transition: all 0.2s ease 0s;
+    cursor: pointer;
+
+    &:hover {
+      color: #fff;
+      background: var(--anzhiyu-theme, var(--primary));
+      border-radius: 0.25rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      border-bottom-color: transparent;
+    }
+  }
+
+  // ---- 图片 ----
+  img {
+    max-width: 100%;
+    height: auto;
+    margin: 1em 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    &.ProseMirror-selectednode {
+      outline: 2px solid var(--anzhiyu-theme, #3b82f6);
+      border-radius: 8px;
+    }
+  }
+
+  // ---- 分割线 ----
+  hr {
+    border: 1px dashed var(--anzhiyu-theme-op, #4259ef23);
+    display: flex;
+    margin: 1rem 0;
+    position: relative;
+  }
+
+  // ---- 表格 ----
+  .tableWrapper {
+    margin: 1rem 0;
+    overflow: hidden;
+    overflow-x: auto;
+    border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+    border-radius: 8px;
+    position: relative;
+
+    table tr {
+      > *:first-child {
+        border-left: none;
+      }
+      > *:last-child {
+        border-right: none;
+      }
+    }
+
+    table tr:last-child > * {
+      border-bottom: none;
+    }
+    table tr:first-child > * {
+      border-top: none;
+    }
+  }
+
+  table {
+    display: table;
+    width: 100%;
+    min-width: 100%;
+    margin: 0;
+    empty-cells: show;
+    border-spacing: 0;
+    border-collapse: collapse;
+
+    td,
+    th {
+      position: relative;
+      padding: 0.5rem 0.75rem;
+      vertical-align: middle;
+      text-align: left;
+      border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+      min-width: 80px;
+      font-size: 14px;
+
+      p {
+        margin: 4px 0;
+        font-size: 14px;
+      }
+    }
+
+    th {
+      font-weight: 600;
+      font-size: 14px;
+      background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+
+      :root.dark & {
+        background: var(--anzhiyu-card-bg-grey, #21232a);
+      }
+    }
+
+    .selectedCell {
+      background: var(--anzhiyu-theme-op, #4259ef23);
+    }
+  }
+
+  thead {
+    background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+
+    :root.dark & {
+      background: var(--anzhiyu-card-bg-grey, #21232a);
+    }
+  }
+
+  .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: -2px;
+    width: 4px;
+    background-color: var(--anzhiyu-theme, #3b82f6);
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  td:last-child .column-resize-handle,
+  th:last-child .column-resize-handle {
+    display: none;
+  }
+
+  .resize-cursor {
+    cursor: col-resize;
+  }
+
+  // ---- 高亮 ----
+  mark {
+    background-color: #fef08a;
+    border-radius: 2px;
+    padding: 0.1em 0;
+  }
+
+  // ---- 删除线 ----
+  s {
+    text-decoration: line-through;
+  }
+
+  // ---- 上标/下标 ----
+  sup {
+    font-size: 0.75em;
+    vertical-align: super;
+  }
+
+  sub {
+    font-size: 0.75em;
+    vertical-align: sub;
+  }
+
+  // ---- 选中状态 ----
+  ::selection {
+    background: #b4d5fe;
+    color: #1a1a1a;
+  }
+
+  // ---- Gapcursor ----
+  .ProseMirror-gapcursor {
+    position: relative;
+
+    &::after {
+      border-top: 1px solid var(--anzhiyu-fontcolor, #363636);
+    }
+  }
+}

@@ -1,0 +1,131 @@
+// ============================================
+// Mermaid 样式
+// ============================================
+
+.tiptap {
+  .mermaid-block-wrapper {
+    margin: 1em 0;
+  }
+
+  .mermaid-svg-container {
+    display: flex;
+    justify-content: center;
+
+    svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    // 重置 Mermaid SVG 内部的段落样式
+    p,
+    span,
+    text {
+      margin: 0;
+      padding: 0;
+      font-size: inherit;
+      letter-spacing: normal;
+      line-height: normal;
+    }
+  }
+}
+
+// ---- Mermaid 图表显示区域 ----
+.editor-mermaid-display {
+  position: relative;
+  padding: 16px;
+  text-align: center;
+  border-radius: 12px;
+  transition: all 0.2s;
+  overflow: hidden;
+
+  &.is-selected {
+    background: color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 4%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--anzhiyu-theme, #3b82f6) 25%, transparent);
+  }
+
+  &:hover .editor-mermaid-zoom-btn {
+    opacity: 1;
+  }
+}
+
+// ---- Mermaid 缩放按钮 ----
+.editor-mermaid-zoom-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
+
+  &:hover {
+    background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  }
+
+  &.is-active {
+    opacity: 1;
+    color: #fff;
+    background: var(--anzhiyu-theme, #3b82f6);
+    border-color: var(--anzhiyu-theme, #3b82f6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+// ---- Mermaid 编辑面板 ----
+.editor-mermaid-edit-panel {
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  animation: editorCalloutPanelIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editor-mermaid-edit-body {
+  padding: 12px;
+}
+
+.editor-mermaid-textarea {
+  width: 100%;
+  min-height: 160px;
+  padding: 12px;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  background: var(--anzhiyu-card-bg-grey, #f1f3f8);
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.2s;
+
+  :root.dark & {
+    background: var(--anzhiyu-card-bg-grey, #27282a);
+  }
+
+  &:focus {
+    border-color: var(--anzhiyu-theme, #3b82f6);
+  }
+
+  &::placeholder {
+    color: var(--anzhiyu-secondtext, #9ca3af);
+    opacity: 0.6;
+  }
+}

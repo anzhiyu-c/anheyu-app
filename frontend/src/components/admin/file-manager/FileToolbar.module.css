@@ -1,0 +1,449 @@
+/* 工具栏容器 - 匹配 anheyu-app 卡片样式 */
+.file-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 6px 14px;
+  background-color: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  border-radius: 12px;
+}
+
+.right-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* 圆形按钮 - 彩色设计（匹配 anheyu-app） */
+.circle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 17px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.circle-btn:hover {
+  opacity: 0.85;
+}
+
+/* 按钮颜色 - 匹配 anheyu-app */
+.btn-primary {
+  background: var(--anzhiyu-theme);
+}
+
+.btn-orange {
+  background: #f5a623;
+}
+
+.btn-purple {
+  background: #8468f3;
+}
+
+.btn-lightblue {
+  background: #73a6f5;
+}
+
+.btn-green {
+  background: #6eb65e;
+}
+
+/* ── 统一弹出面板基础样式 ── */
+
+/* 下拉菜单外层容器 - 覆盖 HeroUI 默认样式 */
+.dropdown-content {
+  min-width: 150px;
+  padding: 0;
+  border-radius: 14px;
+  background-color: var(--anzhiyu-card-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: var(--style-border);
+  box-shadow: var(--anzhiyu-shadow-border, 0 8px 16px -4px rgba(44, 45, 48, 0.05));
+}
+
+/* 下拉菜单内层 */
+.dropdown-menu {
+  min-width: 150px;
+  padding: 6px;
+  margin: 0;
+  list-style: none;
+  border-radius: 14px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.dropdown-item {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--anzhiyu-fontcolor);
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--anzhiyu-theme-op);
+  color: var(--anzhiyu-theme);
+}
+
+.dropdown-item.active {
+  background: var(--anzhiyu-theme-op);
+  color: var(--anzhiyu-theme);
+  font-weight: 500;
+}
+
+.dropdown-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dropdown-item.divider {
+  margin-top: 6px;
+  border-top: 1px solid var(--anzhiyu-card-border);
+  padding-top: 14px;
+}
+
+/* 设置弹出框 - 与下拉菜单统一风格 */
+.settings-popover {
+  width: 260px;
+  padding: 0;
+  border-radius: 14px;
+  background-color: var(--anzhiyu-card-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: var(--style-border);
+  box-shadow: var(--anzhiyu-shadow-border, 0 8px 16px -4px rgba(44, 45, 48, 0.05));
+  z-index: 1200;
+}
+
+.popover-inner {
+  padding: 8px;
+}
+
+.popover-section {
+  padding: 10px 8px;
+}
+
+.popover-title {
+  padding-left: 4px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--anzhiyu-secondtext);
+}
+
+.popover-divider {
+  height: 1px;
+  margin: 0 8px;
+  background: var(--anzhiyu-card-border);
+}
+
+/* 视图切换按钮组 */
+.view-switcher {
+  display: flex;
+  width: 100%;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: var(--style-border);
+}
+
+.view-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  background: var(--anzhiyu-card-bg);
+  color: var(--anzhiyu-fontcolor);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-btn:first-child {
+  border-right: var(--style-border);
+}
+
+.view-btn:hover {
+  background: var(--anzhiyu-secondbg);
+}
+
+.view-btn.active {
+  background: var(--anzhiyu-theme);
+  color: #fff;
+}
+
+/* 全宽按钮 */
+.full-width-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: var(--style-border);
+  background: var(--anzhiyu-card-bg);
+  color: var(--anzhiyu-fontcolor);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.full-width-btn:hover {
+  background: var(--anzhiyu-theme-op);
+  color: var(--anzhiyu-theme);
+  border-color: var(--anzhiyu-theme);
+}
+
+/* 滑块样式 */
+.slider-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.slider-wrapper input[type="range"] {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--anzhiyu-secondbg);
+  appearance: none;
+  cursor: pointer;
+}
+
+.slider-wrapper input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--anzhiyu-theme);
+  box-shadow: 0 1px 4px -1px var(--anzhiyu-theme-op);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.slider-wrapper input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.slider-value {
+  min-width: 45px;
+  padding: 3px 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--anzhiyu-fontcolor);
+  text-align: center;
+  user-select: none;
+  background-color: var(--anzhiyu-secondbg);
+  border-radius: 6px;
+}
+
+/* 列设置对话框 */
+.column-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 40%);
+  backdrop-filter: blur(8px) saturate(180%);
+}
+
+.column-dialog-card {
+  width: 480px;
+  max-width: 90vw;
+  padding: 24px;
+  border-radius: 20px;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border);
+  box-shadow: 0 24px 48px -12px rgb(0 0 0 / 20%);
+}
+
+.column-dialog-card h3 {
+  margin: 0 0 20px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor);
+}
+
+.column-settings-body {
+  overflow: hidden;
+  background-color: var(--anzhiyu-secondbg);
+  border: var(--style-border);
+  border-radius: 14px;
+}
+
+.column-settings-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--anzhiyu-secondtext);
+  background-color: var(--anzhiyu-card-bg);
+  border-bottom: var(--style-border);
+}
+
+.column-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.column-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background-color: var(--anzhiyu-card-bg);
+  border-bottom: var(--style-border);
+  transition: background 0.2s ease;
+}
+
+.column-item:hover {
+  background: var(--anzhiyu-secondbg);
+}
+
+.column-item:last-child {
+  border-bottom: none;
+}
+
+.column-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--anzhiyu-fontcolor);
+}
+
+.column-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: var(--anzhiyu-secondbg);
+  color: var(--anzhiyu-fontcolor);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-icon:hover {
+  background: var(--anzhiyu-theme-op);
+  color: var(--anzhiyu-theme);
+}
+
+.action-icon.danger:hover {
+  background: rgb(216 0 32 / 10%);
+  color: var(--anzhiyu-red);
+}
+
+.dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* 添加列菜单 */
+.add-column-menu {
+  position: relative;
+}
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: var(--anzhiyu-theme);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 12px -2px var(--anzhiyu-theme-op);
+  transition: all 0.25s ease;
+}
+
+.add-btn:hover {
+  box-shadow: 0 6px 16px -2px var(--anzhiyu-theme-op);
+}
+
+.add-column-dropdown {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  min-width: 170px;
+  padding: 6px;
+  border-radius: 14px;
+  border: var(--style-border);
+  background: var(--anzhiyu-card-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--anzhiyu-shadow-border, 0 8px 16px -4px rgba(44, 45, 48, 0.05));
+  z-index: 1200;
+}
+
+.cancel-btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: var(--style-border);
+  background: var(--anzhiyu-card-bg);
+  color: var(--anzhiyu-fontcolor);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background: var(--anzhiyu-secondbg);
+}
+
+.confirm-btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: var(--anzhiyu-theme);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 12px -2px var(--anzhiyu-theme-op);
+  transition: all 0.25s ease;
+}
+
+.confirm-btn:hover {
+  box-shadow: 0 6px 16px -2px var(--anzhiyu-theme-op);
+}

@@ -1,0 +1,527 @@
+// ============================================
+// EnhancedCodeBlock 样式（与文章详情一致）
+// ============================================
+
+.tiptap .enhanced-code-block-wrapper {
+  margin: 1em 0;
+}
+
+// 代码块容器
+.editor-code-block {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 10px;
+}
+
+// ---- 头部工具栏 ----
+.editor-code-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  height: 2.5em;
+  padding: 0 8px 0 0;
+  font-size: 1rem;
+  color: var(--hltools-color, hsl(var(--muted-foreground)));
+  background: var(--hltools-bg, hsl(var(--muted)));
+  border-bottom: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  user-select: none;
+}
+
+// 展开/折叠箭头
+.editor-code-expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2em;
+  height: 100%;
+  font-size: 14px;
+  color: var(--hltools-color, hsl(var(--muted-foreground)));
+  cursor: pointer;
+  transition: transform 0.3s;
+  transform: rotate(-90deg);
+  flex-shrink: 0;
+  border: none;
+  background: none;
+
+  &.is-open {
+    transform: rotate(0deg);
+  }
+}
+
+// Mac 风格装饰圆点
+.editor-code-mac-dots {
+  display: flex;
+  gap: 6px;
+  margin-left: 4px;
+  margin-right: 4px;
+  flex-shrink: 0;
+
+  .mac-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+
+    &.red {
+      background: linear-gradient(135deg, #ff6159, #ff5f52);
+      box-shadow: 0 1px 3px rgba(255, 97, 89, 0.4);
+    }
+
+    &.yellow {
+      background: linear-gradient(135deg, #ffbd2e, #ffbb28);
+      box-shadow: 0 1px 3px rgba(255, 189, 46, 0.4);
+    }
+
+    &.green {
+      background: linear-gradient(135deg, #28ca42, #27c93f);
+      box-shadow: 0 1px 3px rgba(40, 202, 66, 0.4);
+    }
+  }
+
+  &:hover .mac-dot {
+    transform: scale(1.1);
+  }
+}
+
+// 标题文本态
+.editor-code-title-label {
+  font-size: 0.95em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--hltools-color, hsl(var(--muted-foreground)));
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 6px;
+  white-space: nowrap;
+  user-select: none;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover {
+    color: var(--foreground);
+  }
+  &.is-empty {
+    font-weight: 600;
+    opacity: 0.7;
+  }
+}
+
+// 标题输入框态
+.editor-code-title.is-editing {
+  width: 160px;
+  height: 1.6em;
+  padding: 0 6px;
+  margin: 0 4px;
+  font-size: 0.8em;
+  font-weight: 500;
+  color: var(--foreground);
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-theme, var(--primary));
+  border-radius: 4px;
+  outline: none;
+  flex-shrink: 0;
+
+  &::placeholder {
+    color: var(--anzhiyu-secondtext, #9ca3af);
+    font-weight: 400;
+  }
+}
+
+// 标题与右侧之间的分隔线
+.editor-code-head-divider {
+  width: 1px;
+  height: 14px;
+  margin: 0 6px;
+  background: var(--anzhiyu-card-border, #e3e8f7);
+  flex-shrink: 0;
+}
+
+// 右侧区域
+.editor-code-head-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+// 语言下拉按钮
+.editor-code-lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 1.8em;
+  padding: 0 8px;
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--hltools-color, hsl(var(--muted-foreground)));
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--foreground);
+  }
+}
+
+// 复制按钮
+.editor-code-copy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8em;
+  height: 1.8em;
+  color: var(--hltools-color, hsl(var(--muted-foreground)));
+  cursor: pointer;
+  transition: color 0.2s;
+  border: none;
+  background: none;
+  border-radius: 4px;
+
+  &:hover {
+    color: var(--anzhiyu-theme, var(--primary));
+    background: var(--anzhiyu-card-bg, #fff);
+  }
+
+  &.is-copied {
+    color: #28ca42;
+  }
+}
+
+// ---- 代码内容区 ----
+.editor-code-body {
+  position: relative;
+
+  &.is-collapsed {
+    max-height: 300px;
+    overflow: hidden;
+
+    .editor-code-content-row {
+      padding-bottom: 0;
+    }
+  }
+
+  &:not(.is-collapsed) .editor-code-content-row {
+    padding-bottom: 0;
+  }
+}
+
+// 行号 + 代码区 flex 布局
+.editor-code-content-row {
+  display: flex;
+  flex-direction: row;
+  background: var(--anzhiyu-card-bg, #fff);
+}
+
+// 行号列
+.editor-code-line-numbers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  min-width: fit-content;
+  padding: 5px 8px 5px 12px;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #999;
+  background: var(--anzhiyu-secondbg, hsl(var(--muted)));
+  border-right: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  user-select: none;
+
+  span {
+    display: block;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+}
+
+// pre/code 样式
+.editor-code-pre-wrapper {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 5px 0 5px 8px;
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.6;
+  background-color: var(--anzhiyu-card-bg, #fff);
+  border: none;
+  border-radius: 0;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-size: 14px;
+  color: var(--md-theme-code-block-color, #a9b7c6);
+
+  // hljs 语法高亮颜色
+  .hljs {
+    color: #abb2bf;
+    background: transparent;
+  }
+  .hljs-keyword {
+    color: #c678dd;
+  }
+  .hljs-string {
+    color: #98c379;
+  }
+  .hljs-number {
+    color: #d19a66;
+  }
+  .hljs-comment {
+    color: #5c6370;
+    font-style: italic;
+  }
+  .hljs-built_in {
+    color: #e6c07b;
+  }
+  .hljs-title {
+    color: #61aeee;
+  }
+  .hljs-title.function_ {
+    color: #61afef;
+  }
+  .hljs-variable {
+    color: #d19a66;
+  }
+  .hljs-attr {
+    color: #e06c75;
+  }
+  .hljs-property {
+    color: #e06c75;
+  }
+  .hljs-operator {
+    color: #56b6c2;
+  }
+  .hljs-literal {
+    color: #56b6c2;
+  }
+  .hljs-params {
+    color: #abb2bf;
+  }
+  .hljs-punctuation {
+    color: #abb2bf;
+  }
+  .hljs-name,
+  .hljs-selector-tag {
+    color: #e06c75;
+  }
+  .hljs-type {
+    color: #e6c07b;
+  }
+  .hljs-meta {
+    color: #61aeee;
+  }
+  .hljs-regexp,
+  .hljs-addition {
+    color: #98c379;
+  }
+  .hljs-deletion {
+    color: #e06c75;
+  }
+  .hljs-tag {
+    color: #e06c75;
+  }
+  .hljs-tag .hljs-attr {
+    color: #d19a66;
+  }
+  .hljs-tag .hljs-string {
+    color: #98c379;
+  }
+}
+
+// ---- 设置面板（Portal 渲染） ----
+.editor-code-settings-menu {
+  min-width: 248px;
+  padding: 6px;
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 12px;
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  font-size: 14px;
+  transform-origin: top right;
+}
+
+.ecsm-enter {
+  animation: ecsmFadeIn 0.15s ease-out;
+}
+
+// 菜单项
+.ecsm-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  color: var(--anzhiyu-fontcolor, var(--foreground));
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 14px;
+  user-select: none;
+
+  &:hover {
+    background: var(--anzhiyu-card-bg-grey, #f0f2f5);
+  }
+  &.is-active {
+    color: var(--anzhiyu-theme, var(--primary));
+  }
+}
+
+.ecsm-has-sub {
+  cursor: pointer;
+}
+
+// 子菜单
+.ecsm-submenu {
+  position: absolute;
+  top: -6px;
+  left: 100%;
+  min-width: 140px;
+  padding: 6px;
+  padding-left: 14px;
+  background: transparent;
+  animation: ecsmFadeIn 0.12s ease-out;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    left: 8px;
+    background: var(--anzhiyu-card-bg, #fff);
+    border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    z-index: -1;
+  }
+
+  .ecsm-item {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// 分隔线
+.ecsm-divider {
+  height: 1px;
+  margin: 4px 10px;
+  background: var(--anzhiyu-card-border, #e3e8f7);
+}
+
+// 开关 toggle
+.ecsm-toggle {
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+  background: #e0e0e0;
+  position: relative;
+  transition: background 0.25s;
+  flex-shrink: 0;
+
+  &.is-on {
+    background: #34c759;
+
+    .ecsm-toggle-thumb {
+      transform: translateX(16px);
+    }
+  }
+}
+
+.ecsm-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+// 语言搜索框
+.ecsm-search {
+  padding: 6px 8px 4px;
+}
+
+.ecsm-search-input {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  font-size: 13px;
+  color: var(--foreground);
+  background: var(--anzhiyu-card-bg-grey, #f0f2f5);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: var(--anzhiyu-theme, var(--primary));
+  }
+  &::placeholder {
+    color: var(--anzhiyu-secondtext, #9ca3af);
+  }
+}
+
+// 语言列表滚动区
+.ecsm-lang-list {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+// ---- 折叠/展开按钮 ----
+.editor-code-expand-btn {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 32px;
+  font-size: 16px;
+  color: var(--foreground);
+  background: var(--anzhiyu-secondbg, hsl(var(--muted)));
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    background: var(--anzhiyu-theme, var(--primary));
+    color: #fff;
+  }
+}
+
+// 收起按钮
+.editor-code-collapse-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 32px;
+  font-size: 16px;
+  color: var(--hltools-color, hsl(var(--muted-foreground)));
+  background: var(--anzhiyu-secondbg, hsl(var(--muted)));
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    background: var(--anzhiyu-theme, var(--primary));
+    color: #fff;
+  }
+}

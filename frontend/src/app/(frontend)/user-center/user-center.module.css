@@ -1,0 +1,692 @@
+/* User Center Page */
+.container {
+  max-width: 1200px;
+  min-height: calc(100vh - 200px);
+  padding: 2rem 1rem;
+  margin: 0 auto;
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  font-size: 0.95rem;
+  color: var(--muted-foreground);
+}
+
+/* Not Logged In */
+.notLoggedIn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.emptyState {
+  padding: 3rem;
+  text-align: center;
+  background: var(--card);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 8%);
+}
+
+.emptyIcon {
+  margin-bottom: 1.5rem;
+  font-size: 4rem;
+  color: var(--primary);
+}
+
+.emptyTitle {
+  margin-bottom: 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.emptyDesc {
+  margin-bottom: 2rem;
+  color: var(--muted-foreground);
+}
+
+.homeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  background: var(--primary);
+  border: none;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.homeBtn:hover {
+  filter: brightness(1.1);
+}
+
+/* Main Content */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Profile Card */
+.profileCard {
+  padding: 2.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+
+.profileHeader {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.avatarSection {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatarWrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  padding: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--background);
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 15%);
+  transition: all 0.3s;
+}
+
+.avatarWrapper:hover {
+  box-shadow: 0 12px 32px rgb(0 0 0 / 20%);
+  transform: scale(1.05);
+}
+
+.avatarWrapper:hover .avatarOverlay {
+  opacity: 1;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatarOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 50%);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.avatarOverlay svg {
+  width: 2rem;
+  height: 2rem;
+  color: white;
+}
+
+.userInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.nickname {
+  margin-bottom: 0.75rem;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.metaTag {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.metaTag:hover {
+  color: var(--foreground);
+}
+
+.email {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  color: var(--muted-foreground);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.badge {
+  padding: 0.35rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--primary));
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
+}
+
+/* Action Cards */
+.actionCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.actionCard {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 2rem;
+  cursor: pointer;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.3s;
+}
+
+.actionCard:hover {
+  color: white;
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 15%);
+  transform: translateY(-2px);
+}
+
+.actionCard:hover .actionIcon {
+  background: rgb(255 255 255 / 20%);
+  color: white;
+}
+
+.actionCard:hover .actionTitle {
+  color: white;
+}
+
+.actionCard:hover .actionDesc {
+  color: rgb(255 255 255 / 80%);
+}
+
+.actionCard:hover .actionArrow {
+  color: white;
+  transform: translateX(2px);
+}
+
+.actionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  color: var(--foreground);
+  background: var(--muted);
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.actionIcon svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.actionContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.actionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--foreground);
+  transition: color 0.3s;
+}
+
+.actionDesc {
+  font-size: 0.9rem;
+  color: var(--muted-foreground);
+  transition: color 0.3s;
+}
+
+.actionArrow {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--muted-foreground);
+  transition: all 0.3s;
+}
+
+.actionCard.danger:hover {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  border-color: transparent;
+}
+
+.actionCard.danger:hover .actionIcon {
+  background: rgb(255 255 255 / 20%);
+  color: white;
+}
+
+/* Dialog Styles */
+.dialogOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 50%);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialogPanel {
+  position: relative;
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--card);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 30%);
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dialogClose {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.dialogClose:hover {
+  color: white;
+  background: var(--primary);
+}
+
+.dialogClose svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.dialogHeader {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 2rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dialogHeaderIcon {
+  font-size: 1.75rem;
+  color: var(--primary);
+}
+
+.dialogHeaderIcon svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.dialogTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.dialogBody {
+  padding: 2rem;
+}
+
+.dialogFooter {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.5rem 2rem;
+  background: var(--background);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 20px 20px;
+}
+
+/* Form Elements */
+.formGroup {
+  margin-bottom: 1.25rem;
+}
+
+.formLabel {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.formInput {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--foreground);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.formInput:focus {
+  border-color: var(--primary);
+}
+
+.formInput:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.formTip {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+
+.formError {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--destructive, var(--anzhiyu-red, #d80020));
+}
+
+/* Buttons */
+.btnSecondary {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+  cursor: pointer;
+  background: var(--muted);
+  border: none;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.btnSecondary:hover {
+  background: var(--card);
+}
+
+.btnPrimary {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  background: var(--foreground);
+  border: none;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btnPrimary:active:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.btnPrimary:disabled {
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+  background: var(--muted);
+  opacity: 0.6;
+}
+
+/* Password Tips */
+.passwordTips {
+  padding: 1rem;
+  margin-top: 1.5rem;
+  background: var(--background);
+  border-radius: 12px;
+}
+
+.passwordTips p {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.passwordTips ul {
+  padding-left: 1.5rem;
+  margin: 0;
+}
+
+.passwordTips li {
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+
+/* Notification Settings */
+.settingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+}
+
+.settingInfo {
+  flex: 1;
+}
+
+.settingLabel {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.settingDesc {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+.settingAlert {
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-radius: 10px;
+}
+
+/* Toggle Switch */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background: var(--muted);
+  border-radius: 24px;
+  transition: background 0.3s;
+}
+
+.toggleSlider::before {
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  content: "";
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
+}
+
+.toggle input:checked + .toggleSlider {
+  background: var(--primary);
+}
+
+.toggle input:checked + .toggleSlider::before {
+  transform: translateX(20px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .profileCard {
+    padding: 1.5rem;
+  }
+
+  .profileHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .metaRow {
+    justify-content: center;
+  }
+
+  .email {
+    justify-content: center;
+  }
+
+  .badges {
+    justify-content: center;
+  }
+
+  .nickname {
+    font-size: 1.5rem;
+  }
+
+  .avatarWrapper {
+    width: 100px;
+    height: 100px;
+  }
+
+  .actionCards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .actionCard {
+    padding: 1.5rem;
+  }
+
+  .dialogPanel {
+    width: 95%;
+  }
+
+  .dialogHeader,
+  .dialogBody,
+  .dialogFooter {
+    padding-right: 1.5rem;
+    padding-left: 1.5rem;
+  }
+}

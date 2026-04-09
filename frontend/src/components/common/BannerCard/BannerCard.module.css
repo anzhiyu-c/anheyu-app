@@ -1,0 +1,101 @@
+.bannerCard {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  color: #fff;
+  background-color: var(--primary, #425aef);
+  background-image: linear-gradient(-45deg, var(--primary, #425aef), #0f4667, #2a6973 150%, #67044d);
+  background-repeat: no-repeat;
+  background-position: left 28%;
+  background-size: 400%;
+  border-radius: 12px;
+}
+
+.bannerInner {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  padding: 2rem;
+}
+
+.bannerInner::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  background: rgb(0 0 0 / 40%);
+}
+
+.bannerContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+}
+
+.bannerTips {
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.bannerTitle {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.bannerBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bannerDesc {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.bannerButton {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.625rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  background: rgb(255 255 255 / 20%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 25px;
+  transition: all 0.3s ease;
+}
+
+.bannerButtonIcon {
+  flex-shrink: 0;
+}
+
+.bannerButton:hover {
+  background: rgb(255 255 255 / 30%);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+}
+
+@media (max-width: 768px) {
+  .bannerInner {
+    padding: 1.5rem;
+  }
+
+  .bannerTitle {
+    font-size: 1.5rem;
+  }
+}

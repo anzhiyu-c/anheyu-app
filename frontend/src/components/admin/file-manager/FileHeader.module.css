@@ -1,0 +1,146 @@
+.file-heard-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  margin-bottom: 6px;
+}
+
+.primary-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: none;
+  background: var(--anzhiyu-theme);
+  color: #fff;
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: 0 4px 14px -2px var(--anzhiyu-theme-op);
+  transition: box-shadow 0.3s ease;
+}
+
+.new-btn:hover {
+  box-shadow: 0 8px 20px -4px var(--anzhiyu-theme-op);
+}
+
+.search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 12px;
+  border: var(--style-border);
+  background: var(--anzhiyu-card-bg);
+  color: var(--anzhiyu-fontcolor);
+  transition: all 0.25s ease;
+}
+
+.search-btn:hover {
+  background: var(--anzhiyu-theme-op);
+  border-color: var(--anzhiyu-theme);
+  color: var(--anzhiyu-theme);
+}
+
+/* 选择工具栏 */
+.selection-toolbar {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  overflow: auto hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.selection-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* 操作按钮组 - 胶囊式设计 */
+.action-group {
+  display: flex;
+  align-items: center;
+  border: var(--style-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--anzhiyu-card-bg);
+  box-shadow: 0 2px 8px -2px rgb(0 0 0 / 6%);
+  transition: box-shadow 0.3s ease;
+}
+
+.action-group:hover {
+  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 10%);
+}
+
+.action-btn {
+  height: 40px;
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--anzhiyu-fontcolor);
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.action-btn:hover {
+  color: var(--anzhiyu-theme);
+  background: var(--anzhiyu-theme-op);
+}
+
+.selection-count {
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--anzhiyu-secondtext);
+  white-space: nowrap;
+}
+
+/* 危险按钮 */
+.danger-btn {
+  color: var(--anzhiyu-red);
+}
+
+.danger-btn:hover {
+  color: var(--anzhiyu-red);
+  background: rgb(216 0 32 / 10%);
+}
+
+/* 响应式设计 */
+@media (width <= 640px) {
+  .file-heard-actions {
+    flex-wrap: wrap;
+  }
+
+  .new-btn {
+    min-width: 42px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  .selection-toolbar {
+    gap: 6px;
+  }
+
+  .action-btn {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+  }
+}

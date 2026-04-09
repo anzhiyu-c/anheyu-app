@@ -1,0 +1,234 @@
+/* 外部链接跳转提示页面样式 */
+/* 参考 anheyu-app external-link-warning/index.vue */
+
+.page {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 560px;
+  padding: 2.5rem 2rem;
+  background: var(--anzhiyu-card-bg);
+  border: var(--style-border-always);
+  border-radius: 12px;
+  box-shadow: var(--anzhiyu-shadow-border);
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* 图标 */
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.5rem;
+  border-radius: 50%;
+  color: var(--anzhiyu-main);
+  font-size: 36px;
+}
+
+/* 标题 */
+.title {
+  margin: 0 0 0.75rem;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--anzhiyu-fontcolor);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 20px;
+  }
+}
+
+/* 描述 */
+.description {
+  margin: 0 0 1.5rem;
+  font-size: 14px;
+  color: var(--anzhiyu-secondtext);
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* 链接显示 */
+.linkDisplay {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--anzhiyu-secondbg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.linkIcon {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: var(--anzhiyu-main);
+}
+
+.linkText {
+  flex: 1;
+  font-size: 14px;
+  color: var(--anzhiyu-fontcolor);
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+/* 安全提示 */
+.warningTips {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  background: rgba(255, 183, 0, 0.1);
+  border-radius: 8px;
+}
+
+.tipIcon {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: #ffb700;
+  margin-top: 2px;
+}
+
+.tipText {
+  flex: 1;
+  font-size: 13px;
+  color: var(--anzhiyu-fontcolor);
+  line-height: 1.6;
+}
+
+/* 倒计时 */
+.countdownTip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 14px;
+  color: var(--anzhiyu-white, #fff);
+  background: var(--anzhiyu-main);
+  border-radius: 8px;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* 操作按钮 */
+.actionButtons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .actionButtons {
+    flex-direction: column;
+  }
+}
+
+.btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btnSecondary {
+  background: var(--anzhiyu-secondbg);
+  color: var(--anzhiyu-fontcolor);
+}
+
+.btnSecondary:hover {
+  opacity: 0.8;
+}
+
+.btnPrimary {
+  background: var(--anzhiyu-main);
+  color: #fff;
+}
+
+.btnPrimary:hover {
+  opacity: 0.9;
+}
+
+/* 记住选择 */
+.rememberOption {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--anzhiyu-card-border, #eee);
+  text-align: center;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkboxLabel:hover .checkboxText {
+  color: var(--anzhiyu-main);
+}
+
+.checkboxInput {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--anzhiyu-main);
+  margin: 0;
+}
+
+.checkboxText {
+  font-size: 13px;
+  color: var(--anzhiyu-secondtext);
+  transition: color 0.3s ease;
+}

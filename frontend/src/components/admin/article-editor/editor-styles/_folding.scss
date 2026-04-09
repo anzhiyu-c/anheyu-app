@@ -1,0 +1,306 @@
+// ============================================
+// 折叠块（与文章详情一致）
+// ============================================
+
+.tiptap {
+  details.folding-tag {
+    display: block;
+    padding: 16px;
+    margin: 1em 0;
+    font-size: 1rem;
+    transition: border 0s ease;
+
+    .content > :first-child {
+      margin-top: 0 !important;
+    }
+
+    &:not(.custom-color)[open] {
+      background: var(--anzhiyu-card-bg, #fff);
+      border: 1px solid var(--anzhiyu-theme, var(--primary));
+      border-radius: 15px;
+    }
+
+    &.custom-color[open] {
+      border: 1px solid;
+      border-radius: 15px;
+    }
+
+    // Summary 样式（排除代码块头部）
+    summary:not(.md-editor-code-head) {
+      position: relative;
+      padding: 16px;
+      margin: -16px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      line-height: normal;
+      cursor: pointer;
+      user-select: none;
+      background: var(--anzhiyu-card-bg, #fff);
+      border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      list-style: none;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      &::before {
+        margin-right: 8px;
+        content: "▶";
+        font-size: 0.75rem;
+        transition: transform 0.3s ease;
+        display: inline-block;
+      }
+
+      &:hover::after {
+        position: absolute;
+        top: 50%;
+        right: 16px;
+        content: "+";
+        transform: translateY(-50%);
+      }
+    }
+
+    &[open] summary:not(.md-editor-code-head)::before {
+      transform: rotate(90deg);
+    }
+
+    // 非自定义颜色 hover 效果
+    &:not(.custom-color) summary:not(.md-editor-code-head):hover {
+      color: #fff !important;
+      background: var(--anzhiyu-theme, var(--primary));
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+    }
+
+    // 自定义颜色 hover 效果
+    &.custom-color summary:not(.md-editor-code-head):hover {
+      color: #fff !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+    }
+
+    &:not(.custom-color)[open] > summary:not(.md-editor-code-head) {
+      margin-bottom: 0;
+      color: #fff !important;
+      background: var(--anzhiyu-theme, var(--primary));
+      border-top: none !important;
+      border-right: none !important;
+      border-left: none !important;
+      border-bottom-right-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+    }
+
+    &.custom-color[open] > summary:not(.md-editor-code-head) {
+      margin-bottom: 0;
+      color: #fff !important;
+      border-top: none !important;
+      border-right: none !important;
+      border-left: none !important;
+      border-bottom-right-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+    }
+
+    &[open] > summary:not(.md-editor-code-head):hover::after {
+      content: "-";
+    }
+
+    &[open] > div.content {
+      padding: 16px;
+      margin: -16px;
+      margin-top: 0;
+      border-radius: 0 0 16px 16px;
+    }
+
+    // 嵌套代码块修复
+    .md-editor-code {
+      margin: 12px 0;
+    }
+  }
+
+  .folding-block-wrapper .folding-content {
+    min-height: 1.5em;
+  }
+}
+
+// ---- 编辑器折叠块 NodeView 样式 ----
+.editor-folding-block {
+  margin: 1em 0;
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+
+  &.is-open:not(.has-color) {
+    border-color: var(--anzhiyu-theme, #3b82f6);
+  }
+
+  &.is-open.has-color {
+    border-width: 1px;
+    border-style: solid;
+  }
+
+  &.has-color .editor-folding-summary {
+    &:hover,
+    &.is-open {
+      background: inherit;
+    }
+  }
+}
+
+.editor-folding-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  background: var(--anzhiyu-card-bg, #fff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: #fff;
+    background: var(--anzhiyu-theme, #3b82f6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &.is-open:not(:hover) {
+    color: #fff;
+    background: var(--anzhiyu-theme, #3b82f6);
+    border-radius: 0;
+  }
+
+  &:hover .editor-folding-color-wrap,
+  &.is-open .editor-folding-color-wrap {
+    opacity: 1;
+  }
+}
+
+// 箭头
+.editor-folding-arrow {
+  font-size: 0.7rem;
+  transition: transform 0.3s ease;
+  display: inline-block;
+  flex-shrink: 0;
+
+  &.is-open {
+    transform: rotate(90deg);
+  }
+}
+
+// 标题文字
+.editor-folding-title {
+  flex: 1;
+  min-width: 0;
+  cursor: text;
+}
+
+// 标题输入框
+.editor-folding-title-input {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  outline: none;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+// 颜色选择器
+.editor-folding-color-wrap {
+  position: relative;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.editor-folding-color-btn {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.15s;
+
+  &:hover {
+    transform: scale(1.15);
+  }
+}
+
+.editor-folding-color-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  padding: 8px;
+  background: var(--anzhiyu-card-bg, #fff);
+  border: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: ecsmFadeIn 0.15s ease-out;
+}
+
+.editor-folding-color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.editor-folding-color-swatch {
+  width: 24px;
+  height: 24px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    border-color 0.15s;
+
+  &:hover {
+    transform: scale(1.2);
+  }
+
+  &.is-active {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px var(--anzhiyu-theme, #3b82f6);
+  }
+}
+
+.editor-folding-color-clear {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 0;
+  font-size: 11px;
+  color: var(--anzhiyu-secondtext, #9ca3af);
+  text-align: center;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--anzhiyu-card-border, #e3e8f7);
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--anzhiyu-theme, #3b82f6);
+  }
+}
+
+// 内容区
+.editor-folding-content {
+  padding: 16px;
+
+  > .folding-content > :first-child {
+    margin-top: 0 !important;
+  }
+}

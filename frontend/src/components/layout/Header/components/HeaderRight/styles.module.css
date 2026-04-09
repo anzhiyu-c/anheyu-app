@@ -1,0 +1,686 @@
+/* HeaderRight 组件样式 */
+
+.headerRight {
+  --animation-on: cubic-bezier(0.6, 0.1, 0, 1);
+  --animation-in: cubic-bezier(0.6, 0.2, 0.25, 1);
+
+  position: absolute;
+  right: 0;
+  z-index: 102;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 100%;
+  padding-right: 1.5rem;
+}
+
+/* 中控台切换按钮 */
+.centerConsole {
+  display: none;
+}
+
+.consoleLabel {
+  --icon-size: 1.375rem;
+
+  position: relative;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  margin-left: 1rem;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.consoleLabel:hover .left {
+  width: calc(var(--icon-size) / 2.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.consoleLabel:hover .center {
+  width: calc(var(--icon-size) / 2.5);
+  opacity: 0.5;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.consoleLabel:hover .right {
+  width: calc(var(--icon-size) / 2.5);
+  height: calc(var(--icon-size) / 1.15);
+  transform: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.consoleIcon {
+  position: absolute;
+  inset: 0;
+  right: auto;
+  width: calc(var(--icon-size) / 3);
+  height: calc(var(--icon-size) / 3);
+  margin: auto;
+  background: var(--foreground);
+  border-radius: calc(var(--icon-size) * 0.15);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(calc(var(--icon-size) / 4));
+}
+
+.consoleIcon.left {
+  width: 100%;
+  transform: translateY(calc(var(--icon-size) / -4));
+}
+
+.consoleIcon.right {
+  right: 0;
+  left: auto;
+  width: calc(var(--icon-size) / 2);
+}
+
+/* 控制台打开状态 */
+.consoleLabelActive {
+  top: 0;
+  right: 0;
+  z-index: 99999;
+}
+
+.consoleLabelActive::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  display: block;
+  width: 35px;
+  height: 35px;
+  content: "";
+  background: var(--foreground) !important;
+  border-radius: 50px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translate(-50%, -50%);
+}
+
+.consoleLabelActive:hover::after {
+  background: var(--primary) !important;
+}
+
+.consoleLabelActive .consoleIcon {
+  height: 5px;
+  background: var(--background) !important;
+}
+
+.consoleLabelActive .consoleIcon.left {
+  width: 100% !important;
+  transform: translateY(0) rotate(-45deg) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.consoleLabelActive .consoleIcon.center {
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  transform: translateY(0) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.consoleLabelActive .consoleIcon.right {
+  left: 0 !important;
+  width: 100% !important;
+  transform: translateY(0) rotate(45deg) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 控制台打开时禁用 hover 效果 */
+.consoleLabelActive:hover .left,
+.consoleLabelActive:hover .right {
+  width: 100% !important;
+  height: 5px !important;
+}
+
+.consoleLabelActive:hover .center {
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+}
+
+.consoleLabelActive:hover .left {
+  transform: translateY(0) rotate(-45deg) !important;
+}
+
+.consoleLabelActive:hover .right {
+  transform: translateY(0) rotate(45deg) !important;
+}
+
+/* 导航按钮 */
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  margin-left: 1rem;
+  cursor: pointer;
+  border-radius: 50px;
+  transition: 0.3s;
+  color: var(--foreground);
+  background: transparent;
+  border: none;
+}
+
+.navButton svg {
+  color: inherit;
+  transition: color 0.3s;
+}
+
+.navButton:not(.navTotop):hover,
+.navButton:not(.navTotop)[data-hover="true"] {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+/* 覆盖 HeroUI 全局 [data-slot="trigger"] 的 !important 规则 */
+.navButton[data-slot="trigger"] {
+  border-radius: 50px !important;
+  box-shadow: none !important;
+}
+
+.navButton[data-slot="trigger"]:hover,
+.navButton[data-slot="trigger"][data-hover="true"] {
+  color: var(--primary-foreground);
+  background: var(--primary);
+  border-radius: 50px !important;
+}
+
+/*
+ * 深色模式下 globals 对顶栏 [data-slot="trigger"] 使用了 background-color: transparent !important，
+ * 特异性高于本模块的 :hover，导致登录/个人中心按钮 hover 无主色底。用 :global + !important 对齐相邻图标。
+ */
+:global(html.dark) .headerRight .navButton[data-slot="trigger"]:hover,
+:global(html.dark) .headerRight .navButton[data-slot="trigger"][data-hover="true"],
+:global(.dark) .headerRight .navButton[data-slot="trigger"]:hover,
+:global(.dark) .headerRight .navButton[data-slot="trigger"][data-hover="true"] {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+/* 白色文字状态（页面顶部透明时） */
+.textIsWhite .navButton {
+  color: #fff;
+}
+
+.textIsWhite .navButton:not(.navTotop):hover,
+.textIsWhite .navButton:not(.navTotop)[data-hover="true"] {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+:global(html.dark) .headerRight.textIsWhite .navButton[data-slot="trigger"]:hover,
+:global(html.dark) .headerRight.textIsWhite .navButton[data-slot="trigger"][data-hover="true"],
+:global(.dark) .headerRight.textIsWhite .navButton[data-slot="trigger"]:hover,
+:global(.dark) .headerRight.textIsWhite .navButton[data-slot="trigger"][data-hover="true"] {
+  background-color: rgb(255 255 255 / 20%) !important;
+  color: #fff !important;
+}
+
+.textIsWhite .consoleIcon {
+  background: #fff;
+}
+
+.textIsWhite .toggleMenu {
+  color: #fff;
+}
+
+/* 用户中心按钮 */
+.userCenterButton {
+  position: relative;
+}
+
+/* 切换菜单按钮 */
+.toggleMenu {
+  display: none;
+  margin-left: 1rem;
+  cursor: pointer;
+}
+
+.toggleMenu .sitePage {
+  font-size: 1.35rem;
+}
+
+/* 回到顶部按钮 */
+.navTotop {
+  width: 0;
+  margin-left: 0;
+  transition: all 0.3s ease-in-out;
+  transform: scale(0);
+  transform-origin: right center;
+}
+
+.navTotop.isVisible {
+  width: 25px;
+  margin-left: 1.5rem;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.navTotop.isVisible.long {
+  width: 80px;
+  margin-left: 1rem;
+}
+
+.navTotop.isVisible.long .totopbtn {
+  width: 70px;
+}
+
+.totopbtn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 25px;
+  height: 25px;
+  color: var(--card);
+  background: var(--foreground);
+  border-radius: 40px;
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.totopbtn svg,
+.totopbtn .percent {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transition: all 0.3s;
+  transform: translate(-50%, -50%);
+}
+
+.totopbtn svg {
+  opacity: 0;
+}
+
+.percent {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 1;
+}
+
+.navTotop:not(.long):hover .totopbtn {
+  top: 0;
+  right: 0;
+  width: 35px;
+  height: 35px;
+  background: var(--primary);
+}
+
+.navTotop:not(.long):hover .totopbtn svg {
+  color: var(--primary-foreground);
+  opacity: 1;
+  transition: 0.3s;
+}
+
+.navTotop:not(.long):hover .totopbtn .percent {
+  opacity: 0;
+}
+
+.navTotop.long:hover {
+  transform: scale(1);
+}
+
+.navTotop.long:hover .totopbtn {
+  background: var(--primary);
+}
+
+.navTotop.long:hover .totopbtn svg {
+  opacity: 1;
+}
+
+.navTotop.long:hover .totopbtn .percent {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+/* 用户下拉菜单 */
+.userDropdownWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+.dropdownBridge {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 140px;
+  height: 8px;
+  pointer-events: auto;
+}
+
+.userDropdownMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 9999;
+  min-width: 140px;
+  background: var(--card);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+}
+
+.dropdownItem {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 18px;
+  font-size: 14px;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dropdownItem svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dropdownItem span {
+  font-weight: 500;
+}
+
+.dropdownItem:hover {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.dropdownItem:hover span {
+  color: var(--primary-foreground);
+}
+
+.dropdownItem:hover svg {
+  color: var(--primary-foreground);
+  transform: scale(1.1);
+}
+
+.dropdownItem:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.dropdownItem:first-child {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.dropdownItem:last-child {
+  border-bottom-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+/* 下拉菜单动画 */
+.dropdownFadeEnter {
+  animation: dropdown-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes dropdown-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 控制台打开状态 - 只显示关闭按钮 */
+.headerRight.consoleOpen {
+  pointer-events: none;
+}
+
+.headerRight.consoleOpen .navButton,
+.headerRight.consoleOpen .userDropdownWrapper,
+.headerRight.consoleOpen .toggleMenu {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.headerRight.consoleOpen .navTotop {
+  width: 0 !important;
+  margin-left: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transform: scale(0) !important;
+}
+
+.headerRight.consoleOpen .consoleLabel {
+  pointer-events: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .headerRight {
+    padding: 0 1.2rem;
+  }
+
+  .centerConsole,
+  .consoleLabel {
+    display: none;
+  }
+
+  .toggleMenu {
+    display: block;
+  }
+
+  /* 移动端控制台打开时也显示关闭按钮 */
+  .headerRight.consoleOpen .consoleLabel {
+    display: block;
+    pointer-events: auto;
+  }
+}
+
+/* ===================== 用户面板样式 ===================== */
+.userPanel {
+  min-width: 280px;
+}
+
+.panelHeader {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.userAvatar {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.userInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.userName {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userDesc {
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panelGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 12px;
+}
+
+.gridItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 4px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.gridItem:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+:global(html.dark) .gridItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.gridItem:hover .gridIcon {
+  transform: scale(1.05);
+}
+
+.gridItem:hover span {
+  color: var(--foreground);
+}
+
+.gridItem:active {
+  transform: scale(0.97);
+}
+
+.gridIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  transition: transform 0.2s ease;
+}
+
+.gridItem span {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+/* 未登录时的登录引导面板 */
+.loginPanel {
+  width: 272px;
+  padding: 20px 18px 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% -20%, var(--primary-op-light, rgba(99, 102, 241, 0.12)) 0%, transparent 58%),
+    var(--card);
+}
+
+.loginHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.loginIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 12px;
+  background: var(--primary-op, rgba(99, 102, 241, 0.1));
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  box-shadow: 0 8px 20px -16px var(--primary-op-deep, rgba(66, 89, 239, 0.5));
+}
+
+.loginIcon {
+  color: var(--primary);
+}
+
+.loginTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.2px;
+  color: var(--foreground);
+}
+
+.loginDesc {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+
+.loginActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.loginBtn,
+.registerBtn {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+}
+
+.loginBtn:focus-visible,
+.registerBtn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.loginBtn {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.loginBtn:hover {
+  filter: brightness(1.06);
+}
+
+.registerBtn {
+  color: var(--foreground);
+  background: var(--muted);
+  border-color: var(--border);
+}
+
+:global(html.dark) .registerBtn {
+  background: var(--secondary);
+}
+
+.registerBtn:hover {
+  background: var(--card);
+  border-color: var(--primary-op-deep, rgba(66, 89, 239, 0.35));
+}
+
+:global(html.dark) .registerBtn:hover {
+  background: var(--card);
+}

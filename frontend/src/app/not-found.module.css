@@ -1,0 +1,323 @@
+/* 404 页面样式 - 复刻 anheyu-app */
+
+.errorPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  padding: 1rem;
+}
+
+.errorBox {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.errorWrap {
+  margin-bottom: 2rem;
+}
+
+.errorContent {
+  display: flex;
+  align-items: stretch;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.errorImg {
+  flex: 1;
+  min-width: 300px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px 0 0 12px;
+}
+
+.errorInfo {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+.errorTitle {
+  font-size: 8rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 1rem;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--primary), var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.errorSubtitle {
+  font-size: 1.25rem;
+  color: var(--muted-foreground);
+  margin-bottom: 2rem;
+}
+
+.buttonAnimated {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.8rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.buttonAnimated:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.buttonAnimated:active {
+  transform: translateY(0);
+}
+
+.buttonAnimated i,
+.buttonAnimated svg {
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* 随机文章列表 */
+.asideList {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.asideListGroup {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.loadingContainer {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.loadingItem {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--muted);
+  border-radius: 8px;
+}
+
+.loadingThumbnail {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  background: var(--secondary);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.loadingContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.loadingTitle {
+  height: 1.5rem;
+  background: var(--secondary);
+  border-radius: 4px;
+  width: 80%;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.loadingDate {
+  height: 1rem;
+  background: var(--secondary);
+  border-radius: 4px;
+  width: 40%;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.asideListItem {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--muted);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.asideListItem:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.asideListItem:hover .thumbnail img {
+  transform: scale(1.1);
+}
+
+.asideListItem:hover .title {
+  color: var(--primary);
+}
+
+.thumbnail {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--secondary);
+}
+
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--foreground);
+  transition: color 0.3s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.5;
+}
+
+.time {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.noData {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted-foreground);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .errorPage {
+    padding: 1rem 0.5rem;
+  }
+
+  .errorContent {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .errorImg {
+    min-width: 100%;
+    height: 250px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .errorInfo {
+    padding: 1.5rem;
+  }
+
+  .errorTitle {
+    font-size: 5rem;
+  }
+
+  .errorSubtitle {
+    font-size: 1rem;
+  }
+
+  .asideList {
+    padding: 1rem;
+  }
+
+  .asideListGroup {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .asideListItem {
+    padding: 0.75rem;
+  }
+
+  .thumbnail {
+    width: 80px;
+    height: 80px;
+  }
+
+  .title {
+    font-size: 0.875rem;
+  }
+
+  .time {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .errorImg {
+    height: 180px;
+  }
+
+  .errorInfo {
+    padding: 1rem;
+  }
+
+  .errorTitle {
+    font-size: 4rem;
+  }
+
+  .errorSubtitle {
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .buttonAnimated {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+  }
+}
