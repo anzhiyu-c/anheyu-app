@@ -693,11 +693,12 @@ func (r *articleRepo) Update(ctx context.Context, publicID string, req *model.Up
 		if *req.DocSeriesID == "" {
 			updater.ClearDocSeriesID()
 		} else {
-			// 需要将字符串ID转换为数据库ID
 			seriesDBID, _, err := idgen.DecodePublicID(*req.DocSeriesID)
-			if err == nil {
-				updater.SetDocSeriesID(seriesDBID)
+			if err != nil {
+				log.Printf("[Repository.Update] 解析文档系列ID失败: id=%s, error=%v", *req.DocSeriesID, err)
+				return nil, fmt.Errorf("无效的文档系列ID: %s", *req.DocSeriesID)
 			}
+			updater.SetDocSeriesID(seriesDBID)
 		}
 	}
 	if req.ScheduledAt != nil {

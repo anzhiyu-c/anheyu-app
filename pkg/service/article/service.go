@@ -1483,35 +1483,38 @@ func (s *serviceImpl) Update(ctx context.Context, publicID string, req *model.Up
 			return fmt.Errorf("删除未使用的分类失败: %w", err)
 		}
 
-		// 处理文档系列计数更新
-		oldSeriesID := uint(0)
-		if oldArticle.DocSeriesID != nil {
-			oldSeriesID = *oldArticle.DocSeriesID
-		}
-		newSeriesID := uint(0)
-		if req.DocSeriesID != nil && *req.DocSeriesID != "" {
-			dbID, _, err := idgen.DecodePublicID(*req.DocSeriesID)
-			if err == nil {
-				newSeriesID = dbID
+		// 处理文档系列计数更新（仅在请求中包含文档字段时才计算）
+		docFieldsProvided := req.IsDoc != nil || req.DocSeriesID != nil
+		if docFieldsProvided {
+			oldSeriesID := uint(0)
+			if oldArticle.DocSeriesID != nil {
+				oldSeriesID = *oldArticle.DocSeriesID
 			}
-		}
-		oldIsDoc := oldArticle.IsDoc
-		newIsDoc := oldIsDoc
-		if req.IsDoc != nil {
-			newIsDoc = *req.IsDoc
-		}
+			newSeriesID := uint(0)
+			if req.DocSeriesID != nil && *req.DocSeriesID != "" {
+				dbID, _, err := idgen.DecodePublicID(*req.DocSeriesID)
+				if err == nil {
+					newSeriesID = dbID
+				}
+			} else if req.DocSeriesID == nil {
+				// DocSeriesID 未传则保持旧值
+				newSeriesID = oldSeriesID
+			}
+			oldIsDoc := oldArticle.IsDoc
+			newIsDoc := oldIsDoc
+			if req.IsDoc != nil {
+				newIsDoc = *req.IsDoc
+			}
 
-		// 计算文档系列计数变化
-		if oldIsDoc && oldSeriesID > 0 && (!newIsDoc || newSeriesID != oldSeriesID) {
-			// 旧系列减少计数
-			if err := repos.DocSeries.UpdateDocCount(ctx, oldSeriesID, -1); err != nil {
-				return fmt.Errorf("更新旧文档系列计数失败: %w", err)
+			if oldIsDoc && oldSeriesID > 0 && (!newIsDoc || newSeriesID != oldSeriesID) {
+				if err := repos.DocSeries.UpdateDocCount(ctx, oldSeriesID, -1); err != nil {
+					return fmt.Errorf("更新旧文档系列计数失败: %w", err)
+				}
 			}
-		}
-		if newIsDoc && newSeriesID > 0 && (!oldIsDoc || newSeriesID != oldSeriesID) {
-			// 新系列增加计数
-			if err := repos.DocSeries.UpdateDocCount(ctx, newSeriesID, 1); err != nil {
-				return fmt.Errorf("更新新文档系列计数失败: %w", err)
+			if newIsDoc && newSeriesID > 0 && (!oldIsDoc || newSeriesID != oldSeriesID) {
+				if err := repos.DocSeries.UpdateDocCount(ctx, newSeriesID, 1); err != nil {
+					return fmt.Errorf("更新新文档系列计数失败: %w", err)
+				}
 			}
 		}
 
