@@ -18,8 +18,10 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 
 	"github.com/anzhiyu-c/anheyu-app/internal/app/bootstrap"
@@ -235,11 +237,34 @@ func NewAppWithOptions(content embed.FS, opts AppOptions) (*App, func(), error) 
 		return nil, nil, fmt.Errorf("redis 初始化失败: %w", err)
 	}
 
-	if dbPass := cfg.GetString(config.KeyDBPassword); dbPass == "" || dbPass == "changeme" {
-		log.Println("⚠️  警告: 数据库密码使用默认值或为空，生产环境请务必修改！设置环境变量 ANHEYU_DATABASE_PASSWORD")
+	// 默认密码强校验：生产模式（gin release）下使用默认/空密码直接 fail-fast，
+	// 避免运维忽略警告日志默默上线裸奔。本地/调试模式仍仅打 warn 不阻断。
+	releaseMode := strings.EqualFold(gin.Mode(), gin.ReleaseMode)
+	dbPass := cfg.GetString(config.KeyDBPassword)
+	dbPassWeak := dbPass == "" || dbPass == "changeme"
+	if dbPassWeak {
+		msg := "数据库密码使用默认值或为空，请修改后再启动！设置环境变量 ANHEYU_DATABASE_PASSWORD"
+		if releaseMode {
+			sqlDB.Close()
+			if redisClient != nil {
+				redisClient.Close()
+			}
+			return nil, nil, fmt.Errorf("启动失败: %s", msg)
+		}
+		log.Printf("⚠️  警告: %s", msg)
 	}
-	if redisPass := cfg.GetString(config.KeyRedisPassword); redisPass == "" || redisPass == "changeme" {
-		log.Println("⚠️  警告: Redis 密码使用默认值或为空，生产环境请务必修改！设置环境变量 ANHEYU_REDIS_PASSWORD")
+	redisPass := cfg.GetString(config.KeyRedisPassword)
+	redisPassWeak := redisPass == "" || redisPass == "changeme"
+	if redisPassWeak {
+		msg := "Redis 密码使用默认值或为空，请修改后再启动！设置环境变量 ANHEYU_REDIS_PASSWORD"
+		if releaseMode {
+			sqlDB.Close()
+			if redisClient != nil {
+				redisClient.Close()
+			}
+			return nil, nil, fmt.Errorf("启动失败: %s", msg)
+		}
+		log.Printf("⚠️  警告: %s", msg)
 	}
 
 	tempCleanup := func() {
@@ -308,6 +333,26 @@ func NewAppWithOptions(content embed.FS, opts AppOptions) (*App, func(), error) 
 	settingSvc := setting.NewSettingService(settingRepo, eventBus)
 	if err := settingSvc.LoadAllSettings(context.Background()); err != nil {
 		return nil, tempCleanup, fmt.Errorf("从数据库加载站点配置失败: %w", err)
+	}
+
+	// JWT 密钥强度校验：HS256 在密钥短于 32 字节、或全为可预测字符时易被暴力破解。
+	// release 模式下直接 fail-fast，dev 模式下打告警，提示运维生成高熵密钥。
+	{
+		jwtSecret := settingSvc.Get(constant.KeyJWTSecret.String())
+		switch {
+		case jwtSecret == "":
+			msg := "JWT_SECRET 未配置，请在站点设置中生成至少 32 字节的高熵密钥"
+			if releaseMode {
+				return nil, tempCleanup, fmt.Errorf("启动失败: %s", msg)
+			}
+			log.Printf("⚠️  警告: %s", msg)
+		case len(jwtSecret) < 32:
+			msg := fmt.Sprintf("JWT_SECRET 长度仅 %d 字节，低于安全推荐的 32 字节，登录令牌存在被暴力破解风险", len(jwtSecret))
+			if releaseMode {
+				return nil, tempCleanup, fmt.Errorf("启动失败: %s", msg)
+			}
+			log.Printf("⚠️  警告: %s", msg)
+		}
 	}
 	strategyManager := strategy.NewManager()
 	strategyManager.Register(constant.PolicyTypeLocal, strategy.NewLocalStrategy())
@@ -668,6 +713,17 @@ func NewAppWithOptions(content embed.FS, opts AppOptions) (*App, func(), error) 
 		return nil, nil, fmt.Errorf("设置信任代理失败: %w", err)
 	}
 	engine.ForwardedByClientIP = true
+
+	// 全局 gzip 压缩：默认压缩等级，跳过已经压缩好的二进制资源（图片/视频/已压缩归档）。
+	// 对 JSON/HTML/JS/CSS/Sitemap 等文本响应能显著降低带宽与首屏 TTFB。
+	engine.Use(gzip.Gzip(
+		gzip.DefaultCompression,
+		gzip.WithExcludedExtensions([]string{
+			".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif",
+			".mp4", ".webm", ".mp3", ".ogg", ".flac",
+			".zip", ".gz", ".br", ".7z", ".rar", ".woff", ".woff2",
+		}),
+	))
 
 	siteURL := settingSvc.Get(constant.KeySiteURL.String())
 	if siteURL != "" {

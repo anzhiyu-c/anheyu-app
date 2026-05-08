@@ -204,7 +204,10 @@ func (s *authService) Register(ctx context.Context, email, nickname, password st
 		assignedUserGroupID = 1
 	}
 	activationEnabled := s.settingSvc.Get(constant.KeyEnableUserActivation.String()) == "true"
-	hashedPassword, _ := security.HashPassword(password)
+	hashedPassword, err := security.HashPassword(password)
+	if err != nil {
+		return false, fmt.Errorf("密码哈希失败: %w", err)
+	}
 	// 如果昵称为空，则使用邮箱前缀作为默认昵称
 	if nickname == "" {
 		nickname = strings.Split(email, "@")[0]
@@ -483,7 +486,10 @@ func (s *authService) PerformPasswordReset(ctx context.Context, userID uint, sig
 		return fmt.Errorf("用户不存在")
 	}
 
-	newHashedPassword, _ := security.HashPassword(newPassword)
+	newHashedPassword, err := security.HashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("密码哈希失败: %w", err)
+	}
 	user.PasswordHash = newHashedPassword
 
 	return s.userRepo.Update(ctx, user)

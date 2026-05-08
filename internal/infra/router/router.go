@@ -9,7 +9,9 @@
 package router
 
 import (
+	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 
@@ -48,20 +50,41 @@ import (
 	version_handler "github.com/anzhiyu-c/anheyu-app/pkg/handler/version"
 )
 
-// NoCacheMiddleware 全局反缓存中间件，确保所有API响应都不会被CDN缓存
+// NoCacheMiddleware 默认 API 防缓存中间件。
+// 注意：该中间件给所有 /api/* 加 no-store，但部分公开 GET（文章列表、站点配置、
+// 友链等）原本是可以让 CDN 与浏览器短期缓存的；此处保留默认 no-store 以保证
+// 老接口的回滚安全，公开可缓存接口请用 PublicCacheMiddleware 在子路由组覆盖。
 func NoCacheMiddleware() gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
-		// 🚫 强制禁用所有形式的缓存
 		c.Header("Cache-Control", "no-cache, no-store, must-revalidate, private, max-age=0")
 		c.Header("Pragma", "no-cache")
 		c.Header("Expires", "0")
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("X-XSS-Protection", "1; mode=block")
-
-		// 继续处理请求
 		c.Next()
 	})
+}
+
+// PublicCacheMiddleware 把上游 NoCacheMiddleware 设置的 no-store 覆盖为公开短缓存。
+//
+//	maxAge: 浏览器/CDN 缓存秒数；handler 仍可在内部用 c.Header("Cache-Control", ...) 进一步覆盖。
+//
+// 仅对 GET/HEAD 生效；非幂等方法保持 no-store 防止误缓存写操作。
+// 同时清理 Pragma/Expires 防止与 Cache-Control 冲突；并补 Vary: Accept-Encoding,Authorization
+// 让带认证的请求与匿名请求落到不同 CDN entry。
+func PublicCacheMiddleware(maxAge int) gin.HandlerFunc {
+	cacheValue := fmt.Sprintf("public, max-age=%d, stale-while-revalidate=10", maxAge)
+	return func(c *gin.Context) {
+		switch c.Request.Method {
+		case http.MethodGet, http.MethodHead:
+			c.Header("Cache-Control", cacheValue)
+			c.Header("Vary", "Accept-Encoding, Authorization")
+			c.Writer.Header().Del("Pragma")
+			c.Writer.Header().Del("Expires")
+		}
+		c.Next()
+	}
 }
 
 // Router 封装了应用的所有路由和其依赖的处理器。
@@ -371,7 +394,9 @@ func (r *Router) registerArticleRoutes(api *gin.RouterGroup) {
 		articlesAdmin.DELETE("/batch", r.articleHandler.BatchDelete)
 	}
 
-	articlesPublic := api.Group("/public/articles")
+	// 公开文章接口启用 60s 公共短缓存：CDN/浏览器可命中，减轻 DB 压力。
+	// admin 写入会通过事件总线刷新前端 ISR/重新拉取，60s 误差可接受。
+	articlesPublic := api.Group("/public/articles").Use(PublicCacheMiddleware(60))
 	{
 		articlesPublic.GET("", r.articleHandler.ListPublic)
 		articlesPublic.GET("/home", r.articleHandler.ListHome)
@@ -495,7 +520,8 @@ func (r *Router) registerUserRoutes(api *gin.RouterGroup) {
 
 // registerPublicRoutes 注册公开的、无需认证的路由
 func (r *Router) registerPublicRoutes(api *gin.RouterGroup) {
-	public := api.Group("/public")
+	// 公开 GET 启用 60s 公共短缓存；写入路径（PUT/POST 等）由中间件按方法跳过，不会被错误缓存。
+	public := api.Group("/public").Use(PublicCacheMiddleware(60))
 	{
 		public.GET("/albums", r.publicHandler.GetPublicAlbums)
 		public.GET("/album-categories", r.publicHandler.GetPublicAlbumCategories)
