@@ -996,9 +996,31 @@ func (s *serviceImpl) GetBySlugOrIDForPreview(ctx context.Context, slugOrID stri
 	return detailResponse, nil
 }
 
+func requiresArticleTitle(status string) bool {
+	switch status {
+	case "PUBLISHED", "SCHEDULED":
+		return true
+	default:
+		return false
+	}
+}
+
 // Create 处理创建新文章的完整业务流程。
 // referer 参数用于 NSUUU API 白名单验证
 func (s *serviceImpl) Create(ctx context.Context, req *model.CreateArticleRequest, ip, referer string) (*model.ArticleResponse, error) {
+
+	title := strings.TrimSpace(req.Title)
+	status := req.Status
+	if status == "" {
+		status = "DRAFT"
+		req.Status = status
+	}
+
+	if requiresArticleTitle(status) && title == "" {
+		return nil, errors.New("发布文章必须填写标题")
+	}
+
+	req.Title = title
 	// 验证 abbrlink（在事务外进行，避免不必要的事务开销）
 	if err := s.validateAbbrlink(ctx, req.Abbrlink, 0); err != nil {
 		return nil, err
@@ -1328,6 +1350,23 @@ func (s *serviceImpl) Update(ctx context.Context, publicID string, req *model.Up
 			return err
 		}
 		oldStatus = oldArticle.Status
+
+		// 拿到 oldArticle 后，算更新后的最终标题和更新后的最终状态
+		finalTitle := strings.TrimSpace(oldArticle.Title)
+		if req.Title != nil {
+			finalTitle = strings.TrimSpace(*req.Title)
+			req.Title = &finalTitle
+		}
+
+		finalStatus := oldArticle.Status
+		if req.Status != nil {
+			finalStatus = *req.Status
+		}
+
+		if requiresArticleTitle(finalStatus) && finalTitle == "" {
+			return errors.New("发布文章必须填写标题")
+		}
+
 		oldTagIDs := make([]uint, len(oldArticle.PostTags))
 		for i, t := range oldArticle.PostTags {
 			oldTagIDs[i], _, _ = idgen.DecodePublicID(t.ID)

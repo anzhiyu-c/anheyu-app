@@ -89,6 +89,14 @@ func (_c *ArticleCreate) SetTitle(v string) *ArticleCreate {
 	return _c
 }
 
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (_c *ArticleCreate) SetNillableTitle(v *string) *ArticleCreate {
+	if v != nil {
+		_c.SetTitle(*v)
+	}
+	return _c
+}
+
 // SetContentMd sets the "content_md" field.
 func (_c *ArticleCreate) SetContentMd(v string) *ArticleCreate {
 	_c.mutation.SetContentMd(v)
@@ -745,6 +753,10 @@ func (_c *ArticleCreate) defaults() error {
 		v := article.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Title(); !ok {
+		v := article.DefaultTitle
+		_c.mutation.SetTitle(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := article.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -837,11 +849,6 @@ func (_c *ArticleCreate) check() error {
 	}
 	if _, ok := _c.mutation.Title(); !ok {
 		return &ValidationError{Name: "title", err: errors.New(`ent: missing required field "Article.title"`)}
-	}
-	if v, ok := _c.mutation.Title(); ok {
-		if err := article.TitleValidator(v); err != nil {
-			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Article.title": %w`, err)}
-		}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Article.status"`)}

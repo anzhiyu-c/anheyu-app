@@ -160,8 +160,8 @@ func init() {
 	article.DefaultUpdatedAt = articleDescUpdatedAt.Default.(func() time.Time)
 	// articleDescTitle is the schema descriptor for title field.
 	articleDescTitle := articleFields[4].Descriptor()
-	// article.TitleValidator is a validator for the "title" field. It is called by the builders before save.
-	article.TitleValidator = articleDescTitle.Validators[0].(func(string) error)
+	// article.DefaultTitle holds the default value on creation for the title field.
+	article.DefaultTitle = articleDescTitle.Default.(string)
 	// articleDescViewCount is the schema descriptor for view_count field.
 	articleDescViewCount := articleFields[9].Descriptor()
 	// article.DefaultViewCount holds the default value on creation for the view_count field.
@@ -1251,6 +1251,6 @@ func init() {
 }
 
 const (
-	Version = "v0.14.6"                                         // Version of ent codegen.
-	Sum     = "h1:/f2696BpwuWAEEG6PVGWflg6+Inrpq4pRWuNlWz/Skk=" // Sum of ent codegen.
+	Version = "v0.14.5"                                         // Version of ent codegen.
+	Sum     = "h1:Rj2WOYJtCkWyFo6a+5wB3EfBRP0rnx1fMk6gGA0UUe4=" // Sum of ent codegen.
 )

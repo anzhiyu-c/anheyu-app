@@ -52,7 +52,7 @@ func (Article) Fields() []ent.Field {
 			Default(1), // 默认值为管理员ID(1)
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now),
-		field.String("title").Comment("文章标题").NotEmpty(),
+		field.String("title").Default("").Comment("文章标题"),
 		field.Text("content_md").Comment("文章的 Markdown 原文").Optional(),
 		field.Text("content_html").Comment("由 content_md 解析和净化后的 HTML").Optional(),
 		field.String("cover_url").Comment("封面图URL").Optional(),

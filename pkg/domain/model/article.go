@@ -82,7 +82,7 @@ type Article struct {
 
 // CreateArticleRequest 定义了创建文章的请求体
 type CreateArticleRequest struct {
-	Title                string              `json:"title" binding:"required"`
+	Title                string              `json:"title"` // 草稿允许暂时先不设置标题
 	ContentMd            string              `json:"content_md"`
 	CoverURL             string              `json:"cover_url"`
 	Status               string              `json:"status" binding:"omitempty,oneof=DRAFT PUBLISHED ARCHIVED SCHEDULED"`

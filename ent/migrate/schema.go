@@ -71,7 +71,7 @@ var (
 		{Name: "owner_id", Type: field.TypeUint, Comment: "文章作者ID，关联到users表", Default: 1},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "title", Type: field.TypeString, Comment: "文章标题"},
+		{Name: "title", Type: field.TypeString, Comment: "文章标题", Default: ""},
 		{Name: "content_md", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "文章的 Markdown 原文"},
 		{Name: "content_html", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "由 content_md 解析和净化后的 HTML"},
 		{Name: "cover_url", Type: field.TypeString, Nullable: true, Comment: "封面图URL"},
