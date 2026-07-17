@@ -1052,7 +1052,7 @@ func (r *articleRepo) GetRandom(ctx context.Context) (*model.Article, error) {
 		Limit(1).
 		WithPostTags().
 		WithPostCategories().
-		Only(ctx)
+		First(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, constant.ErrNotFound
