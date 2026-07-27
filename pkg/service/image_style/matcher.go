@@ -3,7 +3,7 @@
  * @Author: 安知鱼
  *
  * 对应规范 §6.2：
- *     命名样式 > 动态参数 > 默认样式 > 不处理
+ *     命名样式 > 动态参数 > 默认样式 > 自动压缩 > 不处理
  *
  * 动态参数映射表（§5.4）：
  *     w/width     -> resize.width
@@ -38,6 +38,8 @@ const (
 	dynamicMaxQuality   = 100
 	dynamicMinScale     = 0.01
 	dynamicMaxScale     = 1.0
+
+	autoCompressDefaultQuality = 85
 )
 
 // 支持的输出格式白名单。实际能否输出由引擎决定，此处只过滤明显非法值。
@@ -58,6 +60,15 @@ var supportedFitModes = map[string]struct{}{
 	"contain":    {},
 	"fit-inside": {},
 	"scale":      {},
+}
+
+var supportedAutoCompressFormats = map[string]struct{}{
+	"original": {},
+	"webp":     {},
+	"avif":     {},
+	"png":      {},
+	"jpg":      {},
+	"heic":     {},
 }
 
 // Match 根据策略配置 + URL 语义产出 ResolvedStyle，错误语义见 errors.go。
@@ -116,6 +127,11 @@ func Match(policy *model.StoragePolicy, filename, styleName string, query url.Va
 		}
 		resolved := styleToResolved(s)
 		return &resolved, nil
+	}
+
+	// 4. 自动压缩：仅在无命名样式、无动态参数、无默认样式命中时启用。
+	if process.AutoCompress != nil && process.AutoCompress.Enabled {
+		return autoCompressToResolved(process.AutoCompress)
 	}
 
 	return nil, ErrStyleNotApplicable
@@ -179,6 +195,54 @@ func styleToResolved(s model.ImageStyleConfig) ResolvedStyle {
 		Resize:     s.Resize,
 		Watermark:  s.Watermark,
 	}
+}
+
+func autoCompressToResolved(cfg *model.AutoCompressConfig) (*ResolvedStyle, error) {
+	if cfg == nil || !cfg.Enabled {
+		return nil, ErrStyleNotApplicable
+	}
+
+	format := strings.ToLower(strings.TrimSpace(cfg.Format))
+	if format == "" {
+		format = "original"
+	}
+	if _, ok := supportedAutoCompressFormats[format]; !ok {
+		return nil, fmt.Errorf("%w: invalid auto_compress.format=%q", ErrStyleProcessFailed, cfg.Format)
+	}
+
+	quality := cfg.Quality
+	if quality < dynamicMinQuality || quality > dynamicMaxQuality {
+		return nil, fmt.Errorf("%w: invalid auto_compress.quality=%d", ErrStyleProcessFailed, cfg.Quality)
+	}
+	if quality == 0 {
+		quality = autoCompressDefaultQuality
+	}
+
+	if cfg.MaxWidth < dynamicMinDimension || cfg.MaxWidth > dynamicMaxDimension {
+		return nil, fmt.Errorf("%w: invalid auto_compress.max_width=%d", ErrStyleProcessFailed, cfg.MaxWidth)
+	}
+	if cfg.MaxHeight < dynamicMinDimension || cfg.MaxHeight > dynamicMaxDimension {
+		return nil, fmt.Errorf("%w: invalid auto_compress.max_height=%d", ErrStyleProcessFailed, cfg.MaxHeight)
+	}
+
+	autoRotate := true
+	if cfg.AutoRotate != nil {
+		autoRotate = *cfg.AutoRotate
+	}
+
+	resolved := &ResolvedStyle{
+		Format:     format,
+		Quality:    quality,
+		AutoRotate: autoRotate,
+	}
+	if cfg.MaxWidth > 0 || cfg.MaxHeight > 0 {
+		resolved.Resize = model.ImageResizeConfig{
+			Mode:   "fit-inside",
+			Width:  cfg.MaxWidth,
+			Height: cfg.MaxHeight,
+		}
+	}
+	return resolved, nil
 }
 
 // hasAnyDynamicOpt 判定 query 是否包含至少一个被识别的图片处理参数。

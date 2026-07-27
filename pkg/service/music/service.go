@@ -92,9 +92,6 @@ type MusicService interface {
 type musicService struct {
 	settingSvc setting.SettingService
 	httpClient *http.Client
-	// API URLs
-	playlistAPI string
-	songAPI     string
 	// 图片URL缓存，key: 原始URL, value: 优化后的URL
 	picUrlCache sync.Map
 	// 并发控制
@@ -103,12 +100,6 @@ type musicService struct {
 
 // NewMusicService 创建新的音乐服务
 func NewMusicService(settingSvc setting.SettingService) MusicService {
-	// 从配置获取音乐API基础地址
-	apiBaseURL := normalizeAPIBaseURL(settingSvc.Get(constant.KeyMusicAPIBaseURL.String()))
-	if apiBaseURL == "" {
-		apiBaseURL = "https://metings.qjqq.cn"
-	}
-
 	// 创建自定义 Transport，跳过 SSL 证书验证
 	// 注意：这是为了兼容外部 API（metings.qjqq.cn）的临时解决方案
 	// 该 API 的证书由未知的证书颁发机构签名，导致验证失败
@@ -121,8 +112,6 @@ func NewMusicService(settingSvc setting.SettingService) MusicService {
 	return &musicService{
 		settingSvc:       settingSvc,
 		httpClient:       &http.Client{Timeout: 15 * time.Second, Transport: transport},
-		playlistAPI:      buildMusicAPIURL(apiBaseURL, "Playlist"),
-		songAPI:          buildMusicAPIURL(apiBaseURL, "Song_V1"),
 		picUrlCache:      sync.Map{},
 		concurrencyLimit: 20, // 限制并发数量为20
 	}
@@ -134,6 +123,18 @@ func normalizeAPIBaseURL(apiBaseURL string) string {
 
 func buildMusicAPIURL(apiBaseURL, endpoint string) string {
 	return normalizeAPIBaseURL(apiBaseURL) + "/" + strings.TrimLeft(endpoint, "/")
+}
+
+func (s *musicService) getMusicAPIBaseURL() string {
+	apiBaseURL := normalizeAPIBaseURL(s.settingSvc.Get(constant.KeyMusicAPIBaseURL.String()))
+	if apiBaseURL == "" {
+		return "https://metings.qjqq.cn"
+	}
+	return apiBaseURL
+}
+
+func (s *musicService) getMusicAPIURL(endpoint string) string {
+	return buildMusicAPIURL(s.getMusicAPIBaseURL(), endpoint)
 }
 
 // logRequest 记录请求日志
@@ -411,7 +412,7 @@ func (s *musicService) getPlaylistID() string {
 // buildPlaylistAPI 构建播放列表API URL
 func (s *musicService) buildPlaylistAPI() string {
 	playlistID := s.getPlaylistID()
-	return fmt.Sprintf("%s?id=%s", s.playlistAPI, playlistID)
+	return fmt.Sprintf("%s?id=%s", s.getMusicAPIURL("Playlist"), playlistID)
 }
 
 // isValidSong 验证歌曲数据是否有效
@@ -621,19 +622,21 @@ func (s *musicService) isValidNeteaseID(neteaseID string) bool {
 // fetchSongV1 使用 Song_V1 API 获取歌曲资源（音频和歌词）
 func (s *musicService) fetchSongV1(ctx context.Context, neteaseID string, level string) (SongResourceResponse, error) {
 	log.Printf("[MUSIC_API] 调用 Song_V1 API - 网易云ID: %s, 音质: %s", neteaseID, level)
+	apiBaseURL := s.getMusicAPIBaseURL()
+	songAPI := buildMusicAPIURL(apiBaseURL, "Song_V1")
 
 	// 构建请求参数（使用 form-urlencoded 格式）
 	formData := fmt.Sprintf("url=%s&level=%s&type=json", neteaseID, level)
 
 	// 记录请求日志
-	s.logRequest("POST", s.songAPI, []byte(formData))
+	s.logRequest("POST", songAPI, []byte(formData))
 
 	startTime := time.Now()
 
 	// 创建请求
-	req, err := http.NewRequestWithContext(ctx, "POST", s.songAPI, strings.NewReader(formData))
+	req, err := http.NewRequestWithContext(ctx, "POST", songAPI, strings.NewReader(formData))
 	if err != nil {
-		s.logError("创建 Song_V1 请求", s.songAPI, err)
+		s.logError("创建 Song_V1 请求", songAPI, err)
 		return SongResourceResponse{}, fmt.Errorf("创建 Song_V1 请求失败: %w", err)
 	}
 
@@ -642,16 +645,16 @@ func (s *musicService) fetchSongV1(ctx context.Context, neteaseID string, level 
 	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9")
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	req.Header.Set("Origin", "https://metings.qjqq.cn")
+	req.Header.Set("Origin", apiBaseURL)
 	req.Header.Set("Pragma", "no-cache")
-	req.Header.Set("Referer", "https://metings.qjqq.cn/")
+	req.Header.Set("Referer", apiBaseURL+"/")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
 	// 发送请求
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		s.logError("获取 Song_V1 数据", s.songAPI, err)
+		s.logError("获取 Song_V1 数据", songAPI, err)
 		return SongResourceResponse{}, fmt.Errorf("Song_V1 请求失败: %w", err)
 	}
 	defer resp.Body.Close()
@@ -659,12 +662,12 @@ func (s *musicService) fetchSongV1(ctx context.Context, neteaseID string, level 
 	// 读取响应
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		s.logError("读取 Song_V1 响应", s.songAPI, err)
+		s.logError("读取 Song_V1 响应", songAPI, err)
 		return SongResourceResponse{}, fmt.Errorf("读取 Song_V1 响应失败: %w", err)
 	}
 
 	duration := time.Since(startTime)
-	s.logResponse(s.songAPI, resp.StatusCode, responseBody, duration)
+	s.logResponse(songAPI, resp.StatusCode, responseBody, duration)
 
 	// 检查状态码
 	if resp.StatusCode != http.StatusOK {
@@ -676,7 +679,7 @@ func (s *musicService) fetchSongV1(ctx context.Context, neteaseID string, level 
 	var apiResponse SongV1ApiResponse
 	if err := json.Unmarshal(responseBody, &apiResponse); err != nil {
 		log.Printf("[MUSIC_API] JSON解析失败，响应内容: %s", string(responseBody))
-		s.logError("解析 Song_V1 JSON", s.songAPI, err)
+		s.logError("解析 Song_V1 JSON", songAPI, err)
 		return SongResourceResponse{}, fmt.Errorf("解析 Song_V1 JSON失败: %w", err)
 	}
 

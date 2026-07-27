@@ -188,13 +188,12 @@ func (h *DirectLinkHandler) HandleDirectDownload(c *gin.Context) {
 
 	if policy.Type == constant.PolicyTypeLocal {
 		// 本地存储：先判断是否为图片样式请求。
-		// 路径形如 `/filename!styleName` 时走 ImageStyleService；
-		// 其他情况（无样式 / 未注入 styleSvc）回落到原始流式下载。
+		// 路径形如 `/filename!styleName` 时走命名样式；
+		// 无样式时也交给 ImageStyleService 判定默认样式/自动压缩是否适用。
 		if h.styleSvc != nil {
-			if styleName := extractLocalStyleName(c.Param("filename"), filename); styleName != "" {
-				if handled := h.serveStyledLocal(c, file, policy, filename, styleName); handled {
-					return
-				}
+			styleName := extractLocalStyleName(c.Param("filename"), filename)
+			if handled := h.serveStyledLocal(c, file, policy, filename, styleName); handled {
+				return
 			}
 		}
 

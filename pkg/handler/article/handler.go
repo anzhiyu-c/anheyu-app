@@ -236,8 +236,8 @@ func (h *Handler) GetArticleStatistics(c *gin.Context) {
 func (h *Handler) GetRandom(c *gin.Context) {
 	article, err := h.svc.GetRandom(c.Request.Context())
 	if err != nil {
-		// 专门处理 "未找到" 的情况
-		if ent.IsNotFound(err) {
+		// 专门处理 "未找到" 的情况（repo 层已将 ent 的 NotFound 转换为 constant.ErrNotFound）
+		if errors.Is(err, constant.ErrNotFound) {
 			response.Fail(c, http.StatusNotFound, "没有找到已发布的文章")
 			return
 		}

@@ -531,6 +531,8 @@ func (r *Router) registerStoragePolicyRoutes(api *gin.RouterGroup) {
 		policies.GET("", r.storagePolicyHandler.List)
 		policies.GET("/connect/onedrive/:id", r.storagePolicyHandler.ConnectOneDrive)
 		policies.POST("/authorize/onedrive", r.storagePolicyHandler.AuthorizeOneDrive)
+		policies.GET("/:id/image-styles", r.storagePolicyHandler.GetImageStyles)
+		policies.PUT("/:id/image-styles", r.storagePolicyHandler.PutImageStyles)
 		policies.GET("/:id", r.storagePolicyHandler.Get)
 		policies.PUT("/:id", r.storagePolicyHandler.Update)
 		policies.DELETE("/:id", r.storagePolicyHandler.Delete)

@@ -12,7 +12,7 @@ package model
 import "slices"
 
 // DefaultImageProcessApplyExtensions 为启用 image_process 但未指定扩展名时的默认列表
-//（与后台「填入默认」及规范示例一致）。
+// （与后台「填入默认」及规范示例一致）。
 var DefaultImageProcessApplyExtensions = []string{"jpg", "jpeg", "png", "webp", "heic"}
 
 // ImageProcessConfig 描述单个存储策略是否启用图片样式处理及处理范围。
@@ -26,6 +26,8 @@ type ImageProcessConfig struct {
 	// DefaultStyle 上传返回 URL 时自动拼接的默认样式名；空串表示不自动拼接。
 	// 非空时必须存在于 ImageStyles[].Name。
 	DefaultStyle string `json:"default_style"`
+	// AutoCompress 描述无显式样式请求时的自动压缩配置；nil 或 disabled 表示不启用。
+	AutoCompress *AutoCompressConfig `json:"auto_compress,omitempty"`
 }
 
 // NormalizeApplyExtensionsWhenEnabled 在 Enabled 为 true 且扩展名列表为空时，
@@ -38,6 +40,24 @@ func (c *ImageProcessConfig) NormalizeApplyExtensionsWhenEnabled() {
 		return
 	}
 	c.ApplyToExtensions = slices.Clone(DefaultImageProcessApplyExtensions)
+}
+
+// AutoCompressConfig 描述策略级自动压缩配置。
+//
+// 它只作用于没有命名样式、没有动态参数、也没有默认样式命中的原图读取请求；
+// 不修改上传原文件。
+type AutoCompressConfig struct {
+	// Enabled 是否启用自动压缩。
+	Enabled bool `json:"enabled"`
+	// Quality 输出质量。0 表示使用服务端默认值；1-100 表示显式质量。
+	Quality int `json:"quality,omitempty"`
+	// MaxWidth / MaxHeight 为最大输出尺寸；均为 0 时不缩放，只重编码。
+	MaxWidth  int `json:"max_width,omitempty"`
+	MaxHeight int `json:"max_height,omitempty"`
+	// Format 输出格式：original / webp / avif / png / jpg / heic。空串视为 original。
+	Format string `json:"format,omitempty"`
+	// AutoRotate 是否按 EXIF Orientation 自动矫正方向。nil 表示默认 true。
+	AutoRotate *bool `json:"auto_rotate,omitempty"`
 }
 
 // ImageStyleConfig 描述单个命名样式。

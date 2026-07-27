@@ -49,10 +49,29 @@ func TestNewMusicServiceTrimsConfiguredAPIBaseURL(t *testing.T) {
 		t.Fatalf("NewMusicService returned %T, want *musicService", svc)
 	}
 
-	if got, want := ms.playlistAPI, "https://metings.qjqq.cn/Playlist"; got != want {
-		t.Fatalf("playlistAPI = %q, want %q", got, want)
+	if got, want := ms.getMusicAPIURL("Playlist"), "https://metings.qjqq.cn/Playlist"; got != want {
+		t.Fatalf("getMusicAPIURL(Playlist) = %q, want %q", got, want)
 	}
-	if got, want := ms.songAPI, "https://metings.qjqq.cn/Song_V1"; got != want {
-		t.Fatalf("songAPI = %q, want %q", got, want)
+	if got, want := ms.getMusicAPIURL("Song_V1"), "https://metings.qjqq.cn/Song_V1"; got != want {
+		t.Fatalf("getMusicAPIURL(Song_V1) = %q, want %q", got, want)
+	}
+}
+
+func TestMusicServiceUsesLatestConfiguredAPIBaseURL(t *testing.T) {
+	values := map[string]string{
+		constant.KeyMusicAPIBaseURL.String(): "https://metings.qjqq.cn",
+		"music.player.playlist_id":           "8152976493",
+	}
+	svc := NewMusicService(fakeSettingService{values: values})
+
+	ms, ok := svc.(*musicService)
+	if !ok {
+		t.Fatalf("NewMusicService returned %T, want *musicService", svc)
+	}
+
+	values[constant.KeyMusicAPIBaseURL.String()] = " https://musicapi.acacia-ma.com/ "
+
+	if got, want := ms.buildPlaylistAPI(), "https://musicapi.acacia-ma.com/Playlist?id=8152976493"; got != want {
+		t.Fatalf("buildPlaylistAPI() = %q, want %q", got, want)
 	}
 }

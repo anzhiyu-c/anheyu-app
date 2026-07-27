@@ -44,6 +44,31 @@ func buildPolicyWithStyles(enabled bool, exts []string, defaultStyle string, sty
 	}
 }
 
+func buildPolicyWithProcessRaw(processRaw map[string]any, styles ...model.ImageStyleConfig) *model.StoragePolicy {
+	stylesRaw := make([]any, 0, len(styles))
+	for _, s := range styles {
+		stylesRaw = append(stylesRaw, map[string]any{
+			"name":        s.Name,
+			"format":      s.Format,
+			"quality":     s.Quality,
+			"auto_rotate": s.AutoRotate,
+			"resize": map[string]any{
+				"mode":    s.Resize.Mode,
+				"width":   s.Resize.Width,
+				"height":  s.Resize.Height,
+				"scale":   s.Resize.Scale,
+				"enlarge": s.Resize.Enlarge,
+			},
+		})
+	}
+	return &model.StoragePolicy{
+		Settings: model.StoragePolicySettings{
+			constant.ImageProcessSettingsKey: processRaw,
+			constant.ImageStylesSettingsKey:  stylesRaw,
+		},
+	}
+}
+
 func sampleThumbnail() model.ImageStyleConfig {
 	return model.ImageStyleConfig{
 		Name:       "thumbnail",
@@ -144,6 +169,72 @@ func TestMatch_DefaultStyle_UsedWhenNoneSpecified(t *testing.T) {
 	}
 	if got.Format != "jpg" || got.Quality != 60 {
 		t.Errorf("默认样式 thumbnail 未被使用，实际 %+v", got)
+	}
+}
+
+func TestMatch_AutoCompress_UsedWhenNoStyleQueryOrDefault(t *testing.T) {
+	policy := buildPolicyWithProcessRaw(map[string]any{
+		"enabled":             true,
+		"apply_to_extensions": []string{"jpg"},
+		"default_style":       "",
+		"auto_compress": map[string]any{
+			"enabled":     true,
+			"format":      "webp",
+			"quality":     72,
+			"max_width":   1200,
+			"auto_rotate": false,
+		},
+	})
+
+	got, err := Match(policy, "a.jpg", "", nil)
+	if err != nil {
+		t.Fatalf("未期望错误：%v", err)
+	}
+	if got.Format != "webp" || got.Quality != 72 {
+		t.Errorf("自动压缩 format/quality 未生效，实际 %+v", got)
+	}
+	if got.Resize.Mode != "fit-inside" || got.Resize.Width != 1200 || got.Resize.Height != 0 {
+		t.Errorf("自动压缩尺寸未生效，实际 %+v", got.Resize)
+	}
+	if got.AutoRotate {
+		t.Errorf("auto_rotate=false 应被保留，实际 %+v", got)
+	}
+}
+
+func TestMatch_DefaultStyle_TrumpsAutoCompress(t *testing.T) {
+	policy := buildPolicyWithProcessRaw(map[string]any{
+		"enabled":             true,
+		"apply_to_extensions": []string{"jpg"},
+		"default_style":       "thumbnail",
+		"auto_compress": map[string]any{
+			"enabled": true,
+			"format":  "webp",
+			"quality": 72,
+		},
+	}, sampleThumbnail())
+
+	got, err := Match(policy, "a.jpg", "", nil)
+	if err != nil {
+		t.Fatalf("未期望错误：%v", err)
+	}
+	if got.Format != "jpg" || got.Quality != 60 {
+		t.Errorf("默认样式应优先于自动压缩，实际 %+v", got)
+	}
+}
+
+func TestMatch_AutoCompressInvalidFormat_ReturnsProcessFailed(t *testing.T) {
+	policy := buildPolicyWithProcessRaw(map[string]any{
+		"enabled":             true,
+		"apply_to_extensions": []string{"jpg"},
+		"auto_compress": map[string]any{
+			"enabled": true,
+			"format":  "bmp",
+		},
+	})
+
+	_, err := Match(policy, "a.jpg", "", nil)
+	if !errors.Is(err, ErrStyleProcessFailed) {
+		t.Errorf("非法自动压缩 format 应返回 ErrStyleProcessFailed，实际 %v", err)
 	}
 }
 
