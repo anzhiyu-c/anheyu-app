@@ -31,6 +31,11 @@ func (h *StoragePolicyHandler) GetImageStyles(c *gin.Context) {
 		return
 	}
 	payload := extractImageStylesPayloadFromPolicy(policy)
+	if policy.Type != constant.PolicyTypeLocal {
+		// 历史版本可能通过 API 写入过该字段；云策略始终使用 Provider 原生处理，
+		// 因此不把本地自动压缩配置继续暴露给管理端。
+		payload.ImageProcess.AutoCompress = nil
+	}
 	response.Success(c, payload, "获取成功")
 }
 
@@ -61,6 +66,14 @@ func (h *StoragePolicyHandler) PutImageStyles(c *gin.Context) {
 	policy, err := h.svc.GetPolicyByID(c.Request.Context(), publicID)
 	if err != nil {
 		response.Fail(c, http.StatusNotFound, "存储策略不存在")
+		return
+	}
+	if errs := image_style.ValidateAutoCompressPolicy(policy.Type, payload.ImageProcess); errs.Has() {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "参数校验失败",
+			"data":    errs,
+		})
 		return
 	}
 

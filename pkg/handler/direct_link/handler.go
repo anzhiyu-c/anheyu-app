@@ -64,9 +64,9 @@ type DirectLinkHandler struct {
 	// 修改为 direct_link.Service (接口)。
 	svc              direct_link.Service
 	storageProviders map[constant.StoragePolicyType]storage.IStorageProvider
-	// styleSvc 可选；非 nil 且 URL 含 "!styleName" 形式后缀时，
-	// 本地策略的 HandleDirectDownload 会走 ImageStyleService 处理并流式返回。
-	// 未注入或请求无样式后缀时，走原有流式下载逻辑（不影响云存储 302 路径）。
+	// styleSvc 可选；非 nil 时，本地策略的 HandleDirectDownload 会把图片请求交给
+	// ImageStyleService 判断命名样式、动态参数、默认样式或自动压缩。
+	// 未注入或样式不适用时，走原有流式下载逻辑（不影响云存储 302 路径）。
 	styleSvc image_style.ImageStyleService
 }
 
@@ -82,8 +82,8 @@ func NewDirectLinkHandler(
 }
 
 // SetImageStyleService 注入图片样式服务（可选）。
-// 注入后，本地策略的直链下载在解析到 "!styleName" 样式后缀时，
-// 会把请求委托给 ImageStyleService 走缓存 + 处理流程，不再直接返回原图。
+// 注入后，本地策略的图片直链（包括无样式后缀请求）会委托给
+// ImageStyleService 判定并走缓存 + 处理流程；不适用时回退原图。
 func (h *DirectLinkHandler) SetImageStyleService(svc image_style.ImageStyleService) {
 	h.styleSvc = svc
 }
@@ -340,15 +340,9 @@ func (h *DirectLinkHandler) serveStyledLocal(
 	defer result.Reader.Close()
 
 	etag := `"` + result.StyleHash + `"`
-	// If-None-Match 命中 → 304
-	if match := c.GetHeader("If-None-Match"); match == etag {
-		c.Status(http.StatusNotModified)
-		return true
-	}
-
 	c.Header("Content-Type", result.ContentType)
 	c.Header("ETag", etag)
-	// 样式产物是幂等的（由 style_hash 决定），缓存 7 天与 /api/image 接口保持一致。
+	// 样式产物是幂等的（由原图版本 + style_hash 决定），缓存 7 天与 /api/image 接口保持一致。
 	c.Header("Cache-Control", "public, max-age=604800")
 	if !result.LastModified.IsZero() {
 		c.Header("Last-Modified", result.LastModified.UTC().Format(http.TimeFormat))
@@ -356,6 +350,13 @@ func (h *DirectLinkHandler) serveStyledLocal(
 	if result.Size > 0 {
 		c.Header("Content-Length", fmt.Sprintf("%d", result.Size))
 	}
+
+	// If-None-Match 命中 → 304
+	if image_style.MatchesIfNoneMatch(c.GetHeader("If-None-Match"), etag) {
+		c.Status(http.StatusNotModified)
+		return true
+	}
+
 	c.Status(http.StatusOK)
 	if _, err := io.Copy(c.Writer, result.Reader); err != nil {
 		log.Printf("[直链下载] 写响应失败 file=%d style=%s: %v", file.ID, styleName, err)

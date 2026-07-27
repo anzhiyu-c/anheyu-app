@@ -185,13 +185,13 @@ func (m *warmTaskManager) cancel(taskID string) bool {
 // get 返回任务进度的拷贝；调用方可安全修改返回值而不影响内部状态。
 func (m *warmTaskManager) get(taskID string) (*WarmProgress, error) {
 	m.mu.RLock()
+	defer m.mu.RUnlock()
 	e, ok := m.byTask[taskID]
-	m.mu.RUnlock()
 	if !ok {
 		return nil, ErrWarmTaskNotFound
 	}
-	copy := *e.progress
-	return &copy, nil
+	snapshot := *e.progress
+	return &snapshot, nil
 }
 
 // reap 丢弃早于 cutoff 的已结束任务；由调用方决定何时调用。

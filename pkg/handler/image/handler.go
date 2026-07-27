@@ -145,13 +145,13 @@ func (h *Handler) ServeStyled(c *gin.Context) {
 	defer result.Reader.Close()
 
 	etag := `"` + result.StyleHash + `"`
+	writeStyleHeaders(c, result.ContentType, etag, result)
 	// If-None-Match 短路返回 304
-	if match := c.GetHeader("If-None-Match"); match == etag {
+	if image_style.MatchesIfNoneMatch(c.GetHeader("If-None-Match"), etag) {
 		c.Status(http.StatusNotModified)
 		return
 	}
 
-	writeStyleHeaders(c, result.ContentType, etag, result)
 	c.Status(http.StatusOK)
 	if _, err := io.Copy(c.Writer, result.Reader); err != nil {
 		log.Printf("[image_style] 写响应失败 file=%d: %v", dbFileID, err)

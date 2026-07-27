@@ -29,11 +29,14 @@ import (
 
 // fakeProvider 仅实现 Get，其他 IStorageProvider 方法返回 nil / 空结果。
 type fakeProvider struct {
-	data       []byte
-	getCount   int64
-	getErr     error
+	data            []byte
+	getCount        int64
+	getErr          error
 	capturedSources []string
-	mu         sync.Mutex
+	mu              sync.Mutex
+	getStarted      chan struct{}
+	getRelease      chan struct{}
+	getStartOnce    sync.Once
 }
 
 func (p *fakeProvider) Get(ctx context.Context, policy *model.StoragePolicy, source string) (io.ReadCloser, error) {
@@ -41,6 +44,16 @@ func (p *fakeProvider) Get(ctx context.Context, policy *model.StoragePolicy, sou
 	p.mu.Lock()
 	p.capturedSources = append(p.capturedSources, source)
 	p.mu.Unlock()
+	if p.getStarted != nil {
+		p.getStartOnce.Do(func() { close(p.getStarted) })
+	}
+	if p.getRelease != nil {
+		select {
+		case <-p.getRelease:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
 	if p.getErr != nil {
 		return nil, p.getErr
 	}
@@ -215,6 +228,105 @@ func TestService_Process_CacheHitSkipsProvider(t *testing.T) {
 	if r2.RequestedFormat != "jpg" {
 		t.Errorf("缓存命中路径 RequestedFormat 期望 jpg，实际 %q", r2.RequestedFormat)
 	}
+	if !r2.LastModified.Equal(r1.LastModified) {
+		t.Errorf("同一缓存产物的 LastModified 必须稳定；首次=%s，缓存命中=%s", r1.LastModified, r2.LastModified)
+	}
+}
+
+func TestService_Process_AutoCompressIsLazyCachedAndSourceAware(t *testing.T) {
+	ctx := context.Background()
+	svc, provider, _, policy, file := newServiceWithDisk(t)
+	policy.Settings[constant.ImageProcessSettingsKey] = map[string]any{
+		"enabled":             true,
+		"apply_to_extensions": []string{"jpg"},
+		"default_style":       "",
+		"auto_compress": map[string]any{
+			"enabled":    true,
+			"format":     "jpg",
+			"quality":    70,
+			"max_width":  200,
+			"max_height": 200,
+		},
+	}
+	req := &StyleRequest{Policy: policy, File: file, Filename: "a.jpg"}
+
+	first, err := svc.Process(ctx, req)
+	if err != nil {
+		t.Fatalf("首次自动压缩 Process: %v", err)
+	}
+	firstBody, err := io.ReadAll(first.Reader)
+	_ = first.Reader.Close()
+	if err != nil {
+		t.Fatalf("读取首次自动压缩结果: %v", err)
+	}
+	if first.FromCache {
+		t.Fatal("首次自动压缩不应命中缓存")
+	}
+	firstImage, err := jpeg.Decode(bytes.NewReader(firstBody))
+	if err != nil {
+		t.Fatalf("解码首次自动压缩结果: %v", err)
+	}
+	if got := firstImage.Bounds().Size(); got.X != 200 || got.Y != 150 {
+		t.Fatalf("首次自动压缩尺寸 = %dx%d，期望 200x150", got.X, got.Y)
+	}
+
+	second, err := svc.Process(ctx, req)
+	if err != nil {
+		t.Fatalf("第二次自动压缩 Process: %v", err)
+	}
+	_ = second.Reader.Close()
+	if !second.FromCache {
+		t.Fatal("第二次自动压缩应命中缓存")
+	}
+	if got := atomic.LoadInt64(&provider.getCount); got != 1 {
+		t.Fatalf("相同原图版本应只读取一次 provider，实际 %d", got)
+	}
+	if second.StyleHash != first.StyleHash {
+		t.Fatalf("相同原图版本的 ETag hash 应稳定：首次=%s，再次=%s", first.StyleHash, second.StyleHash)
+	}
+
+	// 覆盖同一逻辑文件时会创建新的物理实体。逻辑 File.ID 不变，但缓存身份必须变化，
+	// 否则会继续返回旧压缩图并错误命中 304。
+	file.PrimaryEntityID = types.NullUint64{Uint64: 2, Valid: true}
+	provider.data = makeJPEG(t, 600, 800)
+
+	afterReplace, err := svc.Process(ctx, req)
+	if err != nil {
+		t.Fatalf("覆盖原图后的自动压缩 Process: %v", err)
+	}
+	afterReplaceBody, err := io.ReadAll(afterReplace.Reader)
+	_ = afterReplace.Reader.Close()
+	if err != nil {
+		t.Fatalf("读取覆盖后的自动压缩结果: %v", err)
+	}
+	if afterReplace.FromCache {
+		t.Fatal("物理实体变化后必须重新生成压缩图")
+	}
+	if afterReplace.StyleHash == first.StyleHash {
+		t.Fatalf("物理实体变化后 ETag hash 必须变化，仍为 %s", afterReplace.StyleHash)
+	}
+	if got := atomic.LoadInt64(&provider.getCount); got != 2 {
+		t.Fatalf("覆盖后应重新读取 provider，实际累计 %d 次", got)
+	}
+	replacedImage, err := jpeg.Decode(bytes.NewReader(afterReplaceBody))
+	if err != nil {
+		t.Fatalf("解码覆盖后的自动压缩结果: %v", err)
+	}
+	if got := replacedImage.Bounds().Size(); got.X != 150 || got.Y != 200 {
+		t.Fatalf("覆盖后的自动压缩尺寸 = %dx%d，期望 150x200", got.X, got.Y)
+	}
+
+	afterReplaceCached, err := svc.Process(ctx, req)
+	if err != nil {
+		t.Fatalf("覆盖后的第二次自动压缩 Process: %v", err)
+	}
+	_ = afterReplaceCached.Reader.Close()
+	if !afterReplaceCached.FromCache {
+		t.Fatal("新物理实体生成后，后续请求应命中新缓存")
+	}
+	if got := atomic.LoadInt64(&provider.getCount); got != 2 {
+		t.Fatalf("新物理实体缓存命中后不应再次读取 provider，实际累计 %d 次", got)
+	}
 }
 
 func TestService_Process_EnabledFalse_ReturnsNotApplicable(t *testing.T) {
@@ -286,6 +398,159 @@ func TestService_Process_SingleflightMerges_ConcurrentRequests(t *testing.T) {
 	got := atomic.LoadInt64(&provider.getCount)
 	if got > 1 {
 		t.Errorf("50 并发同 key 应仅触发 1 次真实处理（singleflight），实际 provider.Get 调用 %d 次", got)
+	}
+}
+
+func TestService_Process_LeaderCancellationDoesNotPoisonConcurrentWaiter(t *testing.T) {
+	svc, provider, cache, policy, file := newServiceWithDisk(t)
+	provider.getStarted = make(chan struct{})
+	provider.getRelease = make(chan struct{})
+	req := &StyleRequest{Policy: policy, File: file, Filename: "a.jpg", StyleName: "thumbnail"}
+
+	leaderCtx, cancelLeader := context.WithCancel(context.Background())
+	defer cancelLeader()
+
+	type processResult struct {
+		result *StyleResult
+		err    error
+	}
+	leaderDone := make(chan processResult, 1)
+	go func() {
+		result, err := svc.Process(leaderCtx, req)
+		leaderDone <- processResult{result: result, err: err}
+	}()
+
+	select {
+	case <-provider.getStarted:
+	case <-time.After(time.Second):
+		t.Fatal("首个请求未进入 provider.Get")
+	}
+
+	waiterDone := make(chan processResult, 1)
+	go func() {
+		result, err := svc.Process(context.Background(), req)
+		waiterDone <- processResult{result: result, err: err}
+	}()
+
+	// 首请求在 singleflight 闭包内会产生两次 miss（快速路径 + double-check），
+	// 等待者的快速路径是第三次 miss。达到 3 后即可确认健康请求已经加入共享调用。
+	deadline := time.Now().Add(time.Second)
+	for {
+		stats, err := cache.Stats(context.Background(), policy.ID)
+		if err != nil {
+			t.Fatalf("读取缓存统计: %v", err)
+		}
+		if stats.MissCount >= 3 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("健康等待者未加入 singleflight，miss=%d", stats.MissCount)
+		}
+		time.Sleep(time.Millisecond)
+	}
+
+	cancelLeader()
+
+	// 首请求应立即停止等待，但不能终止共享生成；否则健康等待者会收到同一个失败结果。
+	select {
+	case got := <-leaderDone:
+		if got.result != nil {
+			_ = got.result.Reader.Close()
+		}
+		if !errors.Is(got.err, context.Canceled) {
+			t.Fatalf("首请求取消应返回 context.Canceled，实际 %v", got.err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("首请求取消后未及时停止等待")
+	}
+
+	close(provider.getRelease)
+
+	waiter := <-waiterDone
+	if waiter.err != nil {
+		t.Fatalf("健康等待者应收到生成结果: %v", waiter.err)
+	}
+	_ = waiter.result.Reader.Close()
+
+	if got := atomic.LoadInt64(&provider.getCount); got != 1 {
+		t.Fatalf("并发首读只应读取一次原图，实际 %d", got)
+	}
+}
+
+func TestService_Process_BoundsDetachedGenerationConcurrency(t *testing.T) {
+	svc, provider, _, policy, file := newServiceWithDisk(t)
+	release := make(chan struct{})
+	provider.getRelease = release
+	var releaseOnce sync.Once
+	releaseAll := func() {
+		releaseOnce.Do(func() { close(release) })
+	}
+	t.Cleanup(releaseAll)
+
+	type processResult struct {
+		result *StyleResult
+		err    error
+	}
+	results := make(chan processResult, sharedProcessConcurrency)
+	for i := 0; i < sharedProcessConcurrency; i++ {
+		requestFile := *file
+		requestFile.ID += uint(i)
+		requestFile.PrimaryEntityID = types.NullUint64{Uint64: uint64(i + 1), Valid: true}
+		go func() {
+			result, err := svc.Process(context.Background(), &StyleRequest{
+				Policy:    policy,
+				File:      &requestFile,
+				Filename:  requestFile.Name,
+				StyleName: "thumbnail",
+			})
+			results <- processResult{result: result, err: err}
+		}()
+	}
+
+	deadline := time.Now().Add(time.Second)
+	for atomic.LoadInt64(&provider.getCount) < int64(sharedProcessConcurrency) {
+		if time.Now().After(deadline) {
+			t.Fatalf("共享处理槽未被占满，provider.Get=%d", provider.getCount)
+		}
+		time.Sleep(time.Millisecond)
+	}
+
+	overflowFile := *file
+	overflowFile.ID += uint(sharedProcessConcurrency)
+	overflowFile.PrimaryEntityID = types.NullUint64{
+		Uint64: uint64(sharedProcessConcurrency + 1),
+		Valid:  true,
+	}
+	overflowDone := make(chan error, 1)
+	go func() {
+		result, err := svc.Process(context.Background(), &StyleRequest{
+			Policy:    policy,
+			File:      &overflowFile,
+			Filename:  overflowFile.Name,
+			StyleName: "thumbnail",
+		})
+		if result != nil {
+			_ = result.Reader.Close()
+		}
+		overflowDone <- err
+	}()
+
+	select {
+	case err := <-overflowDone:
+		if !errors.Is(err, ErrStyleProcessFailed) {
+			t.Fatalf("超过并发上限应快速返回处理失败并由 handler 回退原图，实际 %v", err)
+		}
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("超过并发上限的共享任务未快速失败")
+	}
+
+	releaseAll()
+	for i := 0; i < sharedProcessConcurrency; i++ {
+		got := <-results
+		if got.err != nil {
+			t.Fatalf("已取得处理槽的请求失败: %v", got.err)
+		}
+		_ = got.result.Reader.Close()
 	}
 }
 
@@ -367,6 +632,34 @@ func TestService_PurgeCache_ByStyleNameRequiresRepo(t *testing.T) {
 	_, err := svc.PurgeCache(ctx, 7, "thumbnail", 0)
 	if err == nil {
 		t.Errorf("未注入 policyRepo 时按 styleName 清理应报错")
+	}
+}
+
+func TestService_PurgeCache_ByStyleNameRemovesAllSourceVersions(t *testing.T) {
+	ctx := context.Background()
+	svc, _, _, policy, file := newServiceWithDisk(t)
+	svc.policyRepo = &fakePolicyRepo{byID: map[uint]*model.StoragePolicy{policy.ID: policy}}
+	req := &StyleRequest{Policy: policy, File: file, Filename: "a.jpg", StyleName: "thumbnail"}
+
+	first, err := svc.Process(ctx, req)
+	if err != nil {
+		t.Fatalf("首次 Process: %v", err)
+	}
+	_ = first.Reader.Close()
+
+	file.PrimaryEntityID = types.NullUint64{Uint64: 2, Valid: true}
+	second, err := svc.Process(ctx, req)
+	if err != nil {
+		t.Fatalf("新物理实体 Process: %v", err)
+	}
+	_ = second.Reader.Close()
+
+	removed, err := svc.PurgeCache(ctx, policy.ID, "thumbnail", 0)
+	if err != nil {
+		t.Fatalf("PurgeCache: %v", err)
+	}
+	if removed != 2 {
+		t.Fatalf("按样式应清理全部原图版本，实际清理 %d 条", removed)
 	}
 }
 

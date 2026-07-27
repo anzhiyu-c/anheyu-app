@@ -121,8 +121,14 @@ func (a *AutoEngine) SupportedOutputFormats() []string {
 // 实现注意：由于 src 可能是一次性 Reader（已被 primary 消耗），这里先把 src 读到内存，
 // 降级时重新构造 *bytes.Reader。
 func (a *AutoEngine) Process(ctx context.Context, src io.Reader, style model.ImageStyleConfig, dst io.Writer) (string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 	raw, err := io.ReadAll(src)
 	if err != nil {
+		return "", err
+	}
+	if err := ctx.Err(); err != nil {
 		return "", err
 	}
 	if len(raw) == 0 {
@@ -150,6 +156,9 @@ func (a *AutoEngine) Process(ctx context.Context, src io.Reader, style model.Ima
 	// 4. 用 fallback 引擎 + 降级格式重试
 	degraded := style
 	degraded.Format = fallbackFormat
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 	return a.fallback.Process(ctx, bytes.NewReader(raw), degraded, dst)
 }
 

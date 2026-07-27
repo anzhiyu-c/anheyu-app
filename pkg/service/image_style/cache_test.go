@@ -280,4 +280,67 @@ func TestDiskCache_AtomicPut_NoPartialFiles(t *testing.T) {
 	}
 }
 
-func uintPtr(v uint) *uint { return &v }
+func TestDiskCache_RestartScansAndPurgesLegacyStyleHashFamily(t *testing.T) {
+	ctx := context.Background()
+	root := filepath.Join(t.TempDir(), "image_style_cache")
+	cfg := CacheConfig{Root: root, MaxSizeBytes: 1024 * 1024}
+	const (
+		policyID      = uint(1)
+		fileID        = uint(42)
+		legacyHash    = "0123456789abcdef"
+		versionedHash = legacyHash + "-fedcba9876543210"
+	)
+
+	first, err := NewDiskCache(cfg)
+	if err != nil {
+		t.Fatalf("首次 NewDiskCache: %v", err)
+	}
+	if _, err := first.Put(ctx, policyID, fileID, legacyHash, "image/jpeg", "jpg", []byte("legacy")); err != nil {
+		t.Fatalf("写入旧格式缓存: %v", err)
+	}
+	if _, err := first.Put(ctx, policyID, fileID, versionedHash, "image/jpeg", "jpg", []byte("versioned")); err != nil {
+		t.Fatalf("写入版本化缓存: %v", err)
+	}
+	if err := first.Close(); err != nil {
+		t.Fatalf("关闭首次缓存: %v", err)
+	}
+
+	restarted, err := NewDiskCache(cfg)
+	if err != nil {
+		t.Fatalf("重启 NewDiskCache: %v", err)
+	}
+	defer restarted.Close()
+
+	stats, err := restarted.Stats(ctx, policyID)
+	if err != nil {
+		t.Fatalf("读取重启缓存统计: %v", err)
+	}
+	if stats.Count != 2 {
+		t.Fatalf("重启后应恢复旧格式和版本化缓存，实际 %d 条", stats.Count)
+	}
+
+	for _, hash := range []string{legacyHash, versionedHash} {
+		entry, reader, err := restarted.Get(ctx, policyID, fileID, hash)
+		if err != nil {
+			t.Fatalf("重启后读取 %s: %v", hash, err)
+		}
+		_ = reader.Close()
+		if entry.StyleHash != hash {
+			t.Fatalf("重启后 StyleHash=%s，期望 %s", entry.StyleHash, hash)
+		}
+	}
+
+	removed, err := restarted.Purge(ctx, PurgeOpts{
+		PolicyID:        uintPtr(policyID),
+		StyleHashFamily: stringPtr(legacyHash),
+	})
+	if err != nil {
+		t.Fatalf("按样式族清理: %v", err)
+	}
+	if removed != 2 {
+		t.Fatalf("样式族应同时清理旧格式和版本化缓存，实际 %d 条", removed)
+	}
+}
+
+func uintPtr(v uint) *uint       { return &v }
+func stringPtr(v string) *string { return &v }

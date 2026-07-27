@@ -129,8 +129,11 @@ func Match(policy *model.StoragePolicy, filename, styleName string, query url.Va
 		return &resolved, nil
 	}
 
-	// 4. 自动压缩：仅在无命名样式、无动态参数、无默认样式命中时启用。
-	if process.AutoCompress != nil && process.AutoCompress.Enabled {
+	// 4. 自动压缩：仅用于本地策略，并在无命名样式、无动态参数、
+	// 无默认样式命中时启用。云策略继续使用 Provider 原生图片处理。
+	if policy.Type == constant.PolicyTypeLocal &&
+		process.AutoCompress != nil &&
+		process.AutoCompress.Enabled {
 		return autoCompressToResolved(process.AutoCompress)
 	}
 

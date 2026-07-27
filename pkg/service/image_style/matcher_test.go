@@ -37,6 +37,7 @@ func buildPolicyWithStyles(enabled bool, exts []string, defaultStyle string, sty
 		})
 	}
 	return &model.StoragePolicy{
+		Type: constant.PolicyTypeLocal,
 		Settings: model.StoragePolicySettings{
 			constant.ImageProcessSettingsKey: processRaw,
 			constant.ImageStylesSettingsKey:  stylesRaw,
@@ -62,6 +63,7 @@ func buildPolicyWithProcessRaw(processRaw map[string]any, styles ...model.ImageS
 		})
 	}
 	return &model.StoragePolicy{
+		Type: constant.PolicyTypeLocal,
 		Settings: model.StoragePolicySettings{
 			constant.ImageProcessSettingsKey: processRaw,
 			constant.ImageStylesSettingsKey:  stylesRaw,
@@ -198,6 +200,25 @@ func TestMatch_AutoCompress_UsedWhenNoStyleQueryOrDefault(t *testing.T) {
 	}
 	if got.AutoRotate {
 		t.Errorf("auto_rotate=false 应被保留，实际 %+v", got)
+	}
+}
+
+func TestMatch_AutoCompress_IgnoredForCloudPolicy(t *testing.T) {
+	policy := buildPolicyWithProcessRaw(map[string]any{
+		"enabled":             true,
+		"apply_to_extensions": []string{"jpg"},
+		"default_style":       "",
+		"auto_compress": map[string]any{
+			"enabled": true,
+			"format":  "webp",
+			"quality": 72,
+		},
+	})
+	policy.Type = constant.PolicyTypeAliOSS
+
+	_, err := Match(policy, "a.jpg", "", nil)
+	if !errors.Is(err, ErrStyleNotApplicable) {
+		t.Fatalf("云策略应继续使用 Provider 原生处理，自动压缩必须不适用，实际 %v", err)
 	}
 }
 

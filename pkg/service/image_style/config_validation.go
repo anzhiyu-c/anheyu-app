@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/anzhiyu-c/anheyu-app/pkg/constant"
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
 )
 
@@ -93,6 +94,24 @@ func ValidateConfig(process model.ImageProcessConfig, styles []model.ImageStyleC
 		}
 	}
 
+	return errs
+}
+
+// ValidateAutoCompressPolicy 校验自动压缩与存储策略类型的组合。
+// 自动压缩由本地直链服务执行；云策略必须继续使用 Provider 原生图片处理。
+func ValidateAutoCompressPolicy(
+	policyType constant.StoragePolicyType,
+	process model.ImageProcessConfig,
+) ValidationErrors {
+	var errs ValidationErrors
+	if policyType != constant.PolicyTypeLocal &&
+		process.AutoCompress != nil &&
+		process.AutoCompress.Enabled {
+		errs.Errors = append(errs.Errors, FieldError{
+			Field:   "image_process.auto_compress.enabled",
+			Message: "自动压缩仅支持本地存储策略；云存储请使用 Provider 原生图片处理",
+		})
+	}
 	return errs
 }
 

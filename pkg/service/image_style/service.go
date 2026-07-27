@@ -10,9 +10,9 @@
  *
  * 流程（Process）：
  *   1. Matcher.Match → ResolvedStyle (或 ErrStyleNotApplicable / NotFound)
- *   2. ResolvedStyle.Hash() → styleHash
+ *   2. ResolvedStyle.Hash() + 原图物理版本 → styleHash
  *   3. cache.Get 命中 → 返回 StyleResult{FromCache: true}
- *   4. singleflight.Do(cacheKey)：
+ *   4. singleflight.DoChan(cacheKey)：
  *      - double-check cache
  *      - provider.Get 读原图字节 → engine.Process → cache.Put
  *   5. cache.Get 二次读取（拿独立 ReadCloser）→ 返回 StyleResult
@@ -29,6 +29,7 @@ import (
 	"io"
 	"log"
 	"sync"
+	"time"
 
 	"golang.org/x/sync/singleflight"
 
@@ -66,12 +67,21 @@ type ImageStyleService interface {
 
 	// CancelWarm 请求取消指定的预热任务。
 	// 返回 true 表示找到了该任务并发出了取消信号；false 表示任务不存在。
-	// 取消信号通过 context 传递给后台 goroutine，goroutine 会在当前图片处理完后退出。
+	// 取消信号通过 context 传递给后台 goroutine；当前共享生成可能继续到内部超时，
+	// 但预热任务会立即停止等待且不再调度后续图片。
 	CancelWarm(taskID string) bool
 }
 
 // ErrWarmNotAvailable 表示调用方未注入 WarmFileLister，无法启动预热任务。
 var ErrWarmNotAvailable = errors.New("image style warm cache not available: WarmFileLister not configured")
+
+// sharedProcessTimeout 限制与单个 HTTP 请求生命周期解耦后的共享生成任务。
+// 首个请求取消时仍允许同一实例内的健康等待者拿到结果，同时避免底层 provider
+// 或处理引擎异常时让 singleflight key 永久占用。
+const (
+	sharedProcessTimeout     = time.Minute
+	sharedProcessConcurrency = 4
+)
 
 // WarmFileLister 为预热任务抽象出文件枚举能力。
 // 社区版单独使用时可以传 nil 禁用；anheyu-pro 启动时会基于 EntityRepository
@@ -123,6 +133,9 @@ type Service struct {
 	watermarker Watermarker
 
 	sfGroup singleflight.Group
+	// processSlots 对不同 cache key 的后台生成做硬上限；达到上限时请求回退原图，
+	// 不排队创建无界 goroutine。
+	processSlots chan struct{}
 
 	// Phase 4 Task 4.5：预热子系统（可选）。
 	warmMu     sync.RWMutex
@@ -147,12 +160,13 @@ func NewService(
 		watermarker = NewNoopWatermarker()
 	}
 	s := &Service{
-		engine:      eng,
-		cache:       cache,
-		providers:   providers,
-		policyRepo:  policyRepo,
-		watermarker: watermarker,
-		warmMgr:     newWarmTaskManager(nil),
+		engine:       eng,
+		cache:        cache,
+		providers:    providers,
+		policyRepo:   policyRepo,
+		watermarker:  watermarker,
+		warmMgr:      newWarmTaskManager(nil),
+		processSlots: make(chan struct{}, sharedProcessConcurrency),
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -174,7 +188,7 @@ func (s *Service) Process(ctx context.Context, req *StyleRequest) (*StyleResult,
 	if err != nil {
 		return nil, err
 	}
-	styleHash := resolved.Hash()
+	styleHash := versionedStyleHash(resolved.Hash(), req.File)
 	policyID := req.Policy.ID
 	fileID := req.File.ID
 
@@ -186,23 +200,44 @@ func (s *Service) Process(ctx context.Context, req *StyleRequest) (*StyleResult,
 			Size:            entry.Size,
 			FromCache:       true,
 			StyleHash:       styleHash,
-			LastModified:    entry.LastAccessAt,
+			LastModified:    entry.CreatedAt,
 			RequestedFormat: resolved.Format,
 		}, nil
 	}
 
 	// 3. 进入 singleflight，合并并发请求
 	key := cacheKey(policyID, fileID, styleHash)
-	_, errDo, _ := s.sfGroup.Do(key, func() (any, error) {
+	resultCh := s.sfGroup.DoChan(key, func() (any, error) {
+		// 不等待空闲槽：公开图片路由可构造大量不同 cache key，若排队会在客户端
+		// 断开后积累无界后台 goroutine。繁忙时让 handler 按既有契约回退原图。
+		select {
+		case s.processSlots <- struct{}{}:
+			defer func() { <-s.processSlots }()
+		default:
+			return nil, fmt.Errorf("%w: 图片处理并发已达上限", ErrStyleProcessFailed)
+		}
+
+		// 共享生成不能绑定首个 HTTP 请求的取消信号，否则首请求断开会让同批健康
+		// 等待者一起失败。保留请求 Context 的 values，但用独立超时约束实际工作。
+		processCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), sharedProcessTimeout)
+		defer cancel()
+
 		// double-check：其他并发 goroutine 可能已填好 cache
-		if _, rc, err := s.cache.Get(ctx, policyID, fileID, styleHash); err == nil {
+		if _, rc, err := s.cache.Get(processCtx, policyID, fileID, styleHash); err == nil {
 			_ = rc.Close()
 			return nil, nil
 		}
-		return nil, s.processAndPut(ctx, req, resolved, styleHash)
+		return nil, s.processAndPut(processCtx, req, resolved, styleHash)
 	})
-	if errDo != nil {
-		return nil, errDo
+
+	select {
+	case result := <-resultCh:
+		if result.Err != nil {
+			return nil, result.Err
+		}
+	case <-ctx.Done():
+		// 当前调用者可以停止等待；独立的共享生成仍会服务其他健康等待者并填充缓存。
+		return nil, ctx.Err()
 	}
 
 	// 4. 拿独立的 ReadCloser
@@ -227,6 +262,9 @@ func (s *Service) processAndPut(ctx context.Context, req *StyleRequest, resolved
 	if err != nil {
 		return fmt.Errorf("%w: 读取原图失败: %v", ErrStyleProcessFailed, err)
 	}
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("%w: 读取原图后任务已取消: %v", ErrStyleProcessFailed, err)
+	}
 
 	styleCfg := model.ImageStyleConfig{
 		Format:     resolved.Format,
@@ -240,6 +278,9 @@ func (s *Service) processAndPut(ctx context.Context, req *StyleRequest, resolved
 	mime, err := s.engine.Process(ctx, bytes.NewReader(rawBytes), styleCfg, &buf)
 	if err != nil {
 		return fmt.Errorf("%w: 引擎处理失败: %v", ErrStyleProcessFailed, err)
+	}
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("%w: 引擎处理后任务已取消: %v", ErrStyleProcessFailed, err)
 	}
 
 	ext := extFromMIME(mime)
@@ -266,7 +307,14 @@ func (s *Service) readOriginalBytes(ctx context.Context, policy *model.StoragePo
 		return nil, err
 	}
 	defer rc.Close()
-	return io.ReadAll(rc)
+	data, err := io.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // ResolveUploadURLSuffix 实现 Spec §8.4，薄壳代理到纯函数。
@@ -278,7 +326,7 @@ func (s *Service) ResolveUploadURLSuffix(policy *model.StoragePolicy, filename s
 //
 //   - policyID == 0 → 不按策略过滤（代表"全部策略"）
 //   - fileID   == 0 → 不按文件过滤
-//   - styleName != "" → 查策略找到该样式，计算 hash，按 StyleHash 过滤
+//   - styleName != "" → 查策略找到该样式，按 StyleHashFamily 清理所有原图版本
 //     Phase 1 的 styleName 支持依赖 policyRepo；未注入时若传了非空 styleName 会返回错误。
 func (s *Service) PurgeCache(ctx context.Context, policyID uint, styleName string, fileID uint) (int, error) {
 	opts := PurgeOpts{}
@@ -306,8 +354,8 @@ func (s *Service) PurgeCache(ctx context.Context, policyID uint, styleName strin
 			return 0, nil // 样式不存在 → 无可清理
 		}
 		resolved := styleToResolved(styleCfg)
-		hash := resolved.Hash()
-		opts.StyleHash = &hash
+		hashFamily := resolved.Hash()
+		opts.StyleHashFamily = &hashFamily
 	}
 	return s.cache.Purge(ctx, opts)
 }

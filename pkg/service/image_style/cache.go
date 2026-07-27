@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -49,12 +50,12 @@ type CacheConfig struct {
 // CacheEntry 单条缓存记录。
 // 访问时序字段 (LastAccessAt / AccessCount) 以原子方式更新，避免热点路径加写锁。
 type CacheEntry struct {
-	PolicyID     uint   `json:"policy_id"`
-	FileID       uint   `json:"file_id"`
-	StyleHash    string `json:"style_hash"`
-	MIME         string `json:"mime"`
-	Ext          string `json:"ext"`
-	Size         int64  `json:"size"`
+	PolicyID     uint      `json:"policy_id"`
+	FileID       uint      `json:"file_id"`
+	StyleHash    string    `json:"style_hash"`
+	MIME         string    `json:"mime"`
+	Ext          string    `json:"ext"`
+	Size         int64     `json:"size"`
 	CreatedAt    time.Time `json:"created_at"`
 	LastAccessAt time.Time `json:"last_access_at"`
 	AccessCount  int64     `json:"access_count"`
@@ -64,11 +65,14 @@ type CacheEntry struct {
 }
 
 // PurgeOpts 批量清理的过滤器；nil 字段表示"不限定该维度"。
-// 组合使用：PolicyID + StyleHash / PolicyID + FileID / 仅 PolicyID / 全部。
+// 组合使用：PolicyID + StyleHash/StyleHashFamily / PolicyID + FileID / 仅 PolicyID / 全部。
 type PurgeOpts struct {
-	PolicyID  *uint
+	PolicyID *uint
+	// StyleHash 精确匹配单个派生图身份。
 	StyleHash *string
-	FileID    *uint
+	// StyleHashFamily 匹配基础样式 hash 及其所有 `hash-sourceVersion` 版本。
+	StyleHashFamily *string
+	FileID          *uint
 }
 
 // Cache 图片样式缓存的抽象接口。
@@ -286,6 +290,11 @@ func (c *DiskCache) Purge(ctx context.Context, opts PurgeOpts) (int, error) {
 			continue
 		}
 		if opts.StyleHash != nil && e.StyleHash != *opts.StyleHash {
+			continue
+		}
+		if opts.StyleHashFamily != nil &&
+			e.StyleHash != *opts.StyleHashFamily &&
+			!strings.HasPrefix(e.StyleHash, *opts.StyleHashFamily+"-") {
 			continue
 		}
 		matched = append(matched, e)

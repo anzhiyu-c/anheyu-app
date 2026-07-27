@@ -6,6 +6,8 @@ package image_style
 
 import (
 	"testing"
+
+	"github.com/anzhiyu-c/anheyu-app/pkg/constant"
 )
 
 func TestResolveUploadURLSuffix_Matrix(t *testing.T) {
@@ -60,5 +62,23 @@ func TestResolveUploadURLSuffix_NilPolicy(t *testing.T) {
 	got := resolveUploadURLSuffix(nil, "a.jpg")
 	if got != "" {
 		t.Errorf("nil policy 应返回空串，实际 %q", got)
+	}
+}
+
+func TestResolveUploadURLSuffix_AutoCompressDoesNotMutateUploadURL(t *testing.T) {
+	policy := buildPolicyWithProcessRaw(map[string]any{
+		"enabled":             true,
+		"apply_to_extensions": []string{"jpg"},
+		"default_style":       "",
+		"auto_compress": map[string]any{
+			"enabled": true,
+			"format":  "webp",
+			"quality": 75,
+		},
+	})
+	policy.Type = constant.PolicyTypeLocal
+
+	if got := resolveUploadURLSuffix(policy, "a.jpg"); got != "" {
+		t.Fatalf("自动压缩必须在读取时生效，上传 URL 不应追加后缀，实际 %q", got)
 	}
 }

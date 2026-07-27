@@ -138,7 +138,8 @@ func TestGetImageStyles_ReturnsAutoCompress(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	svc := &imageStylesPolicyServiceStub{policy: &model.StoragePolicy{
-		ID: 7,
+		ID:   7,
+		Type: constant.PolicyTypeLocal,
 		Settings: model.StoragePolicySettings{
 			constant.ImageProcessSettingsKey: map[string]any{
 				"enabled":             true,
@@ -176,5 +177,71 @@ func TestGetImageStyles_ReturnsAutoCompress(t *testing.T) {
 	}
 	if *envelope.Data.ImageProcess.AutoCompress.AutoRotate {
 		t.Fatalf("auto_rotate=false 应被保留")
+	}
+}
+
+func TestPutImageStyles_RejectsEnabledAutoCompressForCloudPolicy(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	svc := &imageStylesPolicyServiceStub{policy: &model.StoragePolicy{
+		ID:       7,
+		Type:     constant.PolicyTypeAliOSS,
+		Settings: model.StoragePolicySettings{},
+	}}
+	handler := NewStoragePolicyHandler(svc)
+	router := gin.New()
+	router.PUT("/api/policies/:id/image-styles", handler.PutImageStyles)
+
+	body := `{"image_process":{"enabled":true,"apply_to_extensions":["jpg"],"auto_compress":{"enabled":true,"quality":72,"format":"webp"}},"image_styles":[]}`
+	req := httptest.NewRequest(http.MethodPut, "/api/policies/p1/image-styles", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("云策略启用自动压缩应返回 400，实际 %d: %s", w.Code, w.Body.String())
+	}
+	if svc.saved != nil {
+		t.Fatal("非法云策略自动压缩配置不应保存")
+	}
+	if !strings.Contains(w.Body.String(), "image_process.auto_compress.enabled") {
+		t.Fatalf("响应应包含策略类型字段错误，实际 %s", w.Body.String())
+	}
+}
+
+func TestGetImageStyles_HidesAutoCompressForCloudPolicy(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	svc := &imageStylesPolicyServiceStub{policy: &model.StoragePolicy{
+		ID:   7,
+		Type: constant.PolicyTypeAliOSS,
+		Settings: model.StoragePolicySettings{
+			constant.ImageProcessSettingsKey: map[string]any{
+				"enabled":             true,
+				"apply_to_extensions": []string{"jpg"},
+				"auto_compress": map[string]any{
+					"enabled": true,
+					"quality": 72,
+					"format":  "webp",
+				},
+			},
+		},
+	}}
+	handler := NewStoragePolicyHandler(svc)
+	router := gin.New()
+	router.GET("/api/policies/:id/image-styles", handler.GetImageStyles)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/policies/p1/image-styles", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	var envelope struct {
+		Data PolicyImageStylesPayload `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &envelope); err != nil {
+		t.Fatalf("响应 JSON 解析失败: %v", err)
+	}
+	if envelope.Data.ImageProcess.AutoCompress != nil {
+		t.Fatalf("云策略不应暴露本地自动压缩配置，实际 %+v", envelope.Data.ImageProcess.AutoCompress)
 	}
 }

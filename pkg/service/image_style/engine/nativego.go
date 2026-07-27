@@ -80,10 +80,17 @@ func (e *NativeGoEngine) SupportedOutputFormats() []string {
 // Process 按 style 处理 src，结果写入 dst。
 // 实现顺序：解码 → EXIF 旋转（可选）→ 尺寸调整 → 编码。
 func (e *NativeGoEngine) Process(ctx context.Context, src io.Reader, style model.ImageStyleConfig, dst io.Writer) (string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+
 	// 1. 将 src 读入内存（后续需要多次 seek：读 EXIF + 解码）
 	buf, err := io.ReadAll(src)
 	if err != nil {
 		return "", fmt.Errorf("读取源图数据失败: %w", err)
+	}
+	if err := ctx.Err(); err != nil {
+		return "", err
 	}
 	if len(buf) == 0 {
 		return "", errors.New("源图为空")
@@ -94,6 +101,9 @@ func (e *NativeGoEngine) Process(ctx context.Context, src io.Reader, style model
 	if err != nil {
 		return "", fmt.Errorf("解码图片失败: %w", err)
 	}
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 
 	// 3. EXIF 自动旋转（仅 JPEG 典型含 EXIF；其他格式忽略）
 	if style.AutoRotate {
@@ -101,9 +111,15 @@ func (e *NativeGoEngine) Process(ctx context.Context, src io.Reader, style model
 			img = applyExifOrientation(img, orient)
 		}
 	}
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 
 	// 4. 尺寸调整
 	img = applyResize(img, style.Resize)
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 
 	// 5. 水印叠加（Phase 3 Task 3.4）；nil 配置时跳过。
 	if style.Watermark != nil && e.watermarker != nil {
@@ -112,6 +128,9 @@ func (e *NativeGoEngine) Process(ctx context.Context, src io.Reader, style model
 			return "", fmt.Errorf("水印叠加失败: %w", werr)
 		}
 		img = wmImg
+	}
+	if err := ctx.Err(); err != nil {
+		return "", err
 	}
 
 	// 6. 决定输出格式
@@ -125,7 +144,9 @@ func (e *NativeGoEngine) Process(ctx context.Context, src io.Reader, style model
 	if err != nil {
 		return "", fmt.Errorf("编码输出失败: %w", err)
 	}
-	_ = ctx // Phase 1 暂不使用 ctx；保留签名兼容 AutoEngine
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 	return mime, nil
 }
 

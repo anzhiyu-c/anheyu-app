@@ -13,6 +13,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
@@ -45,9 +47,9 @@ type StyleResult struct {
 	Size int64
 	// FromCache 是否命中磁盘缓存（未命中时由引擎实时处理）。
 	FromCache bool
-	// StyleHash ResolvedStyle 的稳定 hash（前 16 位 hex），也作为 ETag 响应头。
+	// StyleHash ResolvedStyle 与当前原图版本共同生成的稳定 hash，也作为 ETag 响应头。
 	StyleHash string
-	// LastModified 缓存文件的最后修改时间；未命中缓存时为零值。
+	// LastModified 缓存产物的创建时间；同一产物的后续命中保持不变。
 	LastModified time.Time
 	// RequestedFormat 是样式配置（或动态参数）中用户原始请求的输出格式，
 	// 如 "webp" / "avif" / "jpg" / "original" / ""。Handler 层会把它与实际
@@ -61,15 +63,15 @@ type StyleResult struct {
 // 此结构体不会被持久化，仅作为引擎入参与缓存键计算输入。
 // 字段顺序严格按照 JSON tag 序列化，用于 Hash() 计算。
 type ResolvedStyle struct {
-	Format     string                   `json:"format"`
-	Quality    int                      `json:"quality"`
-	AutoRotate bool                     `json:"auto_rotate"`
-	Resize     model.ImageResizeConfig  `json:"resize"`
-	Watermark  *model.WatermarkConfig   `json:"watermark,omitempty"`
+	Format     string                  `json:"format"`
+	Quality    int                     `json:"quality"`
+	AutoRotate bool                    `json:"auto_rotate"`
+	Resize     model.ImageResizeConfig `json:"resize"`
+	Watermark  *model.WatermarkConfig  `json:"watermark,omitempty"`
 }
 
-// Hash 返回 ResolvedStyle 的稳定哈希（sha256 前 16 位 hex）。
-// 用于：1) 缓存文件名的一部分；2) HTTP ETag；3) singleflight 合并 key。
+// Hash 返回 ResolvedStyle 的稳定基础哈希（sha256 前 16 位 hex）。
+// Process 会再追加原图版本摘要，生成缓存文件名、HTTP ETag 与 singleflight key。
 //
 // 稳定性来源：
 //   - encoding/json 默认按字段定义顺序输出，结构体内字段顺序固定。
@@ -85,6 +87,53 @@ func (r ResolvedStyle) Hash() string {
 	}
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:8])
+}
+
+// versionedStyleHash 将原图物理版本纳入派生图身份。
+//
+// 文件内容覆盖会保留逻辑 File.ID，但会创建新的 PrimaryEntityID。若缓存和 ETag
+// 只使用样式 hash，覆盖后仍会命中旧派生图。这里保留样式 hash 作为前缀，追加
+// 物理版本摘要，既能自动失效旧缓存，也能让按样式清理匹配同一家族的所有版本。
+func versionedStyleHash(styleHash string, file *model.File) string {
+	identity := sourceVersionIdentity(file)
+	if identity == "" {
+		return styleHash
+	}
+	sum := sha256.Sum256([]byte(identity))
+	return styleHash + "-" + hex.EncodeToString(sum[:8])
+}
+
+// sourceVersionIdentity 按可信度选择稳定的原图版本标识。
+// 生产读取路径通常具备 PrimaryEntityID；其余字段仅用于兼容旧数据和测试夹具。
+func sourceVersionIdentity(file *model.File) string {
+	if file == nil {
+		return ""
+	}
+	if file.PrimaryEntityID.Valid && file.PrimaryEntityID.Uint64 > 0 {
+		return "entity:" + strconv.FormatUint(file.PrimaryEntityID.Uint64, 10)
+	}
+	if entity := file.PrimaryEntity; entity != nil {
+		if entity.ID > 0 {
+			return "entity:" + strconv.FormatUint(uint64(entity.ID), 10)
+		}
+		if entity.Etag.Valid {
+			if etag := strings.TrimSpace(entity.Etag.String); etag != "" {
+				return "etag:" + etag
+			}
+		}
+		if !entity.UpdatedAt.IsZero() {
+			return "entity_updated:" + strconv.FormatInt(entity.UpdatedAt.UnixNano(), 10)
+		}
+	}
+	if !file.UpdatedAt.IsZero() {
+		return "updated:" + strconv.FormatInt(file.UpdatedAt.UnixNano(), 10)
+	}
+	if entity := file.PrimaryEntity; entity != nil && entity.Source.Valid {
+		if source := strings.TrimSpace(entity.Source.String); source != "" {
+			return "source:" + source
+		}
+	}
+	return ""
 }
 
 // CacheStats 描述单个策略的缓存统计信息。

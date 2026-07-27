@@ -178,9 +178,10 @@ func TestServeStyled_IfNoneMatch_Returns304(t *testing.T) {
 
 	svc := &stubStyleService{
 		result: &image_style.StyleResult{
-			ContentType: "image/jpeg",
-			Reader:      io.NopCloser(bytes.NewReader([]byte("X"))),
-			StyleHash:   "abc12345",
+			ContentType:  "image/jpeg",
+			Reader:       io.NopCloser(bytes.NewReader([]byte("X"))),
+			StyleHash:    "abc12345",
+			LastModified: time.Unix(1_600_000_000, 0),
 		},
 	}
 	h := newTestHandler(svc, &stubDirectLink{})
@@ -197,6 +198,15 @@ func TestServeStyled_IfNoneMatch_Returns304(t *testing.T) {
 	}
 	if rec.Body.Len() != 0 {
 		t.Errorf("304 响应 body 应为空，实际 %d 字节", rec.Body.Len())
+	}
+	if got := rec.Header().Get("ETag"); got != `"abc12345"` {
+		t.Errorf("304 ETag 期望 \"abc12345\"，实际 %q", got)
+	}
+	if got := rec.Header().Get("Cache-Control"); got != "public, max-age=604800" {
+		t.Errorf("304 Cache-Control 期望 public, max-age=604800，实际 %q", got)
+	}
+	if got := rec.Header().Get("Last-Modified"); got == "" {
+		t.Error("304 Last-Modified 不应为空")
 	}
 }
 
