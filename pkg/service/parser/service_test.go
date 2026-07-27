@@ -52,3 +52,29 @@ func TestSanitizeHTMLPreservesVideoGallerySource(t *testing.T) {
 		t.Fatalf("expected sanitizer to remove event handlers, got: %s", got)
 	}
 }
+
+func TestSanitizeHTMLPreservesTiptapFormatting(t *testing.T) {
+	bus := event.NewEventBus()
+	t.Cleanup(bus.Shutdown)
+	svc := NewService(stubSettingService{}, bus)
+
+	html := `<h2 style="text-align: center"><span style="color: rgb(0, 85, 255)">标题</span></h2>` +
+		`<p style="text-align: right"><span style="color: #ff0000">正文</span>` +
+		`<img src="/safe.png" onerror="alert(1)"></p>`
+
+	got := svc.SanitizeHTML(html)
+
+	for _, formatting := range []string{
+		`style="text-align: center"`,
+		`style="color: rgb(0, 85, 255)"`,
+		`style="text-align: right"`,
+		`style="color: #ff0000"`,
+	} {
+		if !strings.Contains(got, formatting) {
+			t.Fatalf("expected sanitized HTML to preserve %s, got: %s", formatting, got)
+		}
+	}
+	if strings.Contains(got, "onerror") {
+		t.Fatalf("expected sanitizer to remove event handlers, got: %s", got)
+	}
+}
