@@ -53,6 +53,19 @@ func (Article) Fields() []ent.Field {
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now),
 		field.String("title").Default("").Comment("文章标题"),
+		field.String("create_idempotency_key").
+			Comment("创建文章使用的内部幂等键摘要").
+			Optional().
+			Nillable().
+			Unique().
+			MaxLen(64).
+			Sensitive(),
+		field.String("create_request_digest").
+			Comment("创建文章请求的内部摘要").
+			Optional().
+			Nillable().
+			MaxLen(64).
+			Sensitive(),
 		field.Text("content_md").Comment("文章的 Markdown 原文").Optional(),
 		field.Text("content_html").Comment("由 content_md 解析和净化后的 HTML").Optional(),
 		field.String("cover_url").Comment("封面图URL").Optional(),

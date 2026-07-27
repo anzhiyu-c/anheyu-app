@@ -97,6 +97,34 @@ func (_c *ArticleCreate) SetNillableTitle(v *string) *ArticleCreate {
 	return _c
 }
 
+// SetCreateIdempotencyKey sets the "create_idempotency_key" field.
+func (_c *ArticleCreate) SetCreateIdempotencyKey(v string) *ArticleCreate {
+	_c.mutation.SetCreateIdempotencyKey(v)
+	return _c
+}
+
+// SetNillableCreateIdempotencyKey sets the "create_idempotency_key" field if the given value is not nil.
+func (_c *ArticleCreate) SetNillableCreateIdempotencyKey(v *string) *ArticleCreate {
+	if v != nil {
+		_c.SetCreateIdempotencyKey(*v)
+	}
+	return _c
+}
+
+// SetCreateRequestDigest sets the "create_request_digest" field.
+func (_c *ArticleCreate) SetCreateRequestDigest(v string) *ArticleCreate {
+	_c.mutation.SetCreateRequestDigest(v)
+	return _c
+}
+
+// SetNillableCreateRequestDigest sets the "create_request_digest" field if the given value is not nil.
+func (_c *ArticleCreate) SetNillableCreateRequestDigest(v *string) *ArticleCreate {
+	if v != nil {
+		_c.SetCreateRequestDigest(*v)
+	}
+	return _c
+}
+
 // SetContentMd sets the "content_md" field.
 func (_c *ArticleCreate) SetContentMd(v string) *ArticleCreate {
 	_c.mutation.SetContentMd(v)
@@ -850,6 +878,16 @@ func (_c *ArticleCreate) check() error {
 	if _, ok := _c.mutation.Title(); !ok {
 		return &ValidationError{Name: "title", err: errors.New(`ent: missing required field "Article.title"`)}
 	}
+	if v, ok := _c.mutation.CreateIdempotencyKey(); ok {
+		if err := article.CreateIdempotencyKeyValidator(v); err != nil {
+			return &ValidationError{Name: "create_idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Article.create_idempotency_key": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.CreateRequestDigest(); ok {
+		if err := article.CreateRequestDigestValidator(v); err != nil {
+			return &ValidationError{Name: "create_request_digest", err: fmt.Errorf(`ent: validator failed for field "Article.create_request_digest": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Article.status"`)}
 	}
@@ -996,6 +1034,14 @@ func (_c *ArticleCreate) createSpec() (*Article, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Title(); ok {
 		_spec.SetField(article.FieldTitle, field.TypeString, value)
 		_node.Title = value
+	}
+	if value, ok := _c.mutation.CreateIdempotencyKey(); ok {
+		_spec.SetField(article.FieldCreateIdempotencyKey, field.TypeString, value)
+		_node.CreateIdempotencyKey = &value
+	}
+	if value, ok := _c.mutation.CreateRequestDigest(); ok {
+		_spec.SetField(article.FieldCreateRequestDigest, field.TypeString, value)
+		_node.CreateRequestDigest = &value
 	}
 	if value, ok := _c.mutation.ContentMd(); ok {
 		_spec.SetField(article.FieldContentMd, field.TypeString, value)
@@ -1351,6 +1397,42 @@ func (u *ArticleUpsert) SetTitle(v string) *ArticleUpsert {
 // UpdateTitle sets the "title" field to the value that was provided on create.
 func (u *ArticleUpsert) UpdateTitle() *ArticleUpsert {
 	u.SetExcluded(article.FieldTitle)
+	return u
+}
+
+// SetCreateIdempotencyKey sets the "create_idempotency_key" field.
+func (u *ArticleUpsert) SetCreateIdempotencyKey(v string) *ArticleUpsert {
+	u.Set(article.FieldCreateIdempotencyKey, v)
+	return u
+}
+
+// UpdateCreateIdempotencyKey sets the "create_idempotency_key" field to the value that was provided on create.
+func (u *ArticleUpsert) UpdateCreateIdempotencyKey() *ArticleUpsert {
+	u.SetExcluded(article.FieldCreateIdempotencyKey)
+	return u
+}
+
+// ClearCreateIdempotencyKey clears the value of the "create_idempotency_key" field.
+func (u *ArticleUpsert) ClearCreateIdempotencyKey() *ArticleUpsert {
+	u.SetNull(article.FieldCreateIdempotencyKey)
+	return u
+}
+
+// SetCreateRequestDigest sets the "create_request_digest" field.
+func (u *ArticleUpsert) SetCreateRequestDigest(v string) *ArticleUpsert {
+	u.Set(article.FieldCreateRequestDigest, v)
+	return u
+}
+
+// UpdateCreateRequestDigest sets the "create_request_digest" field to the value that was provided on create.
+func (u *ArticleUpsert) UpdateCreateRequestDigest() *ArticleUpsert {
+	u.SetExcluded(article.FieldCreateRequestDigest)
+	return u
+}
+
+// ClearCreateRequestDigest clears the value of the "create_request_digest" field.
+func (u *ArticleUpsert) ClearCreateRequestDigest() *ArticleUpsert {
+	u.SetNull(article.FieldCreateRequestDigest)
 	return u
 }
 
@@ -2125,6 +2207,48 @@ func (u *ArticleUpsertOne) SetTitle(v string) *ArticleUpsertOne {
 func (u *ArticleUpsertOne) UpdateTitle() *ArticleUpsertOne {
 	return u.Update(func(s *ArticleUpsert) {
 		s.UpdateTitle()
+	})
+}
+
+// SetCreateIdempotencyKey sets the "create_idempotency_key" field.
+func (u *ArticleUpsertOne) SetCreateIdempotencyKey(v string) *ArticleUpsertOne {
+	return u.Update(func(s *ArticleUpsert) {
+		s.SetCreateIdempotencyKey(v)
+	})
+}
+
+// UpdateCreateIdempotencyKey sets the "create_idempotency_key" field to the value that was provided on create.
+func (u *ArticleUpsertOne) UpdateCreateIdempotencyKey() *ArticleUpsertOne {
+	return u.Update(func(s *ArticleUpsert) {
+		s.UpdateCreateIdempotencyKey()
+	})
+}
+
+// ClearCreateIdempotencyKey clears the value of the "create_idempotency_key" field.
+func (u *ArticleUpsertOne) ClearCreateIdempotencyKey() *ArticleUpsertOne {
+	return u.Update(func(s *ArticleUpsert) {
+		s.ClearCreateIdempotencyKey()
+	})
+}
+
+// SetCreateRequestDigest sets the "create_request_digest" field.
+func (u *ArticleUpsertOne) SetCreateRequestDigest(v string) *ArticleUpsertOne {
+	return u.Update(func(s *ArticleUpsert) {
+		s.SetCreateRequestDigest(v)
+	})
+}
+
+// UpdateCreateRequestDigest sets the "create_request_digest" field to the value that was provided on create.
+func (u *ArticleUpsertOne) UpdateCreateRequestDigest() *ArticleUpsertOne {
+	return u.Update(func(s *ArticleUpsert) {
+		s.UpdateCreateRequestDigest()
+	})
+}
+
+// ClearCreateRequestDigest clears the value of the "create_request_digest" field.
+func (u *ArticleUpsertOne) ClearCreateRequestDigest() *ArticleUpsertOne {
+	return u.Update(func(s *ArticleUpsert) {
+		s.ClearCreateRequestDigest()
 	})
 }
 
@@ -3172,6 +3296,48 @@ func (u *ArticleUpsertBulk) SetTitle(v string) *ArticleUpsertBulk {
 func (u *ArticleUpsertBulk) UpdateTitle() *ArticleUpsertBulk {
 	return u.Update(func(s *ArticleUpsert) {
 		s.UpdateTitle()
+	})
+}
+
+// SetCreateIdempotencyKey sets the "create_idempotency_key" field.
+func (u *ArticleUpsertBulk) SetCreateIdempotencyKey(v string) *ArticleUpsertBulk {
+	return u.Update(func(s *ArticleUpsert) {
+		s.SetCreateIdempotencyKey(v)
+	})
+}
+
+// UpdateCreateIdempotencyKey sets the "create_idempotency_key" field to the value that was provided on create.
+func (u *ArticleUpsertBulk) UpdateCreateIdempotencyKey() *ArticleUpsertBulk {
+	return u.Update(func(s *ArticleUpsert) {
+		s.UpdateCreateIdempotencyKey()
+	})
+}
+
+// ClearCreateIdempotencyKey clears the value of the "create_idempotency_key" field.
+func (u *ArticleUpsertBulk) ClearCreateIdempotencyKey() *ArticleUpsertBulk {
+	return u.Update(func(s *ArticleUpsert) {
+		s.ClearCreateIdempotencyKey()
+	})
+}
+
+// SetCreateRequestDigest sets the "create_request_digest" field.
+func (u *ArticleUpsertBulk) SetCreateRequestDigest(v string) *ArticleUpsertBulk {
+	return u.Update(func(s *ArticleUpsert) {
+		s.SetCreateRequestDigest(v)
+	})
+}
+
+// UpdateCreateRequestDigest sets the "create_request_digest" field to the value that was provided on create.
+func (u *ArticleUpsertBulk) UpdateCreateRequestDigest() *ArticleUpsertBulk {
+	return u.Update(func(s *ArticleUpsert) {
+		s.UpdateCreateRequestDigest()
+	})
+}
+
+// ClearCreateRequestDigest clears the value of the "create_request_digest" field.
+func (u *ArticleUpsertBulk) ClearCreateRequestDigest() *ArticleUpsertBulk {
+	return u.Update(func(s *ArticleUpsert) {
+		s.ClearCreateRequestDigest()
 	})
 }
 

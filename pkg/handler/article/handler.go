@@ -14,6 +14,7 @@ import (
 
 	"github.com/anzhiyu-c/anheyu-app/ent"
 	"github.com/anzhiyu-c/anheyu-app/internal/pkg/auth"
+	"github.com/anzhiyu-c/anheyu-app/pkg/constant"
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
 	"github.com/anzhiyu-c/anheyu-app/pkg/idgen"
 	"github.com/anzhiyu-c/anheyu-app/pkg/response"
@@ -31,6 +32,19 @@ type Handler struct {
 
 type uploadArticleImageWithOptions interface {
 	UploadArticleImageWithGroupOptions(ctx context.Context, ownerID, userGroupID uint, fileReader io.Reader, originalFilename string, options articleSvc.UploadArticleImageOptions) (fileURL string, publicFileID string, err error)
+}
+
+func mutationErrorStatus(err error) int {
+	switch {
+	case errors.Is(err, constant.ErrBadRequest):
+		return http.StatusBadRequest
+	case errors.Is(err, constant.ErrNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, constant.ErrConflict):
+		return http.StatusConflict
+	default:
+		return http.StatusInternalServerError
+	}
 }
 
 // NewHandler 是 Handler 的构造函数。
@@ -240,9 +254,11 @@ func (h *Handler) GetRandom(c *gin.Context) {
 // @Tags         文章管理
 // @Accept       json
 // @Produce      json
+// @Param        Idempotency-Key header string false "可选的创建幂等键，最长 200 字节" maxlength(200)
 // @Param        article body model.CreateArticleRequest true "创建文章的请求体"
 // @Success      200 {object} response.Response{data=model.ArticleResponse} "成功响应"
 // @Failure      400 {object} response.Response "请求参数错误"
+// @Failure      409 {object} response.Response "幂等键或文章数据冲突"
 // @Failure      500 {object} response.Response "服务器内部错误"
 // @Router       /articles [post]
 func (h *Handler) Create(c *gin.Context) {
@@ -279,13 +295,32 @@ func (h *Handler) Create(c *gin.Context) {
 	clientIP := util.GetRealClientIP(c)
 	// 获取客户端 Referer，用于 NSUUU API 白名单验证
 	referer := c.GetHeader("Referer")
+	idempotencyValues, idempotencyKeyPresent := c.Request.Header[http.CanonicalHeaderKey("Idempotency-Key")]
+	if len(idempotencyValues) > 1 {
+		response.Fail(c, http.StatusBadRequest, "Idempotency-Key 只能提供一次")
+		return
+	}
+	idempotencyKey := ""
+	if len(idempotencyValues) == 1 {
+		idempotencyKey = idempotencyValues[0]
+	}
 
 	// 调用 Service 时传递 IP 地址和 Referer
 	log.Printf("[Handler.Create] 调用 Service.Create...")
-	article, err := h.svc.Create(c.Request.Context(), &req, clientIP, referer)
+	article, err := h.svc.CreateWithOptions(
+		c.Request.Context(),
+		&req,
+		clientIP,
+		referer,
+		articleSvc.CreateOptions{
+			ActorUserID:           claims.UserID,
+			IdempotencyKey:        idempotencyKey,
+			IdempotencyKeyPresent: idempotencyKeyPresent,
+		},
+	)
 	if err != nil {
 		log.Printf("[Handler.Create] ❌ Service.Create 失败: %v", err)
-		response.Fail(c, http.StatusInternalServerError, "创建文章失败: "+err.Error())
+		response.Fail(c, mutationErrorStatus(err), "创建文章失败: "+err.Error())
 		return
 	}
 
@@ -442,6 +477,8 @@ func (h *Handler) Get(c *gin.Context) {
 // @Param        article body model.UpdateArticleRequest true "更新文章的请求体"
 // @Success      200 {object} response.Response{data=model.ArticleResponse} "成功响应"
 // @Failure      400 {object} response.Response "请求参数错误"
+// @Failure      404 {object} response.Response "文章不存在"
+// @Failure      409 {object} response.Response "文章状态或数据冲突"
 // @Failure      500 {object} response.Response "服务器内部错误"
 // @Router       /articles/{id} [put]
 func (h *Handler) Update(c *gin.Context) {
@@ -487,7 +524,7 @@ func (h *Handler) Update(c *gin.Context) {
 	article, err := h.svc.Update(c.Request.Context(), id, &req, clientIP, referer)
 	if err != nil {
 		log.Printf("[Handler.Update] ❌ Service.Update 失败: %v", err)
-		response.Fail(c, http.StatusInternalServerError, "更新文章失败: "+err.Error())
+		response.Fail(c, mutationErrorStatus(err), "更新文章失败: "+err.Error())
 		return
 	}
 

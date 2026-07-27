@@ -72,6 +72,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "title", Type: field.TypeString, Comment: "文章标题", Default: ""},
+		{Name: "create_idempotency_key", Type: field.TypeString, Unique: true, Nullable: true, Size: 64, Comment: "创建文章使用的内部幂等键摘要"},
+		{Name: "create_request_digest", Type: field.TypeString, Nullable: true, Size: 64, Comment: "创建文章请求的内部摘要"},
 		{Name: "content_md", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "文章的 Markdown 原文"},
 		{Name: "content_html", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "由 content_md 解析和净化后的 HTML"},
 		{Name: "cover_url", Type: field.TypeString, Nullable: true, Comment: "封面图URL"},
@@ -121,7 +123,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "articles_doc_series_articles",
-				Columns:    []*schema.Column{ArticlesColumns[44]},
+				Columns:    []*schema.Column{ArticlesColumns[46]},
 				RefColumns: []*schema.Column{DocSeriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -130,27 +132,27 @@ var (
 			{
 				Name:    "article_deleted_at_status_is_takedown_review_status_show_on_home",
 				Unique:  false,
-				Columns: []*schema.Column{ArticlesColumns[1], ArticlesColumns[9], ArticlesColumns[33], ArticlesColumns[29], ArticlesColumns[16]},
+				Columns: []*schema.Column{ArticlesColumns[1], ArticlesColumns[11], ArticlesColumns[35], ArticlesColumns[31], ArticlesColumns[18]},
 			},
 			{
 				Name:    "article_deleted_at_status_pin_sort_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ArticlesColumns[1], ArticlesColumns[9], ArticlesColumns[18], ArticlesColumns[3]},
+				Columns: []*schema.Column{ArticlesColumns[1], ArticlesColumns[11], ArticlesColumns[20], ArticlesColumns[3]},
 			},
 			{
 				Name:    "article_deleted_at_status_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ArticlesColumns[1], ArticlesColumns[9], ArticlesColumns[3]},
+				Columns: []*schema.Column{ArticlesColumns[1], ArticlesColumns[11], ArticlesColumns[3]},
 			},
 			{
 				Name:    "article_deleted_at_is_doc_doc_series_id_doc_sort",
 				Unique:  false,
-				Columns: []*schema.Column{ArticlesColumns[1], ArticlesColumns[39], ArticlesColumns[44], ArticlesColumns[40]},
+				Columns: []*schema.Column{ArticlesColumns[1], ArticlesColumns[41], ArticlesColumns[46], ArticlesColumns[42]},
 			},
 			{
 				Name:    "article_deleted_at_owner_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ArticlesColumns[1], ArticlesColumns[2], ArticlesColumns[9]},
+				Columns: []*schema.Column{ArticlesColumns[1], ArticlesColumns[2], ArticlesColumns[11]},
 			},
 		},
 	}

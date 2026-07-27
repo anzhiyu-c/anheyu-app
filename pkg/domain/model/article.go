@@ -314,7 +314,9 @@ type UpdateArticleComputedParams struct {
 // CreateArticleParams 封装了创建文章时需要持久化的所有数据。
 type CreateArticleParams struct {
 	Title                string
-	OwnerID              uint // 文章作者ID（多人共创功能）
+	CreateIdempotencyKey string // 内部字段：按认证用户隔离后的创建幂等键摘要
+	CreateRequestDigest  string // 内部字段：规范化创建请求摘要
+	OwnerID              uint   // 文章作者ID（多人共创功能）
 	ContentMd            string
 	ContentHTML          string
 	CoverURL             string
