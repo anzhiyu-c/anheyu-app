@@ -29,6 +29,10 @@ type Article struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// 文章标题
 	Title string `json:"title,omitempty"`
+	// 创建文章使用的内部幂等键摘要
+	CreateIdempotencyKey *string `json:"-"`
+	// 创建文章请求的内部摘要
+	CreateRequestDigest *string `json:"-"`
 	// 文章的 Markdown 原文
 	ContentMd string `json:"content_md,omitempty"`
 	// 由 content_md 解析和净化后的 HTML
@@ -188,7 +192,7 @@ func (*Article) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case article.FieldID, article.FieldOwnerID, article.FieldViewCount, article.FieldWordCount, article.FieldReadingTime, article.FieldHomeSort, article.FieldPinSort, article.FieldReviewedBy, article.FieldTakedownBy, article.FieldDocSeriesID, article.FieldDocSort:
 			values[i] = new(sql.NullInt64)
-		case article.FieldTitle, article.FieldContentMd, article.FieldContentHTML, article.FieldCoverURL, article.FieldStatus, article.FieldIPLocation, article.FieldPrimaryColor, article.FieldTopImgURL, article.FieldAbbrlink, article.FieldCopyrightAuthor, article.FieldCopyrightAuthorHref, article.FieldCopyrightURL, article.FieldKeywords, article.FieldReviewStatus, article.FieldReviewComment, article.FieldTakedownReason:
+		case article.FieldTitle, article.FieldCreateIdempotencyKey, article.FieldCreateRequestDigest, article.FieldContentMd, article.FieldContentHTML, article.FieldCoverURL, article.FieldStatus, article.FieldIPLocation, article.FieldPrimaryColor, article.FieldTopImgURL, article.FieldAbbrlink, article.FieldCopyrightAuthor, article.FieldCopyrightAuthorHref, article.FieldCopyrightURL, article.FieldKeywords, article.FieldReviewStatus, article.FieldReviewComment, article.FieldTakedownReason:
 			values[i] = new(sql.NullString)
 		case article.FieldDeletedAt, article.FieldCreatedAt, article.FieldUpdatedAt, article.FieldScheduledAt, article.FieldReviewedAt, article.FieldTakedownAt:
 			values[i] = new(sql.NullTime)
@@ -243,6 +247,20 @@ func (_m *Article) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field title", values[i])
 			} else if value.Valid {
 				_m.Title = value.String
+			}
+		case article.FieldCreateIdempotencyKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field create_idempotency_key", values[i])
+			} else if value.Valid {
+				_m.CreateIdempotencyKey = new(string)
+				*_m.CreateIdempotencyKey = value.String
+			}
+		case article.FieldCreateRequestDigest:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field create_request_digest", values[i])
+			} else if value.Valid {
+				_m.CreateRequestDigest = new(string)
+				*_m.CreateRequestDigest = value.String
 			}
 		case article.FieldContentMd:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -566,6 +584,10 @@ func (_m *Article) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("title=")
 	builder.WriteString(_m.Title)
+	builder.WriteString(", ")
+	builder.WriteString("create_idempotency_key=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("create_request_digest=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("content_md=")
 	builder.WriteString(_m.ContentMd)

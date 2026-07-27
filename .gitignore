@@ -20,3 +20,4 @@ themes
 backup
 static
 DEVELOPMENT_WORKFLOW.md
+/data/*.db

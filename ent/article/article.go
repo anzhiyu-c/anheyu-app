@@ -26,6 +26,10 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldTitle holds the string denoting the title field in the database.
 	FieldTitle = "title"
+	// FieldCreateIdempotencyKey holds the string denoting the create_idempotency_key field in the database.
+	FieldCreateIdempotencyKey = "create_idempotency_key"
+	// FieldCreateRequestDigest holds the string denoting the create_request_digest field in the database.
+	FieldCreateRequestDigest = "create_request_digest"
 	// FieldContentMd holds the string denoting the content_md field in the database.
 	FieldContentMd = "content_md"
 	// FieldContentHTML holds the string denoting the content_html field in the database.
@@ -157,6 +161,8 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldTitle,
+	FieldCreateIdempotencyKey,
+	FieldCreateRequestDigest,
 	FieldContentMd,
 	FieldContentHTML,
 	FieldCoverURL,
@@ -230,8 +236,12 @@ var (
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
-	// TitleValidator is a validator for the "title" field. It is called by the builders before save.
-	TitleValidator func(string) error
+	// DefaultTitle holds the default value on creation for the "title" field.
+	DefaultTitle string
+	// CreateIdempotencyKeyValidator is a validator for the "create_idempotency_key" field. It is called by the builders before save.
+	CreateIdempotencyKeyValidator func(string) error
+	// CreateRequestDigestValidator is a validator for the "create_request_digest" field. It is called by the builders before save.
+	CreateRequestDigestValidator func(string) error
 	// DefaultViewCount holds the default value on creation for the "view_count" field.
 	DefaultViewCount int
 	// ViewCountValidator is a validator for the "view_count" field. It is called by the builders before save.
@@ -367,6 +377,16 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByTitle orders the results by the title field.
 func ByTitle(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTitle, opts...).ToFunc()
+}
+
+// ByCreateIdempotencyKey orders the results by the create_idempotency_key field.
+func ByCreateIdempotencyKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreateIdempotencyKey, opts...).ToFunc()
+}
+
+// ByCreateRequestDigest orders the results by the create_request_digest field.
+func ByCreateRequestDigest(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreateRequestDigest, opts...).ToFunc()
 }
 
 // ByContentMd orders the results by the content_md field.

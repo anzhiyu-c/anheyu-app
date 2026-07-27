@@ -2772,6 +2772,8 @@ type ArticleMutation struct {
 	created_at              *time.Time
 	updated_at              *time.Time
 	title                   *string
+	create_idempotency_key  *string
+	create_request_digest   *string
 	content_md              *string
 	content_html            *string
 	cover_url               *string
@@ -3154,6 +3156,104 @@ func (m *ArticleMutation) OldTitle(ctx context.Context) (v string, err error) {
 // ResetTitle resets all changes to the "title" field.
 func (m *ArticleMutation) ResetTitle() {
 	m.title = nil
+}
+
+// SetCreateIdempotencyKey sets the "create_idempotency_key" field.
+func (m *ArticleMutation) SetCreateIdempotencyKey(s string) {
+	m.create_idempotency_key = &s
+}
+
+// CreateIdempotencyKey returns the value of the "create_idempotency_key" field in the mutation.
+func (m *ArticleMutation) CreateIdempotencyKey() (r string, exists bool) {
+	v := m.create_idempotency_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateIdempotencyKey returns the old "create_idempotency_key" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldCreateIdempotencyKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreateIdempotencyKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreateIdempotencyKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateIdempotencyKey: %w", err)
+	}
+	return oldValue.CreateIdempotencyKey, nil
+}
+
+// ClearCreateIdempotencyKey clears the value of the "create_idempotency_key" field.
+func (m *ArticleMutation) ClearCreateIdempotencyKey() {
+	m.create_idempotency_key = nil
+	m.clearedFields[article.FieldCreateIdempotencyKey] = struct{}{}
+}
+
+// CreateIdempotencyKeyCleared returns if the "create_idempotency_key" field was cleared in this mutation.
+func (m *ArticleMutation) CreateIdempotencyKeyCleared() bool {
+	_, ok := m.clearedFields[article.FieldCreateIdempotencyKey]
+	return ok
+}
+
+// ResetCreateIdempotencyKey resets all changes to the "create_idempotency_key" field.
+func (m *ArticleMutation) ResetCreateIdempotencyKey() {
+	m.create_idempotency_key = nil
+	delete(m.clearedFields, article.FieldCreateIdempotencyKey)
+}
+
+// SetCreateRequestDigest sets the "create_request_digest" field.
+func (m *ArticleMutation) SetCreateRequestDigest(s string) {
+	m.create_request_digest = &s
+}
+
+// CreateRequestDigest returns the value of the "create_request_digest" field in the mutation.
+func (m *ArticleMutation) CreateRequestDigest() (r string, exists bool) {
+	v := m.create_request_digest
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateRequestDigest returns the old "create_request_digest" field's value of the Article entity.
+// If the Article object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ArticleMutation) OldCreateRequestDigest(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreateRequestDigest is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreateRequestDigest requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateRequestDigest: %w", err)
+	}
+	return oldValue.CreateRequestDigest, nil
+}
+
+// ClearCreateRequestDigest clears the value of the "create_request_digest" field.
+func (m *ArticleMutation) ClearCreateRequestDigest() {
+	m.create_request_digest = nil
+	m.clearedFields[article.FieldCreateRequestDigest] = struct{}{}
+}
+
+// CreateRequestDigestCleared returns if the "create_request_digest" field was cleared in this mutation.
+func (m *ArticleMutation) CreateRequestDigestCleared() bool {
+	_, ok := m.clearedFields[article.FieldCreateRequestDigest]
+	return ok
+}
+
+// ResetCreateRequestDigest resets all changes to the "create_request_digest" field.
+func (m *ArticleMutation) ResetCreateRequestDigest() {
+	m.create_request_digest = nil
+	delete(m.clearedFields, article.FieldCreateRequestDigest)
 }
 
 // SetContentMd sets the "content_md" field.
@@ -5288,7 +5388,7 @@ func (m *ArticleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ArticleMutation) Fields() []string {
-	fields := make([]string, 0, 44)
+	fields := make([]string, 0, 46)
 	if m.deleted_at != nil {
 		fields = append(fields, article.FieldDeletedAt)
 	}
@@ -5303,6 +5403,12 @@ func (m *ArticleMutation) Fields() []string {
 	}
 	if m.title != nil {
 		fields = append(fields, article.FieldTitle)
+	}
+	if m.create_idempotency_key != nil {
+		fields = append(fields, article.FieldCreateIdempotencyKey)
+	}
+	if m.create_request_digest != nil {
+		fields = append(fields, article.FieldCreateRequestDigest)
 	}
 	if m.content_md != nil {
 		fields = append(fields, article.FieldContentMd)
@@ -5439,6 +5545,10 @@ func (m *ArticleMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case article.FieldTitle:
 		return m.Title()
+	case article.FieldCreateIdempotencyKey:
+		return m.CreateIdempotencyKey()
+	case article.FieldCreateRequestDigest:
+		return m.CreateRequestDigest()
 	case article.FieldContentMd:
 		return m.ContentMd()
 	case article.FieldContentHTML:
@@ -5536,6 +5646,10 @@ func (m *ArticleMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUpdatedAt(ctx)
 	case article.FieldTitle:
 		return m.OldTitle(ctx)
+	case article.FieldCreateIdempotencyKey:
+		return m.OldCreateIdempotencyKey(ctx)
+	case article.FieldCreateRequestDigest:
+		return m.OldCreateRequestDigest(ctx)
 	case article.FieldContentMd:
 		return m.OldContentMd(ctx)
 	case article.FieldContentHTML:
@@ -5657,6 +5771,20 @@ func (m *ArticleMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTitle(v)
+		return nil
+	case article.FieldCreateIdempotencyKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateIdempotencyKey(v)
+		return nil
+	case article.FieldCreateRequestDigest:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateRequestDigest(v)
 		return nil
 	case article.FieldContentMd:
 		v, ok := value.(string)
@@ -6075,6 +6203,12 @@ func (m *ArticleMutation) ClearedFields() []string {
 	if m.FieldCleared(article.FieldDeletedAt) {
 		fields = append(fields, article.FieldDeletedAt)
 	}
+	if m.FieldCleared(article.FieldCreateIdempotencyKey) {
+		fields = append(fields, article.FieldCreateIdempotencyKey)
+	}
+	if m.FieldCleared(article.FieldCreateRequestDigest) {
+		fields = append(fields, article.FieldCreateRequestDigest)
+	}
 	if m.FieldCleared(article.FieldContentMd) {
 		fields = append(fields, article.FieldContentMd)
 	}
@@ -6154,6 +6288,12 @@ func (m *ArticleMutation) ClearField(name string) error {
 	switch name {
 	case article.FieldDeletedAt:
 		m.ClearDeletedAt()
+		return nil
+	case article.FieldCreateIdempotencyKey:
+		m.ClearCreateIdempotencyKey()
+		return nil
+	case article.FieldCreateRequestDigest:
+		m.ClearCreateRequestDigest()
 		return nil
 	case article.FieldContentMd:
 		m.ClearContentMd()
@@ -6240,6 +6380,12 @@ func (m *ArticleMutation) ResetField(name string) error {
 		return nil
 	case article.FieldTitle:
 		m.ResetTitle()
+		return nil
+	case article.FieldCreateIdempotencyKey:
+		m.ResetCreateIdempotencyKey()
+		return nil
+	case article.FieldCreateRequestDigest:
+		m.ResetCreateRequestDigest()
 		return nil
 	case article.FieldContentMd:
 		m.ResetContentMd()

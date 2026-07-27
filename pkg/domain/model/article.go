@@ -82,7 +82,7 @@ type Article struct {
 
 // CreateArticleRequest 定义了创建文章的请求体
 type CreateArticleRequest struct {
-	Title                string              `json:"title" binding:"required"`
+	Title                string              `json:"title"` // 草稿允许暂时先不设置标题
 	ContentMd            string              `json:"content_md"`
 	CoverURL             string              `json:"cover_url"`
 	Status               string              `json:"status" binding:"omitempty,oneof=DRAFT PUBLISHED ARCHIVED SCHEDULED"`
@@ -314,7 +314,9 @@ type UpdateArticleComputedParams struct {
 // CreateArticleParams 封装了创建文章时需要持久化的所有数据。
 type CreateArticleParams struct {
 	Title                string
-	OwnerID              uint // 文章作者ID（多人共创功能）
+	CreateIdempotencyKey string // 内部字段：按认证用户隔离后的创建幂等键摘要
+	CreateRequestDigest  string // 内部字段：规范化创建请求摘要
+	OwnerID              uint   // 文章作者ID（多人共创功能）
 	ContentMd            string
 	ContentHTML          string
 	CoverURL             string

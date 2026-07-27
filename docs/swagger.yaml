@@ -1248,11 +1248,10 @@ definitions:
           type: string
         type: array
       title:
+        description: 草稿允许暂时先不设置标题
         type: string
       top_img_url:
         type: string
-    required:
-    - title
     type: object
   model.CreateDocSeriesRequest:
     properties:
@@ -3917,6 +3916,11 @@ paths:
       - application/json
       description: 根据提供的请求体创建一个新文章。总字数、阅读时长和IP属地由后端自动计算。
       parameters:
+      - description: 可选的创建幂等键，最长 200 字节
+        in: header
+        maxLength: 200
+        name: Idempotency-Key
+        type: string
       - description: 创建文章的请求体
         in: body
         name: article
@@ -3937,6 +3941,10 @@ paths:
               type: object
         "400":
           description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: 幂等键或文章数据冲突
           schema:
             $ref: '#/definitions/response.Response'
         "500":
@@ -4034,6 +4042,14 @@ paths:
               type: object
         "400":
           description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 文章不存在
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: 文章状态或数据冲突
           schema:
             $ref: '#/definitions/response.Response'
         "500":

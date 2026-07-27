@@ -80,6 +80,16 @@ func Title(v string) predicate.Article {
 	return predicate.Article(sql.FieldEQ(FieldTitle, v))
 }
 
+// CreateIdempotencyKey applies equality check predicate on the "create_idempotency_key" field. It's identical to CreateIdempotencyKeyEQ.
+func CreateIdempotencyKey(v string) predicate.Article {
+	return predicate.Article(sql.FieldEQ(FieldCreateIdempotencyKey, v))
+}
+
+// CreateRequestDigest applies equality check predicate on the "create_request_digest" field. It's identical to CreateRequestDigestEQ.
+func CreateRequestDigest(v string) predicate.Article {
+	return predicate.Article(sql.FieldEQ(FieldCreateRequestDigest, v))
+}
+
 // ContentMd applies equality check predicate on the "content_md" field. It's identical to ContentMdEQ.
 func ContentMd(v string) predicate.Article {
 	return predicate.Article(sql.FieldEQ(FieldContentMd, v))
@@ -488,6 +498,156 @@ func TitleEqualFold(v string) predicate.Article {
 // TitleContainsFold applies the ContainsFold predicate on the "title" field.
 func TitleContainsFold(v string) predicate.Article {
 	return predicate.Article(sql.FieldContainsFold(FieldTitle, v))
+}
+
+// CreateIdempotencyKeyEQ applies the EQ predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyEQ(v string) predicate.Article {
+	return predicate.Article(sql.FieldEQ(FieldCreateIdempotencyKey, v))
+}
+
+// CreateIdempotencyKeyNEQ applies the NEQ predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyNEQ(v string) predicate.Article {
+	return predicate.Article(sql.FieldNEQ(FieldCreateIdempotencyKey, v))
+}
+
+// CreateIdempotencyKeyIn applies the In predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyIn(vs ...string) predicate.Article {
+	return predicate.Article(sql.FieldIn(FieldCreateIdempotencyKey, vs...))
+}
+
+// CreateIdempotencyKeyNotIn applies the NotIn predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyNotIn(vs ...string) predicate.Article {
+	return predicate.Article(sql.FieldNotIn(FieldCreateIdempotencyKey, vs...))
+}
+
+// CreateIdempotencyKeyGT applies the GT predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyGT(v string) predicate.Article {
+	return predicate.Article(sql.FieldGT(FieldCreateIdempotencyKey, v))
+}
+
+// CreateIdempotencyKeyGTE applies the GTE predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyGTE(v string) predicate.Article {
+	return predicate.Article(sql.FieldGTE(FieldCreateIdempotencyKey, v))
+}
+
+// CreateIdempotencyKeyLT applies the LT predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyLT(v string) predicate.Article {
+	return predicate.Article(sql.FieldLT(FieldCreateIdempotencyKey, v))
+}
+
+// CreateIdempotencyKeyLTE applies the LTE predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyLTE(v string) predicate.Article {
+	return predicate.Article(sql.FieldLTE(FieldCreateIdempotencyKey, v))
+}
+
+// CreateIdempotencyKeyContains applies the Contains predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyContains(v string) predicate.Article {
+	return predicate.Article(sql.FieldContains(FieldCreateIdempotencyKey, v))
+}
+
+// CreateIdempotencyKeyHasPrefix applies the HasPrefix predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyHasPrefix(v string) predicate.Article {
+	return predicate.Article(sql.FieldHasPrefix(FieldCreateIdempotencyKey, v))
+}
+
+// CreateIdempotencyKeyHasSuffix applies the HasSuffix predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyHasSuffix(v string) predicate.Article {
+	return predicate.Article(sql.FieldHasSuffix(FieldCreateIdempotencyKey, v))
+}
+
+// CreateIdempotencyKeyIsNil applies the IsNil predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyIsNil() predicate.Article {
+	return predicate.Article(sql.FieldIsNull(FieldCreateIdempotencyKey))
+}
+
+// CreateIdempotencyKeyNotNil applies the NotNil predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyNotNil() predicate.Article {
+	return predicate.Article(sql.FieldNotNull(FieldCreateIdempotencyKey))
+}
+
+// CreateIdempotencyKeyEqualFold applies the EqualFold predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyEqualFold(v string) predicate.Article {
+	return predicate.Article(sql.FieldEqualFold(FieldCreateIdempotencyKey, v))
+}
+
+// CreateIdempotencyKeyContainsFold applies the ContainsFold predicate on the "create_idempotency_key" field.
+func CreateIdempotencyKeyContainsFold(v string) predicate.Article {
+	return predicate.Article(sql.FieldContainsFold(FieldCreateIdempotencyKey, v))
+}
+
+// CreateRequestDigestEQ applies the EQ predicate on the "create_request_digest" field.
+func CreateRequestDigestEQ(v string) predicate.Article {
+	return predicate.Article(sql.FieldEQ(FieldCreateRequestDigest, v))
+}
+
+// CreateRequestDigestNEQ applies the NEQ predicate on the "create_request_digest" field.
+func CreateRequestDigestNEQ(v string) predicate.Article {
+	return predicate.Article(sql.FieldNEQ(FieldCreateRequestDigest, v))
+}
+
+// CreateRequestDigestIn applies the In predicate on the "create_request_digest" field.
+func CreateRequestDigestIn(vs ...string) predicate.Article {
+	return predicate.Article(sql.FieldIn(FieldCreateRequestDigest, vs...))
+}
+
+// CreateRequestDigestNotIn applies the NotIn predicate on the "create_request_digest" field.
+func CreateRequestDigestNotIn(vs ...string) predicate.Article {
+	return predicate.Article(sql.FieldNotIn(FieldCreateRequestDigest, vs...))
+}
+
+// CreateRequestDigestGT applies the GT predicate on the "create_request_digest" field.
+func CreateRequestDigestGT(v string) predicate.Article {
+	return predicate.Article(sql.FieldGT(FieldCreateRequestDigest, v))
+}
+
+// CreateRequestDigestGTE applies the GTE predicate on the "create_request_digest" field.
+func CreateRequestDigestGTE(v string) predicate.Article {
+	return predicate.Article(sql.FieldGTE(FieldCreateRequestDigest, v))
+}
+
+// CreateRequestDigestLT applies the LT predicate on the "create_request_digest" field.
+func CreateRequestDigestLT(v string) predicate.Article {
+	return predicate.Article(sql.FieldLT(FieldCreateRequestDigest, v))
+}
+
+// CreateRequestDigestLTE applies the LTE predicate on the "create_request_digest" field.
+func CreateRequestDigestLTE(v string) predicate.Article {
+	return predicate.Article(sql.FieldLTE(FieldCreateRequestDigest, v))
+}
+
+// CreateRequestDigestContains applies the Contains predicate on the "create_request_digest" field.
+func CreateRequestDigestContains(v string) predicate.Article {
+	return predicate.Article(sql.FieldContains(FieldCreateRequestDigest, v))
+}
+
+// CreateRequestDigestHasPrefix applies the HasPrefix predicate on the "create_request_digest" field.
+func CreateRequestDigestHasPrefix(v string) predicate.Article {
+	return predicate.Article(sql.FieldHasPrefix(FieldCreateRequestDigest, v))
+}
+
+// CreateRequestDigestHasSuffix applies the HasSuffix predicate on the "create_request_digest" field.
+func CreateRequestDigestHasSuffix(v string) predicate.Article {
+	return predicate.Article(sql.FieldHasSuffix(FieldCreateRequestDigest, v))
+}
+
+// CreateRequestDigestIsNil applies the IsNil predicate on the "create_request_digest" field.
+func CreateRequestDigestIsNil() predicate.Article {
+	return predicate.Article(sql.FieldIsNull(FieldCreateRequestDigest))
+}
+
+// CreateRequestDigestNotNil applies the NotNil predicate on the "create_request_digest" field.
+func CreateRequestDigestNotNil() predicate.Article {
+	return predicate.Article(sql.FieldNotNull(FieldCreateRequestDigest))
+}
+
+// CreateRequestDigestEqualFold applies the EqualFold predicate on the "create_request_digest" field.
+func CreateRequestDigestEqualFold(v string) predicate.Article {
+	return predicate.Article(sql.FieldEqualFold(FieldCreateRequestDigest, v))
+}
+
+// CreateRequestDigestContainsFold applies the ContainsFold predicate on the "create_request_digest" field.
+func CreateRequestDigestContainsFold(v string) predicate.Article {
+	return predicate.Article(sql.FieldContainsFold(FieldCreateRequestDigest, v))
 }
 
 // ContentMdEQ applies the EQ predicate on the "content_md" field.

@@ -1643,6 +1643,13 @@ const docTemplate = `{
                 "summary": "创建新文章",
                 "parameters": [
                     {
+                        "maxLength": 200,
+                        "type": "string",
+                        "description": "可选的创建幂等键，最长 200 字节",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "description": "创建文章的请求体",
                         "name": "article",
                         "in": "body",
@@ -1673,6 +1680,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "幂等键或文章数据冲突",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2194,6 +2207,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "文章状态或数据冲突",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -14128,9 +14153,6 @@ const docTemplate = `{
         },
         "model.CreateArticleRequest": {
             "type": "object",
-            "required": [
-                "title"
-            ],
             "properties": {
                 "abbrlink": {
                     "type": "string"
@@ -14246,6 +14268,7 @@ const docTemplate = `{
                     }
                 },
                 "title": {
+                    "description": "草稿允许暂时先不设置标题",
                     "type": "string"
                 },
                 "top_img_url": {

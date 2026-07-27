@@ -118,6 +118,46 @@ func (_u *ArticleUpdate) SetNillableTitle(v *string) *ArticleUpdate {
 	return _u
 }
 
+// SetCreateIdempotencyKey sets the "create_idempotency_key" field.
+func (_u *ArticleUpdate) SetCreateIdempotencyKey(v string) *ArticleUpdate {
+	_u.mutation.SetCreateIdempotencyKey(v)
+	return _u
+}
+
+// SetNillableCreateIdempotencyKey sets the "create_idempotency_key" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableCreateIdempotencyKey(v *string) *ArticleUpdate {
+	if v != nil {
+		_u.SetCreateIdempotencyKey(*v)
+	}
+	return _u
+}
+
+// ClearCreateIdempotencyKey clears the value of the "create_idempotency_key" field.
+func (_u *ArticleUpdate) ClearCreateIdempotencyKey() *ArticleUpdate {
+	_u.mutation.ClearCreateIdempotencyKey()
+	return _u
+}
+
+// SetCreateRequestDigest sets the "create_request_digest" field.
+func (_u *ArticleUpdate) SetCreateRequestDigest(v string) *ArticleUpdate {
+	_u.mutation.SetCreateRequestDigest(v)
+	return _u
+}
+
+// SetNillableCreateRequestDigest sets the "create_request_digest" field if the given value is not nil.
+func (_u *ArticleUpdate) SetNillableCreateRequestDigest(v *string) *ArticleUpdate {
+	if v != nil {
+		_u.SetCreateRequestDigest(*v)
+	}
+	return _u
+}
+
+// ClearCreateRequestDigest clears the value of the "create_request_digest" field.
+func (_u *ArticleUpdate) ClearCreateRequestDigest() *ArticleUpdate {
+	_u.mutation.ClearCreateRequestDigest()
+	return _u
+}
+
 // SetContentMd sets the "content_md" field.
 func (_u *ArticleUpdate) SetContentMd(v string) *ArticleUpdate {
 	_u.mutation.SetContentMd(v)
@@ -1025,9 +1065,14 @@ func (_u *ArticleUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ArticleUpdate) check() error {
-	if v, ok := _u.mutation.Title(); ok {
-		if err := article.TitleValidator(v); err != nil {
-			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Article.title": %w`, err)}
+	if v, ok := _u.mutation.CreateIdempotencyKey(); ok {
+		if err := article.CreateIdempotencyKeyValidator(v); err != nil {
+			return &ValidationError{Name: "create_idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Article.create_idempotency_key": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.CreateRequestDigest(); ok {
+		if err := article.CreateRequestDigestValidator(v); err != nil {
+			return &ValidationError{Name: "create_request_digest", err: fmt.Errorf(`ent: validator failed for field "Article.create_request_digest": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Status(); ok {
@@ -1111,6 +1156,18 @@ func (_u *ArticleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Title(); ok {
 		_spec.SetField(article.FieldTitle, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.CreateIdempotencyKey(); ok {
+		_spec.SetField(article.FieldCreateIdempotencyKey, field.TypeString, value)
+	}
+	if _u.mutation.CreateIdempotencyKeyCleared() {
+		_spec.ClearField(article.FieldCreateIdempotencyKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.CreateRequestDigest(); ok {
+		_spec.SetField(article.FieldCreateRequestDigest, field.TypeString, value)
+	}
+	if _u.mutation.CreateRequestDigestCleared() {
+		_spec.ClearField(article.FieldCreateRequestDigest, field.TypeString)
 	}
 	if value, ok := _u.mutation.ContentMd(); ok {
 		_spec.SetField(article.FieldContentMd, field.TypeString, value)
@@ -1626,6 +1683,46 @@ func (_u *ArticleUpdateOne) SetNillableTitle(v *string) *ArticleUpdateOne {
 	if v != nil {
 		_u.SetTitle(*v)
 	}
+	return _u
+}
+
+// SetCreateIdempotencyKey sets the "create_idempotency_key" field.
+func (_u *ArticleUpdateOne) SetCreateIdempotencyKey(v string) *ArticleUpdateOne {
+	_u.mutation.SetCreateIdempotencyKey(v)
+	return _u
+}
+
+// SetNillableCreateIdempotencyKey sets the "create_idempotency_key" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableCreateIdempotencyKey(v *string) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetCreateIdempotencyKey(*v)
+	}
+	return _u
+}
+
+// ClearCreateIdempotencyKey clears the value of the "create_idempotency_key" field.
+func (_u *ArticleUpdateOne) ClearCreateIdempotencyKey() *ArticleUpdateOne {
+	_u.mutation.ClearCreateIdempotencyKey()
+	return _u
+}
+
+// SetCreateRequestDigest sets the "create_request_digest" field.
+func (_u *ArticleUpdateOne) SetCreateRequestDigest(v string) *ArticleUpdateOne {
+	_u.mutation.SetCreateRequestDigest(v)
+	return _u
+}
+
+// SetNillableCreateRequestDigest sets the "create_request_digest" field if the given value is not nil.
+func (_u *ArticleUpdateOne) SetNillableCreateRequestDigest(v *string) *ArticleUpdateOne {
+	if v != nil {
+		_u.SetCreateRequestDigest(*v)
+	}
+	return _u
+}
+
+// ClearCreateRequestDigest clears the value of the "create_request_digest" field.
+func (_u *ArticleUpdateOne) ClearCreateRequestDigest() *ArticleUpdateOne {
+	_u.mutation.ClearCreateRequestDigest()
 	return _u
 }
 
@@ -2549,9 +2646,14 @@ func (_u *ArticleUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ArticleUpdateOne) check() error {
-	if v, ok := _u.mutation.Title(); ok {
-		if err := article.TitleValidator(v); err != nil {
-			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Article.title": %w`, err)}
+	if v, ok := _u.mutation.CreateIdempotencyKey(); ok {
+		if err := article.CreateIdempotencyKeyValidator(v); err != nil {
+			return &ValidationError{Name: "create_idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Article.create_idempotency_key": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.CreateRequestDigest(); ok {
+		if err := article.CreateRequestDigestValidator(v); err != nil {
+			return &ValidationError{Name: "create_request_digest", err: fmt.Errorf(`ent: validator failed for field "Article.create_request_digest": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Status(); ok {
@@ -2652,6 +2754,18 @@ func (_u *ArticleUpdateOne) sqlSave(ctx context.Context) (_node *Article, err er
 	}
 	if value, ok := _u.mutation.Title(); ok {
 		_spec.SetField(article.FieldTitle, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.CreateIdempotencyKey(); ok {
+		_spec.SetField(article.FieldCreateIdempotencyKey, field.TypeString, value)
+	}
+	if _u.mutation.CreateIdempotencyKeyCleared() {
+		_spec.ClearField(article.FieldCreateIdempotencyKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.CreateRequestDigest(); ok {
+		_spec.SetField(article.FieldCreateRequestDigest, field.TypeString, value)
+	}
+	if _u.mutation.CreateRequestDigestCleared() {
+		_spec.ClearField(article.FieldCreateRequestDigest, field.TypeString)
 	}
 	if value, ok := _u.mutation.ContentMd(); ok {
 		_spec.SetField(article.FieldContentMd, field.TypeString, value)
