@@ -3,6 +3,7 @@ package auth_handler
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -446,8 +447,10 @@ func (h *AuthHandler) ForgotPasswordRequest(c *gin.Context) {
 		return
 	}
 
-	// 调用 service，无论用户是否存在，都返回成功，防止邮箱枚举攻击
-	h.authSvc.RequestPasswordReset(c.Request.Context(), req.Email)
+	// 无论用户是否存在或内部处理是否成功，都返回相同响应，防止邮箱枚举攻击。
+	if err := h.authSvc.RequestPasswordReset(c.Request.Context(), req.Email); err != nil {
+		log.Printf("[ERROR] 处理密码重置邮件请求失败: %v", err)
+	}
 	response.Success(c, nil, "如果该邮箱已注册，您将会收到一封密码重置邮件。")
 }
 

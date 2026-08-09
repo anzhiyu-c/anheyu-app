@@ -400,11 +400,20 @@ func (s *authService) Register(ctx context.Context, email, nickname, password st
 			return false, fmt.Errorf("用户已创建，但生成激活邮件公共ID失败: %w", err)
 		}
 
-		sign, err := s.tokenSvc.GenerateSignedToken(publicUserID, 24*time.Hour)
+		sign, err := s.tokenSvc.GenerateSignedToken(
+			publicUserID,
+			time.Duration(constant.ActivationTokenTTLMinutes)*time.Minute,
+		)
 		if err != nil {
 			return false, fmt.Errorf("用户已创建，但生成激活令牌失败: %w", err)
 		}
-		go s.emailSvc.SendActivationEmail(context.Background(), newUser.Email, newUser.Nickname, publicUserID, sign)
+		go func() {
+			if err := s.emailSvc.SendActivationEmail(context.Background(), newUser.Email, newUser.Nickname, publicUserID, sign); err != nil {
+				log.Printf("[ERROR] 发送账号激活邮件失败 (PublicUserID: %s): %v", publicUserID, err)
+				return
+			}
+			log.Printf("[INFO] 账号激活邮件发送成功 (PublicUserID: %s)", publicUserID)
+		}()
 	}
 
 	return activationEnabled, nil
@@ -438,6 +447,8 @@ func (s *authService) ActivateUser(ctx context.Context, userID uint, sign string
 
 // RequestPasswordReset 实现了请求重置密码的业务逻辑
 func (s *authService) RequestPasswordReset(ctx context.Context, email string) error {
+	email = strings.ToLower(strings.TrimSpace(email))
+
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		fmt.Printf("请求重置密码时查询用户失败: %v\n", err)
@@ -453,11 +464,20 @@ func (s *authService) RequestPasswordReset(ctx context.Context, email string) er
 		return fmt.Errorf("生成重置密码邮件公共ID失败: %w", err)
 	}
 
-	sign, err := s.tokenSvc.GenerateSignedToken(publicUserID, 1*time.Hour) // 令牌使用公共 ID
+	sign, err := s.tokenSvc.GenerateSignedToken(
+		publicUserID,
+		time.Duration(constant.PasswordResetTokenTTLMinutes)*time.Minute,
+	) // 令牌使用公共 ID
 	if err != nil {
 		return fmt.Errorf("生成重置令牌失败: %w", err)
 	}
-	go s.emailSvc.SendForgotPasswordEmail(context.Background(), user.Email, user.Nickname, publicUserID, sign)
+	go func() {
+		if err := s.emailSvc.SendForgotPasswordEmail(context.Background(), user.Email, user.Nickname, publicUserID, sign); err != nil {
+			log.Printf("[ERROR] 发送密码重置邮件失败 (PublicUserID: %s): %v", publicUserID, err)
+			return
+		}
+		log.Printf("[INFO] 密码重置邮件发送成功 (PublicUserID: %s)", publicUserID)
+	}()
 
 	return nil
 }

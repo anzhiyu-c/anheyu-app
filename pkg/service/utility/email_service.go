@@ -46,6 +46,8 @@ type emailService struct {
 	parserSvc       *parser_service.Service
 }
 
+type authEmailTemplateData map[string]interface{}
+
 // NewEmailService 是 emailService 的构造函数
 func NewEmailService(settingSvc setting.SettingService, notificationSvc notification.Service, parserSvc *parser_service.Service) EmailService {
 	return &emailService{
@@ -384,22 +386,25 @@ func (s *emailService) SendActivationEmail(ctx context.Context, toEmail, nicknam
 	siteURL = strings.TrimRight(siteURL, "/")
 
 	activateLink := fmt.Sprintf("%s/activate?id=%s&sign=%s", siteURL, userID, sign)
-	data := map[string]string{
-		"Nickname":     nickname,
-		"AppName":      appName,
-		"ActivateLink": activateLink,
+	data := authEmailTemplateData{
+		"Nickname":      nickname,
+		"AppName":       appName,
+		"ActivateLink":  activateLink,
+		"ExpireMinutes": constant.ActivationTokenTTLMinutes,
 	}
 
-	subject, err := renderTemplate(subjectTplStr, data)
+	subject, err := renderAuthEmailTemplate(subjectTplStr, data)
 	if err != nil {
 		return fmt.Errorf("渲染激活邮件主题失败: %w", err)
 	}
-	body, err := renderTemplate(bodyTplStr, data)
+	body, err := renderAuthEmailTemplate(bodyTplStr, data)
 	if err != nil {
 		return fmt.Errorf("渲染激活邮件正文失败: %w", err)
 	}
 
-	go func() { _ = s.send(toEmail, subject, body) }()
+	if err := s.send(toEmail, subject, body); err != nil {
+		return fmt.Errorf("发送激活邮件失败: %w", err)
+	}
 	return nil
 }
 
@@ -418,22 +423,25 @@ func (s *emailService) SendForgotPasswordEmail(ctx context.Context, toEmail, nic
 	siteURL = strings.TrimRight(siteURL, "/")
 
 	resetLink := buildResetPasswordLink(siteURL, userID, sign)
-	data := map[string]string{
-		"Nickname":  nickname,
-		"AppName":   appName,
-		"ResetLink": resetLink,
+	data := authEmailTemplateData{
+		"Nickname":      nickname,
+		"AppName":       appName,
+		"ResetLink":     resetLink,
+		"ExpireMinutes": constant.PasswordResetTokenTTLMinutes,
 	}
 
-	subject, err := renderTemplate(subjectTplStr, data)
+	subject, err := renderAuthEmailTemplate(subjectTplStr, data)
 	if err != nil {
 		return fmt.Errorf("渲染重置密码邮件主题失败: %w", err)
 	}
-	body, err := renderTemplate(bodyTplStr, data)
+	body, err := renderAuthEmailTemplate(bodyTplStr, data)
 	if err != nil {
 		return fmt.Errorf("渲染重置密码邮件正文失败: %w", err)
 	}
 
-	go func() { _ = s.send(toEmail, subject, body) }()
+	if err := s.send(toEmail, subject, body); err != nil {
+		return fmt.Errorf("发送重置密码邮件失败: %w", err)
+	}
 	return nil
 }
 
@@ -861,6 +869,27 @@ func (s *emailService) send(to, subject, body string) error {
 // renderTemplate 是一个渲染 Go 模板的辅助函数
 func renderTemplate(tplStr string, data interface{}) (string, error) {
 	tpl, err := template.New("email").Parse(tplStr)
+	if err != nil {
+		return "", err
+	}
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, data); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// renderAuthEmailTemplate 同时支持后台公开的变量和历史 Go 模板变量。
+func renderAuthEmailTemplate(tplStr string, data authEmailTemplateData) (string, error) {
+	funcs := template.FuncMap{
+		"nick":           func() interface{} { return data["Nickname"] },
+		"site_name":      func() interface{} { return data["AppName"] },
+		"reset_link":     func() interface{} { return data["ResetLink"] },
+		"activate_link":  func() interface{} { return data["ActivateLink"] },
+		"expire_minutes": func() interface{} { return data["ExpireMinutes"] },
+	}
+
+	tpl, err := template.New("email").Funcs(funcs).Parse(tplStr)
 	if err != nil {
 		return "", err
 	}
