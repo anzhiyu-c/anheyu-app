@@ -25,7 +25,11 @@ type Metadata struct {
 	Version     string `json:"version"`
 	Description string `json:"description"`
 	Author      string `json:"author"`
-	Type        string `json:"type"` // "search", "general" 等
+	Type        string `json:"type"` // 兼容保留的展示字段（如 "search"），新插件建议使用 Types
+	// Types 插件提供的能力类型列表（如 ["searcher", "eventhook"]），由 SDK 自动填充
+	Types []string `json:"types,omitempty"`
+	// Homepage 插件主页或仓库地址
+	Homepage string `json:"homepage,omitempty"`
 }
 
 // Handshake 是主程序与插件之间的握手配置，双方必须一致才能通信
@@ -35,9 +39,34 @@ var Handshake = goplugin.HandshakeConfig{
 	MagicCookieValue: "anheyu-plugin-v1",
 }
 
+// 插件类型名常量（PluginMap 的 key，宿主与插件双方必须一致）
+const (
+	TypeSearcher  = "searcher"
+	TypeEventHook = "eventhook"
+)
+
 // PluginMap 是插件类型到接口的映射（用于 go-plugin 发现插件实现了哪些接口）
 var PluginMap = map[string]goplugin.Plugin{
-	"searcher": &SearcherPlugin{},
+	TypeSearcher:  &SearcherPlugin{},
+	TypeEventHook: &EventHookPlugin{},
+}
+
+// rpcCallWithTimeout 带超时的 RPC 调用
+// 注意：net/rpc.Call 不支持取消，超时后底层 goroutine 会继续运行直到 RPC 完成或连接断开。
+// 这是 net/rpc 的固有限制。如需完全可取消，应迁移到 gRPC 协议。
+func rpcCallWithTimeout(client *rpc.Client, method string, args interface{}, reply interface{}) error {
+	done := make(chan error, 1)
+	go func() {
+		done <- client.Call(method, args, reply)
+	}()
+
+	select {
+	case err := <-done:
+		return err
+	case <-time.After(rpcCallTimeout):
+		log.Printf("[Plugin] RPC 调用 %s 超时（%v），底层调用仍在后台运行", method, rpcCallTimeout)
+		return fmt.Errorf("RPC call %s timed out after %v", method, rpcCallTimeout)
+	}
 }
 
 // --- Searcher 插件接口（RPC 模式） ---
@@ -121,21 +150,8 @@ type SearcherRPCClient struct {
 }
 
 // callWithTimeout 带超时的 RPC 调用
-// 注意：net/rpc.Call 不支持取消，超时后底层 goroutine 会继续运行直到 RPC 完成或连接断开。
-// 这是 net/rpc 的固有限制。如需完全可取消，应迁移到 gRPC 协议。
 func (c *SearcherRPCClient) callWithTimeout(method string, args interface{}, reply interface{}) error {
-	done := make(chan error, 1)
-	go func() {
-		done <- c.client.Call(method, args, reply)
-	}()
-
-	select {
-	case err := <-done:
-		return err
-	case <-time.After(rpcCallTimeout):
-		log.Printf("[Plugin] RPC 调用 %s 超时（%v），底层调用仍在后台运行", method, rpcCallTimeout)
-		return fmt.Errorf("RPC call %s timed out after %v", method, rpcCallTimeout)
-	}
+	return rpcCallWithTimeout(c.client, method, args, reply)
 }
 
 func (c *SearcherRPCClient) Search(ctx context.Context, query string, page int, size int) (*model.SearchResult, error) {

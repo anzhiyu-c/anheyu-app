@@ -1,0 +1,38 @@
+{
+  "manifest_version": 1,
+  "id": "webhook-notifier",
+  "name": "Webhook 通知",
+  "version": "1.0.0",
+  "description": "把文章发布、评论创建等站点事件推送到自定义 Webhook 地址",
+  "author": "安知鱼",
+  "homepage": "https://github.com/anzhiyu-c/anheyu-app",
+  "types": ["eventhook"],
+  "entry": {
+    "linux-amd64": "bin/webhook-notifier-linux-amd64",
+    "linux-arm64": "bin/webhook-notifier-linux-arm64",
+    "darwin-amd64": "bin/webhook-notifier-darwin-amd64",
+    "darwin-arm64": "bin/webhook-notifier-darwin-arm64",
+    "windows-amd64": "bin/webhook-notifier-windows-amd64.exe"
+  },
+  "min_app_version": "1.9.0",
+  "config_schema": [
+    {
+      "key": "webhook_url",
+      "label": "Webhook 地址",
+      "type": "string",
+      "required": true,
+      "secret": false,
+      "default": "",
+      "description": "接收事件 POST 请求的完整 URL，事件以 JSON 格式推送"
+    },
+    {
+      "key": "events",
+      "label": "订阅事件",
+      "type": "string",
+      "required": false,
+      "secret": false,
+      "default": "*",
+      "description": "逗号分隔的事件名（如 article.published,comment.created），* 表示全部事件"
+    }
+  ]
+}

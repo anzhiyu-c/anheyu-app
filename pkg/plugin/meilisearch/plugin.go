@@ -16,7 +16,7 @@ import (
 
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
 	"github.com/anzhiyu-c/anheyu-app/pkg/plugin"
-	goplugin "github.com/hashicorp/go-plugin"
+	"github.com/anzhiyu-c/anheyu-app/pkg/plugin/sdk"
 	ms "github.com/meilisearch/meilisearch-go"
 )
 
@@ -256,19 +256,19 @@ func docToHit(doc *meiliDoc) *model.SearchHit {
 }
 
 // Serve 作为 go-plugin 服务端运行（供独立二进制的 main 函数调用）
+// 配置优先级：管理后台下发的插件配置 > 主进程环境变量（旧部署方式兼容）
 func Serve() {
-	host := os.Getenv("ANHEYU_MEILISEARCH_HOST")
-	apiKey := os.Getenv("ANHEYU_MEILISEARCH_API_KEY")
+	cfg := sdk.LoadConfig()
+	host := cfg.StringDefault("host", os.Getenv("ANHEYU_MEILISEARCH_HOST"))
+	apiKey := cfg.StringDefault("api_key", os.Getenv("ANHEYU_MEILISEARCH_API_KEY"))
 
 	searcher, err := NewSearcher(host, apiKey)
 	if err != nil {
 		log.Fatalf("Meilisearch 初始化失败: %v", err)
 	}
 
-	goplugin.Serve(&goplugin.ServeConfig{
-		HandshakeConfig: plugin.Handshake,
-		Plugins: map[string]goplugin.Plugin{
-			"searcher": &plugin.SearcherPlugin{Impl: searcher},
-		},
+	sdk.Serve(sdk.Options{
+		Metadata: searcher.PluginMetadata(),
+		Searcher: searcher,
 	})
 }

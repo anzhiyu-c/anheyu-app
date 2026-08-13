@@ -35,12 +35,27 @@ const (
 	// 分类/标签事件
 	CategoryUpdated Topic = "category:updated"
 	TagUpdated      Topic = "tag:updated"
+
+	// 评论事件
+	CommentCreated Topic = "comment:created"
 )
 
-// ArticlePayload 文章事件载荷（用于 ArticleCreated / ArticleUpdated / ArticleDeleted）
+// ArticlePayload 文章事件载荷（用于 ArticleCreated / ArticleUpdated / ArticleDeleted / ArticlePublished）
 type ArticlePayload struct {
 	Slug     string // abbrlink（优先）
 	PublicID string // 公共 ID（备选，确保两种访问路径都能清缓存）
+	Title    string // 文章标题（供插件事件等订阅者展示使用）
+}
+
+// CommentPayload 评论事件载荷（用于 CommentCreated）
+type CommentPayload struct {
+	ID          uint   // 评论数据库 ID
+	TargetPath  string // 评论所属页面路径
+	TargetTitle string // 评论所属页面标题
+	Nickname    string // 评论者昵称
+	Content     string // 评论内容（原文）
+	IsPublished bool   // 是否已发布（false 表示待审核）
+	IsAdmin     bool   // 是否为管理员评论
 }
 
 // 事件处理器函数类型

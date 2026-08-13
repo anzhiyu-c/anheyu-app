@@ -501,6 +501,8 @@ func NewAppWithOptions(content embed.FS, opts AppOptions) (*App, func(), error) 
 	commentSvc := comment_service.NewService(commentRepo, userRepo, txManager, geoSvc, settingSvc, cacheSvc, taskBroker, fileSvc, parserSvc, pushooSvc, notificationSvc)
 	// 注入图片样式服务，使评论内嵌图片 URL 自动拼默认样式后缀（Plan B Phase 1 Task 1.13.2）
 	commentSvc.SetImageStyleService(imageStyleSvc)
+	// 注入事件总线，评论创建后发布事件（供插件事件钩子等订阅）
+	commentSvc.SetEventBus(eventBus)
 	log.Printf("[DEBUG] CommentService 初始化完成，PushooService 和 NotificationService 已注入")
 	themeSvc := theme.NewThemeService(entClient, userRepo)
 	_ = listener.NewFilePostProcessingListener(eventBus, taskBroker, extractionSvc)
@@ -509,6 +511,10 @@ func NewAppWithOptions(content embed.FS, opts AppOptions) (*App, func(), error) 
 	revalidateSvc := cache.NewRevalidateService()
 	cacheRevalidateListener := listener.NewCacheRevalidateListener(revalidateSvc)
 	cacheRevalidateListener.RegisterHandlers(eventBus)
+
+	// 插件事件桥接：内部事件转发给事件钩子插件（Pro 版复用；插件系统未初始化时为 no-op）
+	pluginEventListener := listener.NewPluginEventListener()
+	pluginEventListener.RegisterHandlers(eventBus)
 
 	// 初始化音乐服务
 	log.Printf("[DEBUG] 正在初始化 MusicService...")
@@ -723,15 +729,10 @@ func NewAppWithOptions(content embed.FS, opts AppOptions) (*App, func(), error) 
 			}
 		}
 
-		// 注册插件管理 API 路由
+		// 注册插件管理 API 路由（AdminAuth 依赖 JWTAuth 先解析出用户信息，必须链式挂载）
 		pluginAdminHandler := plugin_admin_handler.NewHandler(pluginMgr)
-		adminPluginGroup := engine.Group("/api/admin/plugins", mw.AdminAuth())
-		{
-			adminPluginGroup.GET("", pluginAdminHandler.List)
-			adminPluginGroup.POST("/:id/reload", pluginAdminHandler.Reload)
-			adminPluginGroup.POST("/:id/disable", pluginAdminHandler.Disable)
-			adminPluginGroup.POST("/:id/enable", pluginAdminHandler.Enable)
-		}
+		adminPluginGroup := engine.Group("/api/admin/plugins", mw.JWTAuth(), mw.AdminAuth())
+		plugin_admin_handler.RegisterRoutes(adminPluginGroup, pluginAdminHandler)
 
 		// 设置搜索引擎切换回调（插件热加载时自动切换搜索引擎）
 		if pluginMgr != nil {

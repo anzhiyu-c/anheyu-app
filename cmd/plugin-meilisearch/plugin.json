@@ -1,0 +1,38 @@
+{
+  "manifest_version": 1,
+  "id": "search-meilisearch",
+  "name": "Meilisearch 搜索引擎",
+  "version": "1.0.0",
+  "description": "基于 Meilisearch 的全文搜索引擎，支持中文分词与高亮",
+  "author": "安知鱼",
+  "homepage": "https://github.com/anzhiyu-c/anheyu-app",
+  "types": ["searcher"],
+  "entry": {
+    "linux-amd64": "bin/meilisearch-linux-amd64",
+    "linux-arm64": "bin/meilisearch-linux-arm64",
+    "darwin-amd64": "bin/meilisearch-darwin-amd64",
+    "darwin-arm64": "bin/meilisearch-darwin-arm64",
+    "windows-amd64": "bin/meilisearch-windows-amd64.exe"
+  },
+  "min_app_version": "1.9.0",
+  "config_schema": [
+    {
+      "key": "host",
+      "label": "Meilisearch 地址",
+      "type": "string",
+      "required": true,
+      "secret": false,
+      "default": "",
+      "description": "Meilisearch 服务地址，如 http://localhost:7700"
+    },
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "string",
+      "required": false,
+      "secret": true,
+      "default": "",
+      "description": "Meilisearch API Key（未启用鉴权时留空）"
+    }
+  ]
+}

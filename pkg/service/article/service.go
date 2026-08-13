@@ -209,11 +209,11 @@ func (s *serviceImpl) SetImageStyleService(svc image_style.ImageStyleService) {
 	s.styleSvc = svc
 }
 
-func (s *serviceImpl) publishArticleEvent(topic event.Topic, abbrlink, publicID string) {
+func (s *serviceImpl) publishArticleEvent(topic event.Topic, abbrlink, publicID, title string) {
 	if s.eventBus == nil {
 		return
 	}
-	s.eventBus.Publish(topic, &event.ArticlePayload{Slug: abbrlink, PublicID: publicID})
+	s.eventBus.Publish(topic, &event.ArticlePayload{Slug: abbrlink, PublicID: publicID, Title: title})
 }
 
 // createArticleHistory 创建文章历史版本（内部方法）
@@ -1339,7 +1339,7 @@ func (s *serviceImpl) CreateWithOptions(
 		return nil, err
 	}
 
-	s.publishArticleEvent(event.ArticleCreated, newArticle.Abbrlink, newArticle.ID)
+	s.publishArticleEvent(event.ArticleCreated, newArticle.Abbrlink, newArticle.ID, newArticle.Title)
 
 	s.updateSiteStatsInBackground()
 
@@ -1357,6 +1357,8 @@ func (s *serviceImpl) CreateWithOptions(
 
 	// 如果文章发布成功，触发订阅通知
 	if newArticle.Status == "PUBLISHED" {
+		s.publishArticleEvent(event.ArticlePublished, newArticle.Abbrlink, newArticle.ID, newArticle.Title)
+
 		if err := s.subscriberSvc.NotifyArticlePublished(ctx, newArticle); err != nil {
 			log.Printf("[Create] 触发订阅通知失败: %v", err)
 		}
@@ -1698,7 +1700,7 @@ func (s *serviceImpl) Update(ctx context.Context, publicID string, req *model.Up
 		return nil, err
 	}
 
-	s.publishArticleEvent(event.ArticleUpdated, updatedArticle.Abbrlink, publicID)
+	s.publishArticleEvent(event.ArticleUpdated, updatedArticle.Abbrlink, publicID, updatedArticle.Title)
 
 	// 清除特定文章的缓存
 	s.invalidateArticleCache(ctx, publicID, updatedArticle.Abbrlink)
@@ -1717,6 +1719,8 @@ func (s *serviceImpl) Update(ctx context.Context, publicID string, req *model.Up
 
 	// 如果文章状态从非发布变为发布，触发订阅通知
 	if oldStatus != "PUBLISHED" && updatedArticle.Status == "PUBLISHED" {
+		s.publishArticleEvent(event.ArticlePublished, updatedArticle.Abbrlink, publicID, updatedArticle.Title)
+
 		if err := s.subscriberSvc.NotifyArticlePublished(ctx, updatedArticle); err != nil {
 			log.Printf("[Update] 触发订阅通知失败: %v", err)
 		}
@@ -1738,13 +1742,14 @@ func (s *serviceImpl) Update(ctx context.Context, publicID string, req *model.Up
 
 // Delete 处理删除文章的业务逻辑。
 func (s *serviceImpl) Delete(ctx context.Context, publicID string) error {
-	var articleSlug string // 保存 slug 用于事务后发布事件
+	var articleSlug, articleTitle string // 保存 slug/标题 用于事务后发布事件
 	err := s.txManager.Do(ctx, func(repos repository.Repositories) error {
 		article, err := repos.Article.GetByID(ctx, publicID)
 		if err != nil {
 			return err
 		}
 		articleSlug = article.Abbrlink
+		articleTitle = article.Title
 		tagIDs := make([]uint, len(article.PostTags))
 		for i, t := range article.PostTags {
 			tagIDs[i], _, _ = idgen.DecodePublicID(t.ID)
@@ -1804,7 +1809,7 @@ func (s *serviceImpl) Delete(ctx context.Context, publicID string) error {
 		return err
 	}
 
-	s.publishArticleEvent(event.ArticleDeleted, articleSlug, publicID)
+	s.publishArticleEvent(event.ArticleDeleted, articleSlug, publicID, articleTitle)
 
 	s.updateSiteStatsInBackground()
 

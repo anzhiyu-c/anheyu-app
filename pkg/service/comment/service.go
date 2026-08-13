@@ -20,6 +20,7 @@ import (
 
 	"github.com/anzhiyu-c/anheyu-app/internal/app/task"
 	"github.com/anzhiyu-c/anheyu-app/internal/pkg/auth"
+	"github.com/anzhiyu-c/anheyu-app/internal/pkg/event"
 	"github.com/anzhiyu-c/anheyu-app/pkg/constant"
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/repository"
@@ -81,6 +82,8 @@ type Service struct {
 	// styleSvc 可选；非 nil 且 comment_image 策略启用了 image_process.default_style 时，
 	// renderHTMLURLs 返回的评论内嵌图片 URL 会自动追加 "!styleName" 后缀（Plan B Phase 1 Task 1.13.2）。
 	styleSvc image_style.ImageStyleService
+	// eventBus 可选注入；评论创建成功后发布 CommentCreated 事件（供插件事件钩子等订阅）
+	eventBus *event.EventBus
 }
 
 // NewService 创建一个新的评论服务实例。
@@ -115,6 +118,11 @@ func NewService(
 // SetInAppNotificationCallback 设置站内通知回调（供PRO版使用）
 func (s *Service) SetInAppNotificationCallback(callback InAppNotificationCallback) {
 	s.inAppNotificationCallback = callback
+}
+
+// SetEventBus 设置事件总线（可选注入，评论创建后发布事件供订阅者消费）
+func (s *Service) SetEventBus(bus *event.EventBus) {
+	s.eventBus = bus
 }
 
 // SetImageStyleService 注入图片样式服务（可选）。
@@ -399,6 +407,23 @@ func (s *Service) Create(ctx context.Context, req *dto.CreateRequest, ip, ua, re
 	newComment, err := s.repo.Create(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("保存评论失败: %w", err)
+	}
+
+	// 发布评论创建事件（供插件事件钩子等订阅者消费）
+	if s.eventBus != nil {
+		targetTitle := ""
+		if newComment.TargetTitle != nil {
+			targetTitle = *newComment.TargetTitle
+		}
+		s.eventBus.Publish(event.CommentCreated, &event.CommentPayload{
+			ID:          newComment.ID,
+			TargetPath:  newComment.TargetPath,
+			TargetTitle: targetTitle,
+			Nickname:    newComment.Author.Nickname,
+			Content:     newComment.Content,
+			IsPublished: newComment.IsPublished(),
+			IsAdmin:     newComment.IsAdminAuthor,
+		})
 	}
 
 	if newComment.IsPublished() {
