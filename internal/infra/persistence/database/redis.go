@@ -11,6 +11,7 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/anzhiyu-c/anheyu-app/pkg/config"
 
@@ -53,9 +54,11 @@ func NewRedisClient(ctx context.Context, cfg *config.Config) (*redis.Client, err
 	})
 
 	// 3. 检查连接
-	if err := rdb.Ping(ctx).Err(); err != nil {
+	if err := pingWithRetry(ctx, func(attemptCtx context.Context) error { return rdb.Ping(attemptCtx).Err() }, 3, time.Second); err != nil {
 		log.Printf("⚠️  连接 Redis (%s, DB %d) 失败: %v，将使用内存缓存", redisAddr, redisDB, err)
-		rdb.Close()
+		if closeErr := rdb.Close(); closeErr != nil {
+			log.Printf("关闭 Redis 连接失败: %v", closeErr)
+		}
 		return nil, nil
 	}
 

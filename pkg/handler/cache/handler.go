@@ -8,7 +8,9 @@
 package cache
 
 import (
+	"context"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 
@@ -19,6 +21,40 @@ import (
 // Handler 缓存管理 handler
 type Handler struct {
 	revalidateSvc *cache.RevalidateService
+	status        func(context.Context) map[string]any
+	actions       map[string]func(context.Context) error
+	operationMu   sync.Mutex
+}
+
+// Configure adds capabilities owned by the running application, without exposing cache paths.
+func (h *Handler) Configure(status func(context.Context) map[string]any, actions map[string]func(context.Context) error) {
+	h.status, h.actions = status, actions
+}
+
+func (h *Handler) Manage(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
+	var req struct {
+		Type string `json:"type" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "请选择缓存操作")
+		return
+	}
+	action, ok := h.actions[req.Type]
+	if !ok {
+		response.Fail(c, 400, "当前运行模式不支持此操作")
+		return
+	}
+	if !h.operationMu.TryLock() {
+		response.Fail(c, 409, "已有缓存操作正在执行")
+		return
+	}
+	defer h.operationMu.Unlock()
+	if err := action(c.Request.Context()); err != nil {
+		response.Fail(c, 500, "缓存操作失败："+err.Error())
+		return
+	}
+	response.Success(c, nil, "缓存操作完成")
 }
 
 // NewHandler 创建缓存管理 handler
@@ -98,7 +134,12 @@ func (h *Handler) Revalidate(c *gin.Context) {
 // @Router       /api/admin/cache/status [get]
 // @Security     BearerAuth
 func (h *Handler) GetStatus(c *gin.Context) {
-	response.Success(c, gin.H{
-		"enabled": h.revalidateSvc.IsEnabled(),
-	}, "success")
+	c.Header("Cache-Control", "no-store")
+	status := map[string]any{"enabled": h.revalidateSvc.IsEnabled()}
+	if h.status != nil {
+		for key, value := range h.status(c.Request.Context()) {
+			status[key] = value
+		}
+	}
+	response.Success(c, status, "success")
 }

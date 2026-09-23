@@ -13,6 +13,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -28,19 +30,22 @@ type RevalidateService struct {
 func NewRevalidateService() *RevalidateService {
 	// 从环境变量获取配置
 	// SSR 模式下，FRONTEND_URL 指向 Next.js 容器
-	frontendURL := os.Getenv("FRONTEND_URL")
+	frontendURL := strings.TrimRight(strings.TrimSpace(os.Getenv("FRONTEND_URL")), "/")
 	if frontendURL == "" {
-		frontendURL = "http://anheyu-frontend:3000"
+		frontendURL = strings.TrimRight(strings.TrimSpace(os.Getenv("ANHEYU_FRONTEND_URL")), "/")
 	}
-
-	token := os.Getenv("REVALIDATE_TOKEN")
-	if token == "" {
-		token = "anheyu-revalidate-secret"
+	if frontendURL == "" {
+		frontendURL = "http://127.0.0.1:3000"
+		if os.Getenv("ANHEYU_MODE") == "api" {
+			frontendURL = "http://anheyu-frontend:3000"
+		}
+		if port, err := strconv.Atoi(os.Getenv("ANHEYU_FRONTEND_PORT")); err == nil && port > 0 && port <= 65535 {
+			frontendURL = "http://127.0.0.1:" + strconv.Itoa(port)
+		}
 	}
-
-	// 检查是否启用 SSR 模式
-	mode := os.Getenv("ANHEYU_MODE")
-	enabled := mode == "api" // api 模式表示启用了 SSR
+	token := strings.TrimSpace(os.Getenv("REVALIDATE_TOKEN"))
+	// Match the Next.js endpoint: no implicit/default secret and support built-in deployments.
+	enabled := token != ""
 
 	return &RevalidateService{
 		enabled: enabled,

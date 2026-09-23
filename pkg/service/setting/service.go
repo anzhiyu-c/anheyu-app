@@ -12,6 +12,7 @@ import (
 
 	"github.com/anzhiyu-c/anheyu-app/internal/configdef"
 	"github.com/anzhiyu-c/anheyu-app/internal/pkg/event"
+	"github.com/anzhiyu-c/anheyu-app/pkg/constant"
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/repository"
 )
 
@@ -39,12 +40,12 @@ type SettingService interface {
 
 // settingService 是 SettingService 接口的实现
 type settingService struct {
-	repo           repository.SettingRepository
-	cache          map[string]string
-	configVersion  int64 // 配置版本号（毫秒时间戳），每次更新时递增，供前端缓存校验
-	mu             sync.RWMutex
-	publicSetting  map[string]bool
-	eventBus       *event.EventBus
+	repo          repository.SettingRepository
+	cache         map[string]string
+	configVersion int64 // 配置版本号（毫秒时间戳），每次更新时递增，供前端缓存校验
+	mu            sync.RWMutex
+	publicSetting map[string]bool
+	eventBus      *event.EventBus
 }
 
 // NewSettingService 是 settingService 的构造函数
@@ -204,6 +205,15 @@ func (s *settingService) RegisterPublicSettings(keys []string) {
 func unflatten(flatConfig map[string]string) map[string]interface{} {
 	nested := make(map[string]interface{})
 	for key, originalValue := range flatConfig {
+		// These fields are text even when their contents look like numbers or booleans.
+		// Keep legacy inference for other settings to preserve their API types.
+		switch constant.SettingKey(key) {
+		case constant.KeyFrontDeskSiteOwnerName, constant.KeyFrontDeskSiteOwnerEmail,
+			constant.KeyFooterOwnerName, constant.KeyAppName, constant.KeySubTitle,
+			constant.KeySiteDescription, constant.KeySiteKeywords:
+			setNestedValue(nested, key, originalValue)
+			continue
+		}
 		trimmedValue := strings.TrimSpace(originalValue)
 
 		if (strings.HasPrefix(trimmedValue, "{") && strings.HasSuffix(trimmedValue, "}")) ||

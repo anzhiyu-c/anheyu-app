@@ -1374,19 +1374,21 @@ func (s *Service) GetQQInfo(ctx context.Context, qqNumber string, referer string
 	apiURL := s.settingSvc.Get(constant.KeyCommentQQAPIURL.String())
 	apiKey := s.settingSvc.Get(constant.KeyCommentQQAPIKey.String())
 
-	// 如果没有配置API，返回空结果
+	// QQ 官方头像不依赖可选的第三方昵称服务。
+	base := &QQInfoResponse{Avatar: fmt.Sprintf("https://q.qlogo.cn/headimg_dl?dst_uin=%s&spec=640&img_type=jpg", qqNumber)}
 	if apiURL == "" || apiKey == "" {
-		return nil, errors.New("QQ信息查询API未配置")
+		return base, nil
 	}
 
 	// 调用第三方API
 	resp, err := httpGetQQInfo(apiURL, apiKey, qqNumber, referer)
 	if err != nil {
-		log.Printf("获取QQ信息失败: %v", err)
-		return nil, fmt.Errorf("获取QQ信息失败: %w", err)
+		log.Printf("QQ 昵称服务暂不可用，保留官方头像")
+		return base, nil
 	}
 
-	return resp, nil
+	base.Nickname = resp.Nickname
+	return base, nil
 }
 
 // httpGetQQInfo 调用第三方QQ信息API

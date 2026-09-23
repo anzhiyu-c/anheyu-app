@@ -26,6 +26,10 @@ type UserGroupDefinition struct {
 
 // AllSettings 是我们系统中所有配置项的"单一事实来源"
 var AllSettings = []Definition{
+	{Key: constant.KeyFireworksEnable, Value: "false", Comment: "显示用户主动触发的节庆烟花入口", IsPublic: true},
+	{Key: constant.KeyFireworksButtonText, Value: "节日快乐", Comment: "节庆烟花按钮和祝福文案", IsPublic: true},
+	{Key: constant.KeyFireworksMessage, Value: "愿你的每一天都有新的惊喜", Comment: "烟花触发后的纯文本祝福", IsPublic: true},
+
 	// --- 站点基础配置 ---
 	{Key: constant.KeyAppName, Value: "安和鱼", Comment: "应用名称", IsPublic: true},
 	{Key: constant.KeySubTitle, Value: "生活明朗，万物可爱", Comment: "应用副标题", IsPublic: true},
@@ -465,6 +469,8 @@ var AllSettings = []Definition{
 	{Key: constant.KeyMusicPlayerCustomPlaylist, Value: "", Comment: "自定义音乐歌单JSON文件链接（音乐馆页面使用）", IsPublic: true},
 	{Key: constant.KeyMusicCapsuleCustomPlaylist, Value: "", Comment: "音乐胶囊自定义歌单JSON文件链接（胶囊播放器使用，独立于音乐馆配置）", IsPublic: true},
 	{Key: constant.KeyMusicAPIBaseURL, Value: "https://metings.qjqq.cn", Comment: "音乐API基础地址（不带末尾斜杠）", IsPublic: true},
+	{Key: constant.KeyMusicAPIProtocol, Value: "legacy", Comment: "音乐协议：legacy 或 meting", IsPublic: true},
+	{Key: constant.KeyMusicMetingServer, Value: "netease", Comment: "Meting 音乐平台", IsPublic: true},
 	{Key: constant.KeyMusicVinylBackground, Value: "/static/img/music-vinyl-background.png", Comment: "音乐播放器唱片背景图", IsPublic: true},
 	{Key: constant.KeyMusicVinylOuter, Value: "/static/img/music-vinyl-outer.png", Comment: "音乐播放器唱片外圈图", IsPublic: true},
 	{Key: constant.KeyMusicVinylInner, Value: "/static/img/music-vinyl-inner.png", Comment: "音乐播放器唱片内圈图", IsPublic: true},

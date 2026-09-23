@@ -1,10 +1,12 @@
 package frontend
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -47,6 +49,8 @@ func newProxyState(launcher *Launcher) *proxyState {
 		},
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, proxyErr error) {
 			log.Printf("[Frontend Proxy] 代理错误: %v (target: %s)", proxyErr, ps.launcher.GetFrontendURL())
+			w.Header().Set("Cache-Control", "no-store")
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte(`<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>前端服务暂不可用</title>
@@ -60,7 +64,26 @@ func newProxyState(launcher *Launcher) *proxyState {
 			// Add immutable caching for content-hashed Next.js static assets
 			path := resp.Request.URL.Path
 			if strings.HasPrefix(path, "/_next/static/") {
-				resp.Header.Set("Cache-Control", "public, max-age=31536000, immutable")
+				if strings.Contains(strings.ToLower(resp.Header.Get("Content-Type")), "text/html") {
+					if err := resp.Body.Close(); err != nil {
+						log.Printf("[Frontend Proxy] 关闭无效静态资源响应失败: %v", err)
+					}
+					const body = "not found\n"
+					resp.StatusCode = http.StatusNotFound
+					resp.Status = "404 Not Found"
+					resp.Header.Del("Content-Encoding")
+					resp.Header.Del("Etag")
+					resp.Header.Del("Last-Modified")
+					resp.Header.Set("Content-Type", "text/plain; charset=utf-8")
+					resp.Header.Set("Content-Length", strconv.Itoa(len(body)))
+					resp.Body = io.NopCloser(strings.NewReader(body))
+					resp.ContentLength = int64(len(body))
+				}
+				if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNotModified {
+					resp.Header.Set("Cache-Control", "public, max-age=31536000, immutable")
+				} else {
+					resp.Header.Set("Cache-Control", "no-store")
+				}
 			}
 			return nil
 		},
@@ -117,17 +140,12 @@ func cachedStaticActive() bool {
 // When a valid static directory is detected (custom frontend mode), public-facing
 // pages are served from it; admin pages still proxy to Next.js.
 func ProxyMiddleware(launcher *Launcher) gin.HandlerFunc {
+	pageCacheEnabled.Store(true)
 	// Create the reusable proxy once at middleware creation time
 	state := newProxyState(launcher)
 
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
-
-		// Set immutable cache headers for content-hashed static assets
-		// even before proxying (handles edge cases where ModifyResponse might not fire)
-		if strings.HasPrefix(path, "/_next/static/") {
-			c.Header("Cache-Control", "public, max-age=31536000, immutable")
-		}
 
 		if shouldSkipProxy(path, launcher.SkipStaticProxy()) {
 			c.Next()
@@ -144,7 +162,10 @@ func ProxyMiddleware(launcher *Launcher) gin.HandlerFunc {
 		}
 
 		if !launcher.IsRunning() {
-			c.Next()
+			c.Header("Cache-Control", "no-store")
+			c.Header("Retry-After", "5")
+			c.String(http.StatusServiceUnavailable, "前端服务暂不可用，请稍后重试")
+			c.Abort()
 			return
 		}
 

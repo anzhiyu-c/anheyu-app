@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -28,6 +29,27 @@ type pageCache struct {
 
 var sharedPageCache = &pageCache{
 	items: make(map[string]*cacheEntry, 256),
+}
+
+var pageCacheEnabled atomic.Bool
+
+// PageCacheStatus reports only live entries; no request URLs or cached content leave the process.
+func PageCacheStatus() (bool, int) {
+	sharedPageCache.mu.RLock()
+	defer sharedPageCache.mu.RUnlock()
+	count := 0
+	for _, entry := range sharedPageCache.items {
+		if time.Now().Before(entry.expiresAt) {
+			count++
+		}
+	}
+	return pageCacheEnabled.Load(), count
+}
+
+func ClearPageCache() {
+	sharedPageCache.mu.Lock()
+	defer sharedPageCache.mu.Unlock()
+	clear(sharedPageCache.items)
 }
 
 // cacheTTL returns the TTL for a given request path.
@@ -60,6 +82,9 @@ func cacheTTL(path string) time.Duration {
 // isCacheablePath returns true if the path is eligible for response caching.
 // Admin, auth, and user-specific pages are never cached.
 func isCacheablePath(path string) bool {
+	if path == "/sw.js" || path == "/manifest.json" || path == "/offline.html" {
+		return false
+	}
 	skipPrefixes := []string{
 		"/admin", "/login", "/user-center", "/api/",
 		"/_next/", "/f/", "/needcache/", "/static/",
@@ -140,7 +165,7 @@ func buildPageCacheKey(r *http.Request) string {
 // tryServeFromCache attempts to serve the request from the page cache.
 // Returns true if the response was served from cache.
 func tryServeFromCache(w http.ResponseWriter, r *http.Request) bool {
-	if r.Method != "GET" {
+	if r.Method != "GET" || r.Header.Get("RSC") != "" {
 		return false
 	}
 	if !isCacheablePath(r.URL.Path) {
@@ -208,7 +233,11 @@ func wrapForCaching(w http.ResponseWriter, r *http.Request) (*cacheResponseWrite
 	}
 	return crw, func() {
 		// Only cache successful GET responses for cacheable paths
-		if r.Method != "GET" || !isCacheablePath(r.URL.Path) || hasAuthCookie(r) {
+		if r.Method != "GET" || !isCacheablePath(r.URL.Path) || hasAuthCookie(r) || r.Header.Get("RSC") != "" {
+			return
+		}
+		policy := strings.ToLower(crw.Header().Get("Cache-Control"))
+		if strings.Contains(policy, "private") || strings.Contains(policy, "no-store") || strings.Contains(policy, "no-cache") || crw.Header().Get("Set-Cookie") != "" {
 			return
 		}
 		if crw.statusCode >= 200 && crw.statusCode < 300 {

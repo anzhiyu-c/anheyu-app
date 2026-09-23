@@ -86,7 +86,7 @@ func NewSQLDB(cfg *config.Config) (*sql.DB, error) {
 
 	db, err := sql.Open(driverName, dsn)
 	if err != nil {
-		return nil, fmt.Errorf("打开 sql.DB 连接失败 (驱动: %s): %w", driverName, err)
+		return nil, safeConnectionError(driverName, dbHost, dbPort, dbPass, err)
 	}
 
 	// 设置连接池参数
@@ -95,9 +95,15 @@ func NewSQLDB(cfg *config.Config) (*sql.DB, error) {
 	db.SetConnMaxLifetime(time.Hour)
 
 	// 验证数据库连接
-	if err := db.Ping(); err != nil {
-		db.Close() // 如果 ping 失败，关闭连接以释放资源
-		return nil, fmt.Errorf("无法 Ping 通数据库 (DSN: %s): %w", dsn, err)
+	attempts := 5
+	if driverName == "sqlite3" {
+		attempts = 1
+	}
+	if err := pingWithRetry(context.Background(), db.PingContext, attempts, time.Second); err != nil {
+		if closeErr := db.Close(); closeErr != nil {
+			log.Printf("关闭连接失败: %v", safeConnectionError(driverName, dbHost, dbPort, dbPass, closeErr))
+		}
+		return nil, safeConnectionError(driverName, dbHost, dbPort, dbPass, err)
 	}
 
 	log.Printf("✅ %s 数据库连接池创建成功！\n", strings.Title(driver))

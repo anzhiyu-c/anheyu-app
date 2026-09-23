@@ -527,7 +527,7 @@ release:
     - [文档](https://dev.anheyu.com/)
     - [问题反馈](https://github.com/anzhiyu-c/anheyu-app/issues)
 
-    **完整的 SHA256 校验和**：[anheyu-app_{{ .Tag }}_checksums.txt](https://github.com/anzhiyu-c/anheyu-app/releases/download/{{ .Tag }}/anheyu-app_{{ .Tag }}_checksums.txt)
+    **完整的 SHA256 校验和**：[anheyu-app_{{ .Version }}_checksums.txt](https://github.com/anzhiyu-c/anheyu-app/releases/download/{{ .Tag }}/anheyu-app_{{ .Version }}_checksums.txt)
 
 # 公告配置
 announce:

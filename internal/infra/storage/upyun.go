@@ -97,8 +97,9 @@ func ensureStatus(resp *http.Response, expected ...int) error {
 			return nil
 		}
 	}
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-	return fmt.Errorf("又拍云请求失败: HTTP %d %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	// Upstream error bodies are untrusted and may echo operator credentials or
+	// authorization headers. Keep the status useful without exposing that body.
+	return fmt.Errorf("又拍云请求失败: HTTP %d", resp.StatusCode)
 }
 
 func (p *UpyunProvider) Upload(ctx context.Context, file io.Reader, policy *model.StoragePolicy, virtualPath string) (*UploadResult, error) {

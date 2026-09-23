@@ -201,6 +201,9 @@ type AppOptions struct {
 	SkipPluginSystem bool
 	// ConfigExtension 配置导出/导入扩展（如 Pro 版支付配置），为 nil 时仅导出/导入系统设置
 	ConfigExtension config_service.ConfigExportImportExtension
+	// CacheIndexProjection supplies the public projection for manual index rebuilds.
+	// Pro hosts must configure this before serving cache-management requests.
+	CacheIndexProjection CacheIndexProjection
 }
 
 // NewApp 是应用的构造函数，它执行所有的初始化和依赖注入工作
@@ -707,6 +710,8 @@ func NewAppWithOptions(content embed.FS, opts AppOptions) (*App, func(), error) 
 		router.SetupFrontend(engine, settingSvc, articleSvc, cacheSvc, content, cfg, pageRepo)
 	}
 	appRouter.Setup(engine)
+	cacheHandler := newCacheManagement(revalidateSvc, imageStyleCache, articleRepo, opts.CacheIndexProjection)
+	registerCacheManagementRoutes(engine, mw, cacheHandler)
 
 	// 插件系统：社区版在此初始化；Pro 版在 main 中自行 InitManager 并注册 /api/admin/plugins，须设 SkipPluginSystem 避免重复
 	var pluginMgr *plugin.Manager

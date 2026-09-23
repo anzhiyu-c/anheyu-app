@@ -6,8 +6,10 @@ services:
     # image: anheyu/anheyu-backend:latest
     container_name: anheyu-backend
     depends_on:
-      - anheyu_postgresql
-      - anheyu_redis
+      anheyu_postgresql:
+        condition: service_healthy
+      anheyu_redis:
+        condition: service_healthy
     restart: always
     ports:
       - 8091:8091
@@ -32,6 +34,7 @@ services:
     # backup & consult https://www.postgresql.org/docs/current/pgupgrade.html
     image: postgres:17
     container_name: anheyu_postgresql
+    restart: unless-stopped
     expose:
       - "5432"
     environment:
@@ -40,16 +43,29 @@ services:
       - POSTGRES_PASSWORD=${ANHEYU_DATABASE_PASSWORD:-changeme}
     volumes:
       - database_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anheyu -d anheyu"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   anheyu_redis:
     image: redis:latest
     container_name: anheyu_redis
+    restart: unless-stopped
+    environment:
+      - REDISCLI_AUTH=${ANHEYU_REDIS_PASSWORD:-changeme}
     command: >
       redis-server --requirepass ${ANHEYU_REDIS_PASSWORD:-changeme}
     expose:
       - "6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   database_postgres:

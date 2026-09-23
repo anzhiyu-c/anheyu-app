@@ -17,6 +17,11 @@ func (k SettingKey) String() string {
 }
 
 const (
+	// --- 自愿节庆效果（默认关闭） ---
+	KeyFireworksEnable     SettingKey = "fireworks.enable"
+	KeyFireworksButtonText SettingKey = "fireworks.button_text"
+	KeyFireworksMessage    SettingKey = "fireworks.message"
+
 	// --- 站点基础配置 (可暴露给前端) ---
 	KeyAppName                   SettingKey = "APP_NAME"
 	KeySubTitle                  SettingKey = "SUB_TITLE"
@@ -360,6 +365,8 @@ const (
 	KeyMusicPlayerCustomPlaylist  SettingKey = "music.player.custom_playlist"
 	KeyMusicCapsuleCustomPlaylist SettingKey = "music.capsule.custom_playlist"
 	KeyMusicAPIBaseURL            SettingKey = "music.api.base_url"
+	KeyMusicAPIProtocol           SettingKey = "music.api.protocol"
+	KeyMusicMetingServer          SettingKey = "music.api.meting_server"
 	KeyMusicVinylBackground       SettingKey = "music.vinyl.background"
 	KeyMusicVinylOuter            SettingKey = "music.vinyl.outer"
 	KeyMusicVinylInner            SettingKey = "music.vinyl.inner"

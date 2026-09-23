@@ -247,6 +247,7 @@ jobs:
       - name: Create release summary
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
+          ASSET_VERSION="${VERSION#v}"
 
           # 检测是否为预发布版本
           if [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"alpha"* ]] || [[ "$VERSION" == *"rc"* ]]; then
@@ -292,14 +293,14 @@ jobs:
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "# Binary download - Linux AMD64" >> $GITHUB_STEP_SUMMARY
-          echo "wget https://github.com/anzhiyu-c/anheyu-app/releases/download/${GITHUB_REF#refs/tags/}/anheyu-app_${GITHUB_REF#refs/tags/}_linux_amd64.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "wget https://github.com/anzhiyu-c/anheyu-app/releases/download/${VERSION}/anheyu-app_${ASSET_VERSION}_linux_amd64.tar.gz" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "# Binary download - Linux ARM64" >> $GITHUB_STEP_SUMMARY
-          echo "wget https://github.com/anzhiyu-c/anheyu-app/releases/download/${GITHUB_REF#refs/tags/}/anheyu-app_${GITHUB_REF#refs/tags/}_linux_arm64.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "wget https://github.com/anzhiyu-c/anheyu-app/releases/download/${VERSION}/anheyu-app_${ASSET_VERSION}_linux_arm64.tar.gz" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "# Binary download - macOS AMD64" >> $GITHUB_STEP_SUMMARY
-          echo "wget https://github.com/anzhiyu-c/anheyu-app/releases/download/${GITHUB_REF#refs/tags/}/anheyu-app_${GITHUB_REF#refs/tags/}_darwin_amd64.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "wget https://github.com/anzhiyu-c/anheyu-app/releases/download/${VERSION}/anheyu-app_${ASSET_VERSION}_darwin_amd64.tar.gz" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "# Binary download - macOS ARM64 (Apple Silicon)" >> $GITHUB_STEP_SUMMARY
-          echo "wget https://github.com/anzhiyu-c/anheyu-app/releases/download/${GITHUB_REF#refs/tags/}/anheyu-app_${GITHUB_REF#refs/tags/}_darwin_arm64.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "wget https://github.com/anzhiyu-c/anheyu-app/releases/download/${VERSION}/anheyu-app_${ASSET_VERSION}_darwin_arm64.tar.gz" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

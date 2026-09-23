@@ -426,6 +426,9 @@ func (s *musicService) isValidSong(song map[string]interface{}) bool {
 
 // FetchPlaylist 获取播放列表
 func (s *musicService) FetchPlaylist(ctx context.Context) ([]Song, error) {
+	if s.usesMeting() {
+		return s.fetchMetingPlaylist(ctx)
+	}
 	playlistURL := s.buildPlaylistAPI()
 
 	// 记录开始日志
@@ -554,6 +557,9 @@ func (s *musicService) extractIDFromURL(url string) string {
 
 // FetchSongResources 获取歌曲的高质量资源
 func (s *musicService) FetchSongResources(ctx context.Context, song Song) (SongResourceResponse, error) {
+	if s.usesMeting() {
+		return SongResourceResponse{AudioURL: song.URL, LyricsText: song.Lrc}, nil
+	}
 	log.Printf("[MUSIC_API] 开始获取歌曲资源 - 网易云ID: %s", song.NeteaseID)
 
 	// 验证网易云ID
