@@ -16,6 +16,7 @@ import (
 	"archive/zip"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -824,6 +825,13 @@ func (s *themeService) GetInstalledThemes(ctx context.Context, userID uint) ([]*
 
 // InstallTheme 安装主题（简化流程）
 func (s *themeService) InstallTheme(ctx context.Context, userID uint, req *ThemeInstallRequest) error {
+	if req == nil {
+		return fmt.Errorf("主题安装请求不能为空")
+	}
+	themeDir, err := safeThemePath(req.ThemeName)
+	if err != nil {
+		return err
+	}
 	// 1. 检查主题是否已经安装
 	exists, err := s.db.UserInstalledTheme.
 		Query().
@@ -842,7 +850,6 @@ func (s *themeService) InstallTheme(ctx context.Context, userID uint, req *Theme
 	}
 
 	// 2. 下载并解压主题文件
-	themeDir := filepath.Join(ThemesDirName, req.ThemeName)
 	if err := s.downloadAndExtractTheme(req.DownloadURL, themeDir); err != nil {
 		return fmt.Errorf("下载主题失败: %w", err)
 	}
@@ -850,7 +857,9 @@ func (s *themeService) InstallTheme(ctx context.Context, userID uint, req *Theme
 	// 3. 验证主题文件完整性
 	if err := s.validateThemeFiles(themeDir); err != nil {
 		// 清理已下载的文件
-		os.RemoveAll(themeDir)
+		if cleanupErr := removeThemeDirectory(themeDir); cleanupErr != nil {
+			log.Printf("清理主题目录失败: %v", cleanupErr)
+		}
 		return fmt.Errorf("主题文件验证失败: %w", err)
 	}
 
@@ -872,7 +881,9 @@ func (s *themeService) InstallTheme(ctx context.Context, userID uint, req *Theme
 	_, err = createBuilder.Save(ctx)
 	if err != nil {
 		// 清理已下载的文件
-		os.RemoveAll(themeDir)
+		if cleanupErr := removeThemeDirectory(themeDir); cleanupErr != nil {
+			log.Printf("清理主题目录失败: %v", cleanupErr)
+		}
 		return fmt.Errorf("保存主题信息失败: %w", err)
 	}
 
@@ -954,6 +965,10 @@ func (s *themeService) SwitchToTheme(ctx context.Context, userID uint, themeName
 		log.Printf("用户 %d 请求切换到官方主题: %s", userID, themeName)
 		return s.SwitchToOfficial(ctx, userID, ssrManager)
 	}
+	themeDir, err := safeThemePath(themeName)
+	if err != nil {
+		return err
+	}
 
 	// 1. 检查主题是否已安装
 	theme, err := s.db.UserInstalledTheme.
@@ -972,7 +987,6 @@ func (s *themeService) SwitchToTheme(ctx context.Context, userID uint, themeName
 	}
 
 	// 2. 检查主题文件是否存在
-	themeDir := filepath.Join(ThemesDirName, themeName)
 	if err := s.validateThemeFiles(themeDir); err != nil {
 		return fmt.Errorf("主题文件不完整: %w", err)
 	}
@@ -1135,6 +1149,10 @@ func (s *themeService) SwitchToOfficial(ctx context.Context, userID uint, ssrMan
 
 // UninstallTheme 卸载主题
 func (s *themeService) UninstallTheme(ctx context.Context, userID uint, themeName string) error {
+	themeDir, err := safeThemePath(themeName)
+	if err != nil {
+		return err
+	}
 	if s.isOfficialTheme(themeName) {
 		return fmt.Errorf("不能卸载官方主题")
 	}
@@ -1186,8 +1204,7 @@ func (s *themeService) UninstallTheme(ctx context.Context, userID uint, themeNam
 	}
 
 	// 3. 删除主题文件
-	themeDir := filepath.Join(ThemesDirName, themeName)
-	if err := os.RemoveAll(themeDir); err != nil {
+	if err := removeThemeDirectory(themeDir); err != nil {
 		log.Printf("警告：删除主题文件夹失败: %v", err)
 		// 继续执行，不因为文件删除失败而中断
 	}
@@ -1259,82 +1276,27 @@ func (s *themeService) extractZip(zipPath, destDir string) error {
 	if err != nil {
 		return err
 	}
-	defer reader.Close()
-
-	// 检测是否有根目录前缀
-	var rootPrefix string
-	for _, file := range reader.File {
-		if strings.Contains(file.Name, "/") {
-			parts := strings.Split(file.Name, "/")
-			if len(parts) > 1 {
-				// 检查是否有 theme.json 或 index.html 在这个子目录中
-				potentialPrefix := parts[0] + "/"
-				if strings.HasSuffix(file.Name, "theme.json") || strings.HasSuffix(file.Name, "index.html") {
-					rootPrefix = potentialPrefix
-					log.Printf("解压时检测到主题文件在子目录中: %s", rootPrefix)
-					break
-				}
-			}
+	defer closeThemeResource(reader)
+	entries, err := inspectThemeArchive(reader.File)
+	if err != nil {
+		return err
+	}
+	root, err := openThemeDirectory(destDir, true)
+	if err != nil {
+		return err
+	}
+	defer closeThemeResource(root)
+	// 既有目标也要先完整检查，避免在遇到链接前覆盖包中的正常文件。
+	for _, entry := range entries {
+		if err := checkThemeEntryDestination(root, entry.name, entry.file.FileInfo().IsDir()); err != nil {
+			return err
 		}
 	}
-
-	// 创建目标目录
-	os.MkdirAll(destDir, 0755)
-
-	for _, file := range reader.File {
-		// 防止路径遍历攻击
-		if strings.Contains(file.Name, "..") {
-			continue
+	for _, entry := range entries {
+		if err := extractThemeFile(root, entry); err != nil {
+			return fmt.Errorf("解压主题文件 %s: %w", entry.file.Name, err)
 		}
-
-		// 处理子目录前缀
-		targetPath := file.Name
-		if rootPrefix != "" && strings.HasPrefix(file.Name, rootPrefix) {
-			targetPath = strings.TrimPrefix(file.Name, rootPrefix)
-		}
-
-		// 如果去除前缀后路径为空，跳过
-		if targetPath == "" {
-			continue
-		}
-
-		path := filepath.Join(destDir, targetPath)
-
-		// 确保目标路径在目标目录内（再次防止路径遍历）
-		if !strings.HasPrefix(path, destDir) {
-			log.Printf("跳过不安全的路径: %s", path)
-			continue
-		}
-
-		if file.FileInfo().IsDir() {
-			os.MkdirAll(path, file.FileInfo().Mode())
-			continue
-		}
-
-		// 创建文件的父目录
-		os.MkdirAll(filepath.Dir(path), 0755)
-
-		// 创建文件
-		fileReader, err := file.Open()
-		if err != nil {
-			return err
-		}
-		defer fileReader.Close()
-
-		targetFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.FileInfo().Mode())
-		if err != nil {
-			return err
-		}
-		defer targetFile.Close()
-
-		_, err = io.Copy(targetFile, fileReader)
-		if err != nil {
-			return err
-		}
-
-		log.Printf("解压文件: %s -> %s", file.Name, targetPath)
 	}
-
 	return nil
 }
 
@@ -1387,8 +1349,7 @@ func (s *themeService) copyThemeToStatic(themeDir string) error {
 
 	// 先安全清空static目录
 	if err := s.safeRemoveStaticDir(); err != nil {
-		log.Printf("警告：清空static目录失败，继续尝试复制: %v", err)
-		// 即使清空失败也继续，让copyDirectory去处理文件覆盖
+		return fmt.Errorf("清空static目录失败: %w", err)
 	}
 
 	// 确保static目录存在
@@ -1406,6 +1367,9 @@ func (s *themeService) copyDirectory(srcDir, destDir string) error {
 		if err != nil {
 			return err
 		}
+		if !info.IsDir() && !info.Mode().IsRegular() {
+			return fmt.Errorf("主题目录不允许链接或特殊文件: %s", path)
+		}
 
 		relPath, err := filepath.Rel(srcDir, path)
 		if err != nil {
@@ -1415,7 +1379,11 @@ func (s *themeService) copyDirectory(srcDir, destDir string) error {
 		destPath := filepath.Join(destDir, relPath)
 
 		if info.IsDir() {
-			return os.MkdirAll(destPath, info.Mode())
+			root, err := openThemeDirectory(destPath, true)
+			if err != nil {
+				return err
+			}
+			return root.Close()
 		}
 
 		return s.copyFile(path, destPath)
@@ -1424,23 +1392,7 @@ func (s *themeService) copyDirectory(srcDir, destDir string) error {
 
 // copyFile 复制文件
 func (s *themeService) copyFile(srcPath, destPath string) error {
-	srcFile, err := os.Open(srcPath)
-	if err != nil {
-		return err
-	}
-	defer srcFile.Close()
-
-	// 创建目标目录
-	os.MkdirAll(filepath.Dir(destPath), 0755)
-
-	destFile, err := os.Create(destPath)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-
-	_, err = io.Copy(destFile, srcFile)
-	return err
+	return copyThemeFile(srcPath, destPath)
 }
 
 // UploadTheme 上传主题压缩包
@@ -1460,6 +1412,10 @@ func (s *themeService) UploadTheme(ctx context.Context, userID uint, file *multi
 	metadata := validationResult.Metadata
 	if metadata == nil {
 		return nil, fmt.Errorf("无法获取主题元信息")
+	}
+	themeDir, err := safeThemePath(metadata.Name)
+	if err != nil {
+		return nil, err
 	}
 
 	// 2. 检查主题是否已安装
@@ -1494,7 +1450,6 @@ func (s *themeService) UploadTheme(ctx context.Context, userID uint, file *multi
 	defer os.Remove(tempFile)
 
 	// 4. 解压主题到目标目录
-	themeDir := filepath.Join(ThemesDirName, metadata.Name)
 	if err := s.extractZip(tempFile, themeDir); err != nil {
 		return nil, fmt.Errorf("解压主题失败: %w", err)
 	}
@@ -1502,7 +1457,9 @@ func (s *themeService) UploadTheme(ctx context.Context, userID uint, file *multi
 	// 5. 再次验证解压后的文件
 	if err := s.validateExtractedTheme(themeDir, metadata); err != nil {
 		// 清理已解压的文件
-		os.RemoveAll(themeDir)
+		if cleanupErr := removeThemeDirectory(themeDir); cleanupErr != nil {
+			log.Printf("清理主题目录失败: %v", cleanupErr)
+		}
 		return nil, fmt.Errorf("解压后验证失败: %w", err)
 	}
 
@@ -1517,7 +1474,9 @@ func (s *themeService) UploadTheme(ctx context.Context, userID uint, file *multi
 
 		if err != nil {
 			// 清理已解压的文件
-			os.RemoveAll(themeDir)
+			if cleanupErr := removeThemeDirectory(themeDir); cleanupErr != nil {
+				log.Printf("清理主题目录失败: %v", cleanupErr)
+			}
 			return nil, fmt.Errorf("更新主题信息失败: %w", err)
 		}
 	} else {
@@ -1535,7 +1494,9 @@ func (s *themeService) UploadTheme(ctx context.Context, userID uint, file *multi
 		_, err = createBuilder.Save(ctx)
 		if err != nil {
 			// 清理已解压的文件
-			os.RemoveAll(themeDir)
+			if cleanupErr := removeThemeDirectory(themeDir); cleanupErr != nil {
+				log.Printf("清理主题目录失败: %v", cleanupErr)
+			}
 			return nil, fmt.Errorf("保存主题信息失败: %w", err)
 		}
 	}
@@ -1629,48 +1590,20 @@ func (s *themeService) ValidateThemePackage(ctx context.Context, userID uint, fi
 		return result, nil
 	}
 	defer zipReader.Close()
+	entries, err := inspectThemeArchive(zipReader.File)
+	if err != nil {
+		result.Errors = append(result.Errors, err.Error())
+		return result, nil
+	}
 
 	// 4. 验证文件结构和内容
 	var themeJsonFile *zip.File
 	var indexHtmlFile *zip.File
 	hasStaticDir := false
-	var rootPrefix string // 检测是否有根目录前缀
-
-	// 第一遍扫描：检测压缩包结构
-	for _, file := range zipReader.File {
-		// 防止路径遍历攻击
-		if strings.Contains(file.Name, "..") {
-			result.Errors = append(result.Errors, fmt.Sprintf("发现危险路径: %s", file.Name))
-			continue
-		}
-
+	for _, entry := range entries {
+		file := entry.file
 		result.FileList = append(result.FileList, file.Name)
-
-		// 检测是否所有文件都在同一个子目录中
-		if strings.Contains(file.Name, "/") && rootPrefix == "" {
-			parts := strings.Split(file.Name, "/")
-			if len(parts) > 1 {
-				// 检查是否有 theme.json 或 index.html 在这个子目录中
-				potentialPrefix := parts[0] + "/"
-				if strings.HasSuffix(file.Name, "theme.json") || strings.HasSuffix(file.Name, "index.html") {
-					rootPrefix = potentialPrefix
-					log.Printf("检测到主题文件在子目录中: %s", rootPrefix)
-				}
-			}
-		}
-	}
-
-	// 第二遍扫描：根据检测到的结构验证文件
-	for _, file := range zipReader.File {
-		if strings.Contains(file.Name, "..") {
-			continue // 已处理过的危险路径
-		}
-
-		// 移除根目录前缀进行匹配
-		normalizedName := file.Name
-		if rootPrefix != "" && strings.HasPrefix(file.Name, rootPrefix) {
-			normalizedName = strings.TrimPrefix(file.Name, rootPrefix)
-		}
+		normalizedName := filepath.ToSlash(entry.name)
 
 		// 检查必需文件
 		switch {
@@ -1678,7 +1611,7 @@ func (s *themeService) ValidateThemePackage(ctx context.Context, userID uint, fi
 			themeJsonFile = file
 		case normalizedName == "index.html":
 			indexHtmlFile = file
-		case strings.HasPrefix(normalizedName, "static/"):
+		case normalizedName == "static" && file.FileInfo().IsDir(), strings.HasPrefix(normalizedName, "static/"):
 			hasStaticDir = true
 		}
 
@@ -1714,6 +1647,15 @@ func (s *themeService) ValidateThemePackage(ctx context.Context, userID uint, fi
 				result.Errors = append(result.Errors, validationErrors...)
 			}
 		}
+	}
+
+	// 不安全的名称或归档必须在数据库查询之前返回。
+	if len(result.Errors) > 0 {
+		return result, nil
+	}
+	if _, err := safeThemePath(result.Metadata.Name); err != nil {
+		result.Errors = append(result.Errors, err.Error())
+		return result, nil
 	}
 
 	// 7. 检查是否存在重复主题
@@ -1813,19 +1755,8 @@ func (s *themeService) validateThemeMetadata(metadata *ThemeMetadata) []string {
 	var errors []string
 
 	// 验证必需字段
-	if metadata.Name == "" {
-		errors = append(errors, "name字段不能为空")
-	} else {
-		// 验证主题名称格式
-		if !strings.HasPrefix(metadata.Name, "theme-") {
-			errors = append(errors, "主题名称必须以'theme-'开头")
-		}
-
-		// 验证主题名称字符
-		validName := regexp.MustCompile(`^theme-[a-z0-9\-]+$`)
-		if !validName.MatchString(metadata.Name) {
-			errors = append(errors, "主题名称只能包含小写字母、数字和连字符")
-		}
+	if err := ValidateThemeName(metadata.Name); err != nil {
+		errors = append(errors, err.Error())
 	}
 
 	if metadata.DisplayName == "" {
@@ -2005,7 +1936,10 @@ func (s *themeService) extractFirstScreenshot(screenshots interface{}) string {
 
 // loadThemeMetadataFromDisk 从磁盘读取主题的 theme.json 文件
 func (s *themeService) loadThemeMetadataFromDisk(themeName string) (*ThemeMetadata, error) {
-	themeDir := filepath.Join(ThemesDirName, themeName)
+	themeDir, err := safeThemePath(themeName)
+	if err != nil {
+		return nil, err
+	}
 	themeJsonPath := filepath.Join(themeDir, "theme.json")
 
 	// 检查文件是否存在
@@ -2014,7 +1948,15 @@ func (s *themeService) loadThemeMetadataFromDisk(themeName string) (*ThemeMetada
 	}
 
 	// 读取文件内容
-	content, err := os.ReadFile(themeJsonPath)
+	root, err := openThemeDirectory(themeDir, false)
+	if err != nil {
+		return nil, err
+	}
+	defer closeThemeResource(root)
+	if err := checkThemeEntryDestination(root, "theme.json", false); err != nil {
+		return nil, err
+	}
+	content, err := root.ReadFile("theme.json")
 	if err != nil {
 		return nil, fmt.Errorf("读取 theme.json 失败: %w", err)
 	}
@@ -2030,6 +1972,14 @@ func (s *themeService) loadThemeMetadataFromDisk(themeName string) (*ThemeMetada
 
 // safeRemoveStaticDir 安全地删除static目录，处理Docker挂载等特殊情况
 func (s *themeService) safeRemoveStaticDir() error {
+	root, err := openThemeDirectory(s.staticDirPath(), false)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	closeThemeResource(root)
 	maxRetries := 3
 	retryDelay := time.Second * 2
 
@@ -2057,11 +2007,20 @@ func (s *themeService) safeRemoveStaticDir() error {
 // clearStaticDirContents 清空static目录的内容，但保留目录本身
 func (s *themeService) clearStaticDirContents() error {
 	staticDir := s.staticDirPath()
-	if _, err := os.Stat(staticDir); os.IsNotExist(err) {
+	root, err := openThemeDirectory(staticDir, false)
+	if errors.Is(err, os.ErrNotExist) {
 		return nil // 目录不存在，认为成功
 	}
-
-	entries, err := os.ReadDir(staticDir)
+	if err != nil {
+		return err
+	}
+	defer closeThemeResource(root)
+	dir, err := root.Open(".")
+	if err != nil {
+		return err
+	}
+	defer closeThemeResource(dir)
+	entries, err := dir.ReadDir(-1)
 	if err != nil {
 		return err
 	}
@@ -2069,7 +2028,7 @@ func (s *themeService) clearStaticDirContents() error {
 	var lastError error
 	for _, entry := range entries {
 		entryPath := filepath.Join(staticDir, entry.Name())
-		if err := os.RemoveAll(entryPath); err != nil {
+		if err := root.RemoveAll(entry.Name()); err != nil {
 			log.Printf("删除 %s 失败: %v", entryPath, err)
 			lastError = err
 		}
@@ -2179,7 +2138,9 @@ func (s *themeService) GetThemeSettings(ctx context.Context, themeName string) (
 	if s.isOfficialTheme(themeName) {
 		return []ThemeSettingGroup{}, nil
 	}
-
+	if err := ValidateThemeName(themeName); err != nil {
+		return nil, err
+	}
 	// 从磁盘读取 theme.json
 	metadata, err := s.loadThemeMetadataFromDisk(themeName)
 	if err != nil {
@@ -2196,6 +2157,9 @@ func (s *themeService) GetThemeSettings(ctx context.Context, themeName string) (
 
 // GetUserThemeConfig 获取用户对某主题的配置值
 func (s *themeService) GetUserThemeConfig(ctx context.Context, userID uint, themeName string) (map[string]interface{}, error) {
+	if err := ValidateThemeName(themeName); err != nil {
+		return nil, err
+	}
 	// 查询用户安装的主题
 	installedTheme, err := s.db.UserInstalledTheme.
 		Query().
@@ -2222,6 +2186,9 @@ func (s *themeService) GetUserThemeConfig(ctx context.Context, userID uint, them
 
 // SaveUserThemeConfig 保存用户对某主题的配置值
 func (s *themeService) SaveUserThemeConfig(ctx context.Context, userID uint, themeName string, config map[string]interface{}) error {
+	if err := ValidateThemeName(themeName); err != nil {
+		return err
+	}
 	// 获取配置定义用于验证
 	settings, err := s.GetThemeSettings(ctx, themeName)
 	if err != nil {
@@ -2407,6 +2374,9 @@ func (s *themeService) mergeConfigWithDefaults(settings []ThemeSettingGroup, use
 
 // InstallSSRTheme 安装 SSR 主题（写入数据库记录）
 func (s *themeService) InstallSSRTheme(ctx context.Context, userID uint, themeName string, version string, marketID int) error {
+	if err := ValidateThemeName(themeName); err != nil {
+		return err
+	}
 	// 检查是否已安装
 	exists, err := s.db.UserInstalledTheme.
 		Query().
@@ -2468,6 +2438,9 @@ func (s *themeService) InstallSSRTheme(ctx context.Context, userID uint, themeNa
 
 // UninstallSSRTheme 卸载 SSR 主题（删除数据库记录）
 func (s *themeService) UninstallSSRTheme(ctx context.Context, userID uint, themeName string) error {
+	if err := ValidateThemeName(themeName); err != nil {
+		return err
+	}
 	// 检查是否为当前主题
 	theme, err := s.db.UserInstalledTheme.
 		Query().
@@ -2501,6 +2474,9 @@ func (s *themeService) UninstallSSRTheme(ctx context.Context, userID uint, theme
 
 // SwitchToSSRTheme 切换到 SSR 主题
 func (s *themeService) SwitchToSSRTheme(ctx context.Context, userID uint, themeName string, ssrManager SSRManagerInterface) error {
+	if err := ValidateThemeName(themeName); err != nil {
+		return err
+	}
 	// #region agent log
 	debugLog := func(msg string, data map[string]interface{}) {
 		f, _ := os.OpenFile("/Users/anzhiyu/Project/2025/anheyu-work/.cursor/debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -2682,6 +2658,10 @@ func (s *themeService) SyncSSRThemesFromFileSystem(ctx context.Context, userID u
 		}
 
 		themeName := entry.Name()
+		if err := ValidateThemeName(themeName); err != nil {
+			log.Printf("跳过不安全的主题目录 %s: %v", themeName, err)
+			continue
+		}
 		themePath := filepath.Join(themesDir, themeName)
 
 		// 检查是否是 SSR 主题（有 server.js 文件）

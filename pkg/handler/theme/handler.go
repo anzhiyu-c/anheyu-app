@@ -181,7 +181,7 @@ func (h *Handler) GetInstalledThemes(c *gin.Context) {
 
 // InstallTheme 安装主题
 // @Summary      安装主题
-// @Description  从指定URL下载并安装主题（主题名必须以theme-开头）
+// @Description  从指定URL下载并安装主题（主题名仅允许theme-前缀、小写字母、数字和连字符）
 // @Tags         主题管理
 // @Security     BearerAuth
 // @Accept       json
@@ -220,9 +220,8 @@ func (h *Handler) InstallTheme(c *gin.Context) {
 		return
 	}
 
-	// 主题名称必须以theme-开头
-	if len(req.ThemeName) < 6 || req.ThemeName[:6] != "theme-" {
-		response.Fail(c, http.StatusBadRequest, "主题名称必须以'theme-'开头")
+	if err := theme.ValidateThemeName(req.ThemeName); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
 

@@ -83,7 +83,7 @@ func validateThemeName(name string) error {
 	if name == "" {
 		return fmt.Errorf("主题名称不能为空")
 	}
-	if strings.Contains(name, "..") || strings.Contains(name, "/") || strings.Contains(name, "\\") {
+	if name == "." || strings.ContainsAny(name, "/\\:\x00") || strings.Contains(name, "..") {
 		return fmt.Errorf("主题名称包含非法字符")
 	}
 	if filepath.Base(name) != name {
@@ -127,11 +127,23 @@ func (m *Manager) Install(ctx context.Context, themeName, downloadURL string) er
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	themesRoot, err := m.openThemesRoot()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := themesRoot.Close(); err != nil {
+			log.Printf("[SSR] 关闭主题目录失败: %v", err)
+		}
+	}()
+
 	themePath := filepath.Join(m.themesDir, themeName)
 
 	// 检查是否已安装
-	if _, err := os.Stat(themePath); err == nil {
+	if _, err := themesRoot.Lstat(themeName); err == nil {
 		return errors.New("theme already installed")
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("检查主题目录失败: %w", err)
 	}
 
 	// 下载主题包
@@ -155,7 +167,9 @@ func (m *Manager) Install(ctx context.Context, themeName, downloadURL string) er
 
 	// 解压到主题目录
 	if err := m.extractTarGz(resp.Body, themePath); err != nil {
-		os.RemoveAll(themePath) // 清理失败的安装
+		if cleanupErr := themesRoot.RemoveAll(themeName); cleanupErr != nil {
+			return fmt.Errorf("extract failed: %w; cleanup failed: %v", err, cleanupErr)
+		}
 		return fmt.Errorf("extract failed: %w", err)
 	}
 
@@ -163,13 +177,61 @@ func (m *Manager) Install(ctx context.Context, themeName, downloadURL string) er
 	return nil
 }
 
+func (m *Manager) openThemesRoot() (*os.Root, error) {
+	info, err := os.Lstat(filepath.Clean(m.themesDir))
+	if err != nil {
+		return nil, fmt.Errorf("检查主题根目录失败: %w", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+		return nil, fmt.Errorf("主题根目录必须为真实目录")
+	}
+	return os.OpenRoot(filepath.Clean(m.themesDir))
+}
+
 // extractTarGz 解压 tar.gz 文件
 func (m *Manager) extractTarGz(r io.Reader, destDir string) error {
+	name, err := filepath.Rel(filepath.Clean(m.themesDir), filepath.Clean(destDir))
+	if err != nil || validateThemeName(name) != nil {
+		return fmt.Errorf("不安全的主题解压目录: %s", destDir)
+	}
+	themesRoot, err := m.openThemesRoot()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := themesRoot.Close(); err != nil {
+			log.Printf("[SSR] 关闭主题目录失败: %v", err)
+		}
+	}()
+	if info, err := themesRoot.Lstat(name); err == nil {
+		if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+			return fmt.Errorf("主题解压目录必须为真实目录")
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	if err := themesRoot.MkdirAll(name, 0755); err != nil {
+		return err
+	}
+	root, err := themesRoot.OpenRoot(name)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := root.Close(); err != nil {
+			log.Printf("[SSR] 关闭主题解压目录失败: %v", err)
+		}
+	}()
+
 	gzr, err := gzip.NewReader(r)
 	if err != nil {
 		return err
 	}
-	defer gzr.Close()
+	defer func() {
+		if err := gzr.Close(); err != nil {
+			log.Printf("[SSR] 关闭主题归档失败: %v", err)
+		}
+	}()
 
 	tr := tar.NewReader(gzr)
 
@@ -182,8 +244,19 @@ func (m *Manager) extractTarGz(r io.Reader, destDir string) error {
 			return err
 		}
 
-		// 处理路径，移除顶层目录（如果存在）
+		// 先检查原始路径，避免去除包装目录后掩盖非法路径。
 		name := header.Name
+		if strings.HasPrefix(name, "/") || strings.ContainsAny(name, "\\:\x00") {
+			return fmt.Errorf("invalid file path: %s", name)
+		}
+		for _, part := range strings.Split(name, "/") {
+			if part == ".." {
+				return fmt.Errorf("invalid file path: %s", name)
+			}
+		}
+		if header.Typeflag != tar.TypeDir && header.Typeflag != tar.TypeReg {
+			return fmt.Errorf("不支持的归档文件类型: %s", name)
+		}
 		// 去除可能的顶层目录前缀（如 "theme-nova/"）
 		parts := strings.SplitN(name, "/", 2)
 		if len(parts) == 2 {
@@ -196,16 +269,14 @@ func (m *Manager) extractTarGz(r io.Reader, destDir string) error {
 			continue
 		}
 
-		target := filepath.Join(destDir, name)
-
-		// 安全检查：防止路径遍历攻击
-		if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(destDir)) {
+		target := filepath.FromSlash(name)
+		if !filepath.IsLocal(target) {
 			return fmt.Errorf("invalid file path: %s", name)
 		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(target, 0755); err != nil {
+			if err := root.MkdirAll(target, 0755); err != nil {
 				return err
 			}
 		case tar.TypeReg:
@@ -213,18 +284,18 @@ func (m *Manager) extractTarGz(r io.Reader, destDir string) error {
 			if header.Size > maxFileSize {
 				return fmt.Errorf("文件过大: %s (%d bytes > %d bytes)", name, header.Size, maxFileSize)
 			}
-			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			if err := root.MkdirAll(filepath.Dir(target), 0755); err != nil {
 				return err
 			}
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			f, err := root.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 			if err != nil {
 				return err
 			}
-			if _, err := io.Copy(f, io.LimitReader(tr, maxFileSize)); err != nil {
-				f.Close()
-				return err
+			_, copyErr := io.Copy(f, io.LimitReader(tr, maxFileSize))
+			closeErr := f.Close()
+			if err := errors.Join(copyErr, closeErr); err != nil {
+				return fmt.Errorf("写入主题文件失败: %w", err)
 			}
-			f.Close()
 		}
 	}
 	return nil
@@ -238,6 +309,15 @@ func (m *Manager) Uninstall(themeName string) error {
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	root, err := m.openThemesRoot()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := root.Close(); err != nil {
+			log.Printf("[SSR] 关闭主题目录失败: %v", err)
+		}
+	}()
 
 	// 先停止运行中的进程
 	if rt, exists := m.processes[themeName]; exists && rt.cmd.Process != nil {
@@ -246,8 +326,7 @@ func (m *Manager) Uninstall(themeName string) error {
 		delete(m.processes, themeName)
 	}
 
-	themePath := filepath.Join(m.themesDir, themeName)
-	if err := os.RemoveAll(themePath); err != nil {
+	if err := root.RemoveAll(themeName); err != nil {
 		return fmt.Errorf("remove theme failed: %w", err)
 	}
 

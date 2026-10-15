@@ -15,6 +15,7 @@ package theme
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -81,15 +82,17 @@ type CreateDirectoryOperation struct {
 }
 
 func (op *CreateDirectoryOperation) Execute() error {
-	if err := os.MkdirAll(op.Path, 0755); err != nil {
+	root, err := openThemeDirectory(op.Path, true)
+	if err != nil {
 		return fmt.Errorf("创建目录失败 %s: %w", op.Path, err)
 	}
+	defer closeThemeResource(root)
 	log.Printf("[File Operation] 创建目录成功: %s", op.Path)
 	return nil
 }
 
 func (op *CreateDirectoryOperation) Rollback() error {
-	if err := os.RemoveAll(op.Path); err != nil && !os.IsNotExist(err) {
+	if err := removeThemeDirectory(op.Path); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("删除目录失败 %s: %w", op.Path, err)
 	}
 	log.Printf("[File Operation] 回滚创建目录: %s", op.Path)
@@ -108,22 +111,31 @@ type CopyFileOperation struct {
 }
 
 func (op *CopyFileOperation) Execute() error {
+	root, err := openThemeDirectory(filepath.Dir(op.Destination), false)
+	if err != nil {
+		return err
+	}
+	defer closeThemeResource(root)
+	name := filepath.Base(op.Destination)
+	if err := checkThemeEntryDestination(root, name, false); err != nil {
+		return err
+	}
 	// 如果目标文件存在，先备份
-	if _, err := os.Stat(op.Destination); err == nil {
+	if _, err := root.Lstat(name); err == nil {
 		op.BackupPath = op.Destination + ".backup"
-		if err := os.Rename(op.Destination, op.BackupPath); err != nil {
+		if err := checkThemeEntryDestination(root, name+".backup", false); err != nil {
+			return err
+		}
+		if err := root.Rename(name, name+".backup"); err != nil {
 			return fmt.Errorf("备份文件失败 %s: %w", op.Destination, err)
 		}
 		log.Printf("[File Operation] 备份原文件: %s -> %s", op.Destination, op.BackupPath)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
 	}
 
 	// 执行复制
-	sourceData, err := os.ReadFile(op.Source)
-	if err != nil {
-		return fmt.Errorf("读取源文件失败 %s: %w", op.Source, err)
-	}
-
-	if err := os.WriteFile(op.Destination, sourceData, 0644); err != nil {
+	if err := copyThemeFile(op.Source, op.Destination); err != nil {
 		return fmt.Errorf("写入目标文件失败 %s: %w", op.Destination, err)
 	}
 
@@ -132,14 +144,19 @@ func (op *CopyFileOperation) Execute() error {
 }
 
 func (op *CopyFileOperation) Rollback() error {
+	root, err := openThemeDirectory(filepath.Dir(op.Destination), false)
+	if err != nil {
+		return err
+	}
+	defer closeThemeResource(root)
 	// 删除复制的文件
-	if err := os.Remove(op.Destination); err != nil && !os.IsNotExist(err) {
+	if err := root.Remove(filepath.Base(op.Destination)); err != nil && !os.IsNotExist(err) {
 		log.Printf("[File Operation] 删除复制文件失败: %v", err)
 	}
 
 	// 恢复备份文件
 	if op.BackupPath != "" {
-		if err := os.Rename(op.BackupPath, op.Destination); err != nil {
+		if err := root.Rename(filepath.Base(op.BackupPath), filepath.Base(op.Destination)); err != nil {
 			return fmt.Errorf("恢复备份文件失败 %s: %w", op.BackupPath, err)
 		}
 		log.Printf("[File Operation] 恢复备份文件: %s -> %s", op.BackupPath, op.Destination)
@@ -192,6 +209,13 @@ func (fm *FileOperationManager) rollbackFrom(fromIndex int) {
 
 // ThemeInstallWithTransaction 在事务中安装主题（基于Ent最佳实践）
 func (s *themeService) ThemeInstallWithTransaction(ctx context.Context, userID uint, req *ThemeInstallRequest) error {
+	if req == nil {
+		return fmt.Errorf("主题安装请求不能为空")
+	}
+	themeDir, err := safeThemePath(req.ThemeName)
+	if err != nil {
+		return err
+	}
 	return WithTx(ctx, s.db, func(tx *ent.Tx) error {
 		// 检查主题是否已安装
 		exists, err := tx.UserInstalledTheme.Query().
@@ -209,22 +233,40 @@ func (s *themeService) ThemeInstallWithTransaction(ctx context.Context, userID u
 		}
 
 		// 下载并解压主题文件
-		tempDir := filepath.Join(os.TempDir(), "theme_install_"+req.ThemeName)
+		tempDir, err := os.MkdirTemp("", "theme_install_*")
+		if err != nil {
+			return fmt.Errorf("创建主题临时目录失败: %w", err)
+		}
+		defer func(cleanupDir string) {
+			if err := os.RemoveAll(cleanupDir); err != nil {
+				log.Printf("清理主题临时目录失败: %v", err)
+			}
+		}(tempDir)
+		// 系统临时目录在 macOS 上可经 /var 链接，先解析受信任的临时根。
+		tempDir, err = filepath.EvalSymlinks(tempDir)
+		if err != nil {
+			return fmt.Errorf("解析主题临时目录失败: %w", err)
+		}
 		if err := s.downloadAndExtractTheme(req.DownloadURL, tempDir); err != nil {
 			return fmt.Errorf("下载主题失败: %w", err)
 		}
 
 		// 验证主题文件
 		if err := s.validateThemeFiles(tempDir); err != nil {
-			os.RemoveAll(tempDir) // 清理临时文件
 			return fmt.Errorf("主题文件验证失败: %w", err)
 		}
 
 		// 准备文件操作
 		fm := NewFileOperationManager()
+		targetRoot, err := openThemeDirectory(themeDir, false)
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		if targetRoot != nil {
+			defer closeThemeResource(targetRoot)
+		}
 
 		// 创建主题目录
-		themeDir := filepath.Join(ThemesDirName, req.ThemeName)
 		fm.AddOperation(&CreateDirectoryOperation{Path: themeDir})
 
 		// 复制主题文件
@@ -239,6 +281,11 @@ func (s *themeService) ThemeInstallWithTransaction(ctx context.Context, userID u
 			}
 
 			destPath := filepath.Join(themeDir, relPath)
+			if targetRoot != nil {
+				if err := checkThemeEntryDestination(targetRoot, relPath, info.IsDir()); err != nil {
+					return err
+				}
+			}
 
 			if info.IsDir() {
 				fm.AddOperation(&CreateDirectoryOperation{Path: destPath})
@@ -252,13 +299,11 @@ func (s *themeService) ThemeInstallWithTransaction(ctx context.Context, userID u
 			return nil
 		})
 		if err != nil {
-			os.RemoveAll(tempDir) // 清理临时文件
 			return fmt.Errorf("准备文件操作失败: %w", err)
 		}
 
 		// 执行文件操作
 		if err := fm.Execute(); err != nil {
-			os.RemoveAll(tempDir) // 清理临时文件
 			return fmt.Errorf("复制主题文件失败: %w", err)
 		}
 
@@ -278,9 +323,6 @@ func (s *themeService) ThemeInstallWithTransaction(ctx context.Context, userID u
 		if err != nil {
 			return fmt.Errorf("保存主题安装记录失败: %w", err)
 		}
-
-		// 清理临时文件
-		os.RemoveAll(tempDir)
 
 		log.Printf("[Theme Service] 主题 %s 安装成功", req.ThemeName)
 		return nil

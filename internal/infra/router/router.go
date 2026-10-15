@@ -754,8 +754,8 @@ func (r *Router) registerThemeRoutes(api *gin.RouterGroup) {
 		themePublic.GET("/config", r.themeHandler.GetPublicThemeConfig)
 	}
 
-	// 需要登录的主题管理接口
-	themeAuth := api.Group("/theme").Use(r.mw.JWTAuth())
+	// 主题管理会修改全站文件与配置，仅允许管理员访问。
+	themeAuth := api.Group("/theme").Use(r.mw.JWTAuth(), r.mw.AdminAuth())
 	{
 		// 获取当前主题: GET /api/theme/current
 		themeAuth.GET("/current", r.themeHandler.GetCurrentTheme)
