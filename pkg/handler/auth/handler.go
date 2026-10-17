@@ -153,7 +153,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, auth.ErrInvalidCredentials), errors.Is(err, auth.ErrPasswordIncorrect):
-			response.Fail(c, http.StatusUnauthorized, err.Error())
+			response.Fail(c, http.StatusUnauthorized, auth.ErrInvalidCredentials.Error())
 		case errors.Is(err, auth.ErrAuthServiceBusy):
 			response.Fail(c, http.StatusServiceUnavailable, err.Error())
 		default:
@@ -262,6 +262,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	activationRequired, err := h.authSvc.Register(c.Request.Context(), req.Email, req.Nickname, req.Password)
 	if err != nil {
+		if errors.Is(err, auth.ErrRegistrationDisabled) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
 		response.Fail(c, http.StatusConflict, err.Error())
 		return
 	}
@@ -495,9 +499,9 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	response.Success(c, nil, "密码重置成功，请使用新密码登录。")
 }
 
-// CheckEmail 检查邮箱是否已被注册
+// CheckEmail 保留旧客户端的登录预检接口，不公开账户存在性。
 // @Summary      检查邮箱
-// @Description  检查邮箱是否已被注册
+// @Description  返回统一的密码登录提示，不查询或披露账户存在性
 // @Tags         用户认证
 // @Produce      json
 // @Param        email  query  string  true  "邮箱地址"
@@ -512,12 +516,7 @@ func (h *AuthHandler) CheckEmail(c *gin.Context) {
 		return
 	}
 
-	exists, err := h.authSvc.CheckEmailExists(c.Request.Context(), email)
-	if err != nil {
-		response.Fail(c, http.StatusServiceUnavailable, "登录服务暂时不可用，请稍后重试")
-		return
-	}
-
-	response.Success(c, gin.H{"exists": exists}, "查询成功")
+	// exists 仅兼容旧客户端的导航逻辑，所有邮箱都进入密码登录步骤。
+	response.Success(c, gin.H{"exists": true}, "请继续登录或选择注册")
 
 }

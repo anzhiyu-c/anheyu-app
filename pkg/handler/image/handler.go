@@ -27,6 +27,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/pkg/idgen"
 	"github.com/anzhiyu-c/anheyu-app/pkg/response"
 	"github.com/anzhiyu-c/anheyu-app/pkg/service/direct_link"
+	filesvc "github.com/anzhiyu-c/anheyu-app/pkg/service/file"
 	"github.com/anzhiyu-c/anheyu-app/pkg/service/image_style"
 )
 
@@ -86,8 +87,8 @@ func (h *Handler) ServeStyled(c *gin.Context) {
 		return
 	}
 
-	dbFileID, _, err := idgen.DecodePublicID(publicID)
-	if err != nil {
+	dbFileID, entityType, err := idgen.DecodePublicID(publicID)
+	if err != nil || entityType != idgen.EntityTypeFile {
 		response.Fail(c, http.StatusBadRequest, "无效的文件 ID 格式")
 		return
 	}
@@ -106,6 +107,10 @@ func (h *Handler) ServeStyled(c *gin.Context) {
 	policy, err := h.policyRepo.FindByID(ctx, file.PrimaryEntity.PolicyID)
 	if err != nil || policy == nil {
 		response.Fail(c, http.StatusNotFound, "存储策略不存在")
+		return
+	}
+	if !filesvc.IsPublicImage(file, policy) {
+		response.Fail(c, http.StatusNotFound, "图片不存在或未公开")
 		return
 	}
 

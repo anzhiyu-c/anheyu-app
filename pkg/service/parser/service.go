@@ -62,17 +62,10 @@ type Service struct {
 	sanitizeCache *LRUCache // HTML -> SafeHTML 缓存
 }
 
-// NewService 创建一个新的解析服务实例
-func NewService(settingSvc setting.SettingService, bus *event.EventBus) *Service {
-	mdParser := goldmark.New(
-		goldmark.WithExtensions(
-			extension.GFM, extension.Footnote, extension.Typographer,
-			extension.Linkify, extension.Strikethrough, extension.Table, extension.TaskList,
-		),
-		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
-		goldmark.WithRendererOptions(gmhtml.WithHardWraps(), gmhtml.WithXHTML(), gmhtml.WithUnsafe()),
-	)
+// htmlPolicy 初始化后只读，在文章、历史与评论输出边界复用同一安全策略。
+var htmlPolicy = newHTMLPolicy()
 
+func newHTMLPolicy() *bluemonday.Policy {
 	policy := bluemonday.UGCPolicy()
 
 	policy.AllowURLSchemes("anzhiyu")
@@ -85,10 +78,6 @@ func NewService(settingSvc setting.SettingService, bus *event.EventBus) *Service
 	)
 	// 图片相关属性
 	policy.AllowAttrs("src", "alt", "title", "width", "height").OnElements("img")
-	policy.AllowAttrs("ontoggle").OnElements("details")
-	policy.AllowAttrs("onmouseover", "onmouseout").OnElements("summary")
-	policy.AllowAttrs("onclick").OnElements("button", "div", "i", "span")
-	policy.AllowAttrs("onmouseenter", "onmouseleave").OnElements("span")
 	policy.AllowAttrs("color").OnElements("font")
 	policy.AllowAttrs("align").OnElements("div")
 	policy.AllowAttrs("xmlns").OnElements("annotation", "div")
@@ -107,12 +96,14 @@ func NewService(settingSvc setting.SettingService, bus *event.EventBus) *Service
 	policy.AllowAttrs("x", "dy", "xml:space").OnElements("tspan")
 	// Mermaid SVG defs 和 symbol 元素
 	policy.AllowAttrs("height", "width", "id", "clip-rule", "fill-rule").OnElements("symbol")
+	policy.AllowNoAttrs().OnElements("defs", "g", "svg", "foreignObject")
 
 	policy.AllowAttrs("orient", "markerHeight", "markerWidth", "markerUnits", "refY", "refX", "viewBox", "class", "id").OnElements("marker")
 	policy.AllowAttrs("language").OnElements("code")
 	policy.AllowAttrs("open", "data-collapsed").OnElements("details")
 	policy.AllowAttrs("data-line").OnElements("details", "p", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "ol", "ul", "li", "figure", "table", "thead", "tbody", "tr", "th", "td", "div")
 	policy.AllowAttrs("data-mermaid-theme", "data-closed", "data-processed").OnElements("p", "div")
+	policy.AllowAttrs("data-mermaid-code").OnElements("p", "div")
 	policy.AllowAttrs("data-tips").OnElements("span")
 	policy.AllowAttrs("data-href").OnElements("button")
 	policy.AllowAttrs("type").OnElements("button")
@@ -164,11 +155,29 @@ func NewService(settingSvc setting.SettingService, bus *event.EventBus) *Service
 	policy.AllowAttrs("src", "width", "height", "scrolling", "seamless", "class", "id", "title", "frameborder", "allowfullscreen", "sandbox").OnElements("iframe")
 
 	policy.AllowAttrs("id").OnElements("div", "h1", "h2", "h3", "h4", "h5", "h6", "button", "a", "img", "span", "code", "pre", "table", "thead", "tbody", "tr", "th", "td", "font", "details", "summary", "svg", "blockquote", "video", "iframe")
+	return policy
+}
+
+// SanitizeHTML 净化存储或外部传入的 HTML，调用方无需初始化表情包与事件订阅。
+func SanitizeHTML(content string) string {
+	return htmlPolicy.Sanitize(content)
+}
+
+// NewService 创建一个新的解析服务实例
+func NewService(settingSvc setting.SettingService, bus *event.EventBus) *Service {
+	mdParser := goldmark.New(
+		goldmark.WithExtensions(
+			extension.GFM, extension.Footnote, extension.Typographer,
+			extension.Linkify, extension.Strikethrough, extension.Table, extension.TaskList,
+		),
+		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
+		goldmark.WithRendererOptions(gmhtml.WithHardWraps(), gmhtml.WithXHTML(), gmhtml.WithUnsafe()),
+	)
 
 	svc := &Service{
 		settingSvc:    settingSvc,
 		mdParser:      mdParser,
-		policy:        policy,
+		policy:        htmlPolicy,
 		httpClient:    &http.Client{Timeout: 10 * time.Second},
 		mermaidRegex:  regexp.MustCompile(`(?s)<(?:p|div)[^>]*class="[^"]*md-editor-mermaid[^"]*"[^>]*>.*?</(?:p|div)>`),
 		htmlCache:     NewLRUCache(cacheCapacity, cacheTTL),
@@ -317,7 +326,8 @@ func (s *Service) ToHTML(ctx context.Context, content string) (string, error) {
 	if len(placeholders) > 0 {
 		replacerPairs := make([]string, 0, len(placeholders)*2)
 		for placeholder, originalMermaid := range placeholders {
-			replacerPairs = append(replacerPairs, placeholder, originalMermaid)
+			// Mermaid 仅跳过 Markdown 转换，不能跳过安全过滤。
+			replacerPairs = append(replacerPairs, placeholder, s.policy.Sanitize(originalMermaid))
 		}
 		batchReplacer := strings.NewReplacer(replacerPairs...)
 		finalHTML = batchReplacer.Replace(safeHTML)
@@ -466,7 +476,7 @@ func (s *Service) SanitizeHTML(htmlContent string) string {
 	if len(placeholders) > 0 {
 		replacerPairs := make([]string, 0, len(placeholders)*2)
 		for placeholder, originalMermaid := range placeholders {
-			replacerPairs = append(replacerPairs, placeholder, originalMermaid)
+			replacerPairs = append(replacerPairs, placeholder, s.policy.Sanitize(originalMermaid))
 		}
 		batchReplacer := strings.NewReplacer(replacerPairs...)
 		finalHTML = batchReplacer.Replace(safeHTML)

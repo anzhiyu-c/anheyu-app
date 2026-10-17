@@ -88,6 +88,8 @@ func (h *Handler) ListChildren(c *gin.Context) {
 // @Router       /public/comments/upload [post]
 func (h *Handler) UploadCommentImage(c *gin.Context) {
 	viewerID := c.GetUint("viewer_id")
+	// 为 multipart 边界留出空间，避免在图片校验之前无界解析请求体。
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, comment.MaxCommentImageSize+(1<<20))
 
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
@@ -104,6 +106,10 @@ func (h *Handler) UploadCommentImage(c *gin.Context) {
 
 	fileItem, err := h.svc.UploadImage(c.Request.Context(), viewerID, fileHeader.Filename, fileContent)
 	if err != nil {
+		if errors.Is(err, comment.ErrInvalidCommentImage) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, err.Error())
 		return
 	}

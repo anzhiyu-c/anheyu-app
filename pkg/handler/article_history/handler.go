@@ -6,15 +6,12 @@
 package article_history
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/anzhiyu-c/anheyu-app/internal/pkg/auth"
-	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
-	"github.com/anzhiyu-c/anheyu-app/pkg/idgen"
+	articleHandler "github.com/anzhiyu-c/anheyu-app/pkg/handler/article"
 	"github.com/anzhiyu-c/anheyu-app/pkg/response"
 	historySvc "github.com/anzhiyu-c/anheyu-app/pkg/service/article_history"
 )
@@ -27,19 +24,6 @@ type Handler struct {
 // NewHandler 是 Handler 的构造函数
 func NewHandler(svc historySvc.Service) *Handler {
 	return &Handler{svc: svc}
-}
-
-// getClaims 从请求上下文中获取用户认证信息
-func getClaims(c *gin.Context) (*auth.CustomClaims, error) {
-	claims, exists := c.Get(auth.ClaimsKey)
-	if !exists {
-		return nil, fmt.Errorf("用户未登录")
-	}
-	userClaims, ok := claims.(*auth.CustomClaims)
-	if !ok {
-		return nil, fmt.Errorf("用户认证信息格式错误")
-	}
-	return userClaims, nil
 }
 
 // ListHistory 获取文章历史版本列表
@@ -63,6 +47,9 @@ func (h *Handler) ListHistory(c *gin.Context) {
 		return
 	}
 
+	if _, ok := articleHandler.RequireArticleAccess(c, articleID, h.svc.GetArticleOwnerID); !ok {
+		return
+	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
@@ -102,6 +89,9 @@ func (h *Handler) GetVersion(c *gin.Context) {
 		return
 	}
 
+	if _, ok := articleHandler.RequireArticleAccess(c, articleID, h.svc.GetArticleOwnerID); !ok {
+		return
+	}
 	version, err := strconv.Atoi(c.Param("version"))
 	if err != nil || version <= 0 {
 		response.Fail(c, http.StatusBadRequest, "无效的版本号")
@@ -138,6 +128,9 @@ func (h *Handler) CompareVersions(c *gin.Context) {
 		return
 	}
 
+	if _, ok := articleHandler.RequireArticleAccess(c, articleID, h.svc.GetArticleOwnerID); !ok {
+		return
+	}
 	v1, err1 := strconv.Atoi(c.Query("v1"))
 	v2, err2 := strconv.Atoi(c.Query("v2"))
 
@@ -182,27 +175,12 @@ func (h *Handler) RestoreVersion(c *gin.Context) {
 		return
 	}
 
+	if _, ok := articleHandler.RequireArticleAccess(c, articleID, h.svc.GetArticleOwnerID); !ok {
+		return
+	}
 	version, err := strconv.Atoi(c.Param("version"))
 	if err != nil || version <= 0 {
 		response.Fail(c, http.StatusBadRequest, "无效的版本号")
-		return
-	}
-
-	// 解析可选的请求体
-	var req model.RestoreHistoryRequest
-	_ = c.ShouldBindJSON(&req) // 忽略解析错误，因为body是可选的
-
-	// 验证用户权限
-	claims, err := getClaims(c)
-	if err != nil {
-		response.Fail(c, http.StatusUnauthorized, "未授权")
-		return
-	}
-
-	// 解码用户ID
-	_, _, err = idgen.DecodePublicID(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusUnauthorized, "无效的用户凭证")
 		return
 	}
 
@@ -235,6 +213,9 @@ func (h *Handler) GetHistoryCount(c *gin.Context) {
 		return
 	}
 
+	if _, ok := articleHandler.RequireArticleAccess(c, articleID, h.svc.GetArticleOwnerID); !ok {
+		return
+	}
 	count, err := h.svc.GetHistoryCount(c.Request.Context(), articleID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "获取历史版本数量失败: "+err.Error())

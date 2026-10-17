@@ -13,6 +13,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/model"
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/repository"
 	"github.com/anzhiyu-c/anheyu-app/pkg/idgen"
+	"github.com/anzhiyu-c/anheyu-app/pkg/service/parser"
 )
 
 // 历史版本保留策略配置
@@ -23,6 +24,7 @@ const (
 
 // Service 定义了文章历史版本服务的接口
 type Service interface {
+	GetArticleOwnerID(ctx context.Context, articlePublicID string) (uint, error)
 	// CreateHistory 创建历史版本（内部调用，由文章发布时触发）
 	CreateHistory(ctx context.Context, article *model.Article, editorID uint, editorNickname, changeNote string) error
 
@@ -49,6 +51,14 @@ type Service interface {
 
 	// CleanupAllOldVersions 清理所有文章的旧历史版本（定时任务调用）
 	CleanupAllOldVersions(ctx context.Context) (int, error)
+}
+
+func (s *serviceImpl) GetArticleOwnerID(ctx context.Context, articlePublicID string) (uint, error) {
+	article, err := s.articleRepo.GetByID(ctx, articlePublicID)
+	if err != nil {
+		return 0, err
+	}
+	return article.OwnerID, nil
 }
 
 type serviceImpl struct {
@@ -171,7 +181,7 @@ func (s *serviceImpl) GetHistoryVersion(ctx context.Context, articlePublicID str
 		return nil, fmt.Errorf("获取历史版本失败: %w", err)
 	}
 
-	return history, nil
+	return sanitizedHistory(history), nil
 }
 
 // CompareVersions 对比两个版本
@@ -199,8 +209,8 @@ func (s *serviceImpl) CompareVersions(ctx context.Context, articlePublicID strin
 	}
 
 	return &model.ArticleHistoryCompareResponse{
-		OldVersion: oldVersion,
-		NewVersion: newVersion,
+		OldVersion: sanitizedHistory(oldVersion),
+		NewVersion: sanitizedHistory(newVersion),
 	}, nil
 }
 
@@ -221,7 +231,16 @@ func (s *serviceImpl) RestoreVersion(ctx context.Context, articlePublicID string
 	log.Printf("[ArticleHistoryService] 准备恢复到版本: 文章=%s, 版本=%d", articlePublicID, version)
 
 	// 返回历史版本数据，由调用方执行实际的文章更新
-	return history, nil
+	return sanitizedHistory(history), nil
+}
+
+func sanitizedHistory(history *model.ArticleHistory) *model.ArticleHistory {
+	if history == nil {
+		return nil
+	}
+	result := *history
+	result.ContentHTML = parser.SanitizeArticleHTML(history.ContentHTML, history.ContentMd)
+	return &result
 }
 
 // GetHistoryCount 获取文章的历史版本数量

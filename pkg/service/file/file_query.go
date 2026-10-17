@@ -266,6 +266,11 @@ func (s *serviceImpl) GetFileInfo(ctx context.Context, viewerID uint, publicFile
 		return nil, fmt.Errorf("查找文件时发生数据库错误: %w", err)
 	}
 
+	// 必须先验证属主，避免在拒绝访问前泄露元数据或签发下载链接。
+	if viewerID == 0 || file.OwnerID != viewerID {
+		return nil, constant.ErrForbidden
+	}
+
 	var policyInfo *model.StoragePolicyInfo
 	// 仅当文件关联到物理实体时才执行
 	if file.PrimaryEntityID.Valid {

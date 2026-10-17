@@ -126,7 +126,7 @@ func (s *captchaService) GetConfig() CaptchaConfig {
 		config.GeetestCaptchaId = s.geetestSvc.GetCaptchaId()
 	case ProviderImage:
 		// 图形验证码长度
-		config.ImageCaptchaLength = 4 // 默认值
+		config.ImageCaptchaLength = imagecaptcha.EffectiveLength(s.settingSvc.Get(constant.KeyImageCaptchaLength.String()))
 	}
 
 	return config

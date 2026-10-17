@@ -157,11 +157,10 @@ func (r *docSeriesRepo) GetByIDWithArticles(ctx context.Context, publicID string
 
 	// 获取该系列下的所有文档文章
 	articles, err := r.db.Article.Query().
+		Where(publicArticlePredicates()...).
 		Where(
 			article.DocSeriesID(dbID),
 			article.IsDoc(true),
-			article.StatusEQ(article.StatusPUBLISHED),
-			article.DeletedAtIsNil(),
 		).
 		Order(ent.Asc(article.FieldDocSort), ent.Asc(article.FieldCreatedAt)).
 		All(ctx)

@@ -2,6 +2,7 @@
 package comment
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
 	"encoding/json"
@@ -11,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -135,8 +135,12 @@ func (s *Service) SetImageStyleService(svc image_style.ImageStyleService) {
 
 // UploadImage 负责处理评论图片的上传业务逻辑。
 func (s *Service) UploadImage(ctx context.Context, viewerID uint, originalFilename string, fileReader io.Reader) (*model.FileItem, error) {
-	newFileName := uuid.New().String() + filepath.Ext(originalFilename)
-	fileItem, err := s.fileSvc.UploadFileByPolicyFlag(ctx, viewerID, fileReader, constant.PolicyFlagCommentImage, newFileName)
+	content, extension, err := readCommentImage(fileReader)
+	if err != nil {
+		return nil, err
+	}
+	newFileName := uuid.New().String() + extension
+	fileItem, err := s.fileSvc.UploadFileByPolicyFlag(ctx, viewerID, bytes.NewReader(content), constant.PolicyFlagCommentImage, newFileName)
 	if err != nil {
 		return nil, fmt.Errorf("上传评论图片失败: %w", err)
 	}
@@ -980,7 +984,7 @@ func (s *Service) toResponseDTO(ctx context.Context, c *model.Comment, parent *m
 	var renderedContentHTML string
 	if err != nil {
 		log.Printf("【WARN】解析评论 %s 的表情包失败: %v", publicID, err)
-		renderedContentHTML = c.ContentHTML
+		renderedContentHTML = s.parserSvc.SanitizeHTML(c.ContentHTML)
 	} else {
 		renderedContentHTML = parsedHTML
 	}
@@ -990,7 +994,6 @@ func (s *Service) toResponseDTO(ctx context.Context, c *model.Comment, parent *m
 	renderedContentHTML, err = s.renderHTMLURLs(ctx, renderedContentHTML)
 	if err != nil {
 		log.Printf("【WARN】渲染评论 %s 的HTML链接失败: %v", publicID, err)
-		renderedContentHTML = c.ContentHTML
 	}
 	// log.Printf("【DEBUG】评论 %s 渲染后HTML: %s", publicID, renderedContentHTML)
 
@@ -1086,15 +1089,10 @@ func (s *Service) renderHTMLURLs(ctx context.Context, htmlContent string) (strin
 		return htmlContent, nil
 	}
 
-	// 一次性读取 comment_image 策略，供后续样式后缀拼接复用。
-	// 查询失败或策略不存在时 stylePolicy 保持 nil，等价于回退到旧行为。
-	var stylePolicy *model.StoragePolicy
-	if s.styleSvc != nil {
-		if policy, perr := s.fileSvc.GetPolicyByFlag(ctx, constant.PolicyFlagCommentImage); perr == nil {
-			stylePolicy = policy
-		} else {
-			log.Printf("[comment.renderHTMLURLs] 获取 comment_image 策略失败（忽略，URL 不拼样式）: %v", perr)
-		}
+	// 评论只公开评论图片目录中的图片，不能凭一个文件 ID 为私有文件签名。
+	stylePolicy, policyErr := s.fileSvc.GetPolicyByFlag(ctx, constant.PolicyFlagCommentImage)
+	if policyErr != nil || stylePolicy == nil || stylePolicy.NodeID == nil {
+		return htmlInternalURIRegex.ReplaceAllString(htmlContent, `src=""`), policyErr
 	}
 
 	var firstError error
@@ -1108,6 +1106,9 @@ func (s *Service) renderHTMLURLs(ctx context.Context, htmlContent string) (strin
 		fileModel, err := s.fileSvc.FindFileByPublicID(ctx, publicID)
 		if err != nil {
 			log.Printf("【ERROR】渲染图片失败：找不到文件, PublicID=%s, 错误: %v", publicID, err)
+			return `src=""`
+		}
+		if stylePolicy.Flag != constant.PolicyFlagCommentImage || !filesvc.IsPublicImage(fileModel, stylePolicy) {
 			return `src=""`
 		}
 
@@ -1124,7 +1125,7 @@ func (s *Service) renderHTMLURLs(ctx context.Context, htmlContent string) (strin
 
 		// 拼接默认样式后缀（如 "!thumbnail"）。
 		// filename 传 fileModel.Name 以便 matcher 按真实扩展名决定是否应用样式。
-		if stylePolicy != nil {
+		if s.styleSvc != nil {
 			if suffix := s.styleSvc.ResolveUploadURLSuffix(stylePolicy, fileModel.Name); suffix != "" {
 				url = url + suffix
 			}

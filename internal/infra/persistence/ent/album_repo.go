@@ -11,8 +11,6 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent"
 	"github.com/anzhiyu-c/anheyu-app/ent/album"
 	"github.com/anzhiyu-c/anheyu-app/ent/privacy"
-
-	"entgo.io/ent/dialect/sql"
 )
 
 type entAlbumRepository struct {
@@ -243,10 +241,14 @@ func (r *entAlbumRepository) FindListByOptions(ctx context.Context, opts reposit
 		query = query.Where(album.CategoryID(*opts.CategoryID))
 	}
 	if opts.Tag != "" {
-		// 使用 SQL 的 LIKE 操作来模拟 FIND_IN_SET
-		query = query.Where(func(s *sql.Selector) {
-			s.Where(sql.ExprP("CONCAT(',', tags, ',') LIKE ?", "%,"+opts.Tag+",%"))
-		})
+		// Ent 负责各数据库的占位符和 LIKE 转义，避免 PostgreSQL 的裸 ?
+		// 以及用户提供的 %/_ 被解释为通配符。
+		query = query.Where(album.Or(
+			album.TagsEQ(opts.Tag),
+			album.TagsHasPrefix(opts.Tag+","),
+			album.TagsHasSuffix(","+opts.Tag),
+			album.TagsContains(","+opts.Tag+","),
+		))
 	}
 	if opts.Start != nil {
 		query = query.Where(album.CreatedAtGTE(*opts.Start))

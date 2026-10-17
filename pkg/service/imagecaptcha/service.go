@@ -9,7 +9,6 @@ package imagecaptcha
 import (
 	"context"
 	"errors"
-	"image/color"
 	"strconv"
 	"strings"
 	"time"
@@ -54,18 +53,8 @@ func (s *imageCaptchaService) Generate(ctx context.Context) (captchaId string, i
 	length := s.getLength()
 	expire := s.getExpire()
 
-	// 创建验证码驱动 - 透明背景 + 深色文字，前端通过 CSS 适配暗色主题
-	driver := base64Captcha.NewDriverString(
-		80,     // height
-		240,    // width
-		2,      // noiseCount
-		2,      // showLineOptions
-		length, // length
-		"23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ",
-		&color.RGBA{R: 245, G: 245, B: 245, A: 255}, // bgColor - 浅灰背景，前端暗色模式通过 CSS invert 适配
-		nil,
-		[]string{"wqy-microhei.ttc"},
-	)
+	// 数字驱动提供字符偏斜、波形畸变、贯穿线和随机噪点，避免固定字体模板直接匹配。
+	driver := base64Captcha.NewDriverDigit(80, 240, length, 0.7, 80)
 
 	// 生成验证码
 	captcha := base64Captcha.NewCaptcha(driver, base64Captcha.DefaultMemStore)
@@ -105,22 +94,33 @@ func (s *imageCaptchaService) Verify(ctx context.Context, captchaId, answer stri
 	if storedAnswer == "" {
 		return errors.New("验证码已过期，请刷新重试")
 	}
+	// 无论答案是否正确都仅允许一次尝试；并发请求只能有一个成功消费。
+	consumed, err := utility.CompareAndDeleteCache(ctx, s.cacheSvc, cacheKey, storedAnswer)
+	if err != nil {
+		return errors.New("验证码验证失败，请重试")
+	}
+	if !consumed {
+		return errors.New("验证码已过期，请刷新重试")
+	}
 
 	if strings.ToLower(answer) != storedAnswer {
-		_ = s.cacheSvc.Delete(ctx, cacheKey)
 		return errors.New("验证码错误")
 	}
 
-	_ = s.cacheSvc.Delete(ctx, cacheKey)
 	return nil
 }
 
 // getLength 获取验证码长度配置
 func (s *imageCaptchaService) getLength() int {
-	lengthStr := s.settingSvc.Get(constant.KeyImageCaptchaLength.String())
+	return EffectiveLength(s.settingSvc.Get(constant.KeyImageCaptchaLength.String()))
+}
+
+// EffectiveLength 保证实际验证码长度与公开的输入框配置一致。
+// 旧版较短配置统一提升到至少六位。
+func EffectiveLength(lengthStr string) int {
 	length, err := strconv.Atoi(lengthStr)
-	if err != nil || length < 1 || length > 10 {
-		return 4 // 默认4位
+	if err != nil || length < 6 || length > 10 {
+		return 6
 	}
 	return length
 }

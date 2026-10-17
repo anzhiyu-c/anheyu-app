@@ -78,3 +78,48 @@ func TestSanitizeHTMLPreservesTiptapFormatting(t *testing.T) {
 		t.Fatalf("expected sanitizer to remove event handlers, got: %s", got)
 	}
 }
+
+func TestMermaidContentNeverBypassesSanitization(t *testing.T) {
+	bus := event.NewEventBus()
+	t.Cleanup(bus.Shutdown)
+	svc := NewService(stubSettingService{}, bus)
+	for _, input := range []string{
+		`<div class="md-editor-mermaid"><img src="x" onerror="alert(1)"><script>alert(2)</script></div>`,
+		`<p class="md-editor-mermaid"><svg onload="alert(1)"><foreignObject><div onclick="alert(2)">node</div></foreignObject></svg></p>`,
+		`<div onclick="alert(1)"><details ontoggle="alert(2)"><summary onmouseover="alert(3)">node</summary></details></div>`,
+	} {
+		for _, renderer := range []struct {
+			name   string
+			render func(string) string
+		}{
+			{"HTML", svc.SanitizeHTML},
+			{"Markdown", func(s string) string {
+				got, err := svc.ToHTML(context.Background(), s)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return got
+			}},
+		} {
+			got := renderer.render(input)
+			for _, dangerous := range []string{"onerror", "onload", "onclick", "ontoggle", "onmouseover", "<script"} {
+				if strings.Contains(got, dangerous) {
+					t.Errorf("%s retained %s: %s", renderer.name, dangerous, got)
+				}
+			}
+		}
+	}
+}
+
+func TestSanitizeHTMLPreservesSafeMermaidSVGAndSource(t *testing.T) {
+	bus := event.NewEventBus()
+	t.Cleanup(bus.Shutdown)
+	svc := NewService(stubSettingService{}, bus)
+	input := `<div class="md-editor-mermaid" data-mermaid-code="graph TD; A--&gt;B"><svg viewBox="0 0 100 50"><defs><marker id="arrow"><path d="M0 0 L10 5"/></marker></defs><g transform="translate(1,2)"><rect width="20" height="10"/><text x="5" y="5">A</text><path d="M0 0 L30 30" marker-end="url(#arrow)"/></g></svg></div>`
+	got := svc.SanitizeHTML(input)
+	for _, want := range []string{`class="md-editor-mermaid"`, `data-mermaid-code="graph TD; A--&gt;B"`, `<svg`, `viewbox="0 0 100 50"`, `<defs`, `<marker`, `<path`, `<rect`, `<text`, `transform="translate(1,2)"`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("lost %s: %s", want, got)
+		}
+	}
+}

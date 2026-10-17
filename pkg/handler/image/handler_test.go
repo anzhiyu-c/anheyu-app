@@ -113,21 +113,57 @@ func encodePublicID(t *testing.T, dbID uint) string {
 }
 
 func newTestHandler(svc image_style.ImageStyleService, dir direct_link.Service) *Handler {
+	nodeID := uint(10)
 	file := &model.File{
-		ID:   42,
-		Name: "a.jpg",
+		ID: 42, Name: "a.jpg", Type: model.FileTypeFile,
+		ParentID: sql.NullInt64{Int64: int64(nodeID), Valid: true},
 		PrimaryEntity: &model.FileStorageEntity{
 			PolicyID: 7,
 			Source:   sql.NullString{String: "/a.jpg", Valid: true},
 		},
 	}
-	policy := &model.StoragePolicy{ID: 7, Type: constant.PolicyTypeLocal}
+	policy := &model.StoragePolicy{ID: 7, Type: constant.PolicyTypeLocal, Flag: constant.PolicyFlagArticleImage, NodeID: &nodeID}
 	return NewHandler(
 		svc,
 		&stubFileFinder{file: file},
 		&stubPolicyFinder{policy: policy},
 		dir,
 	)
+}
+
+func TestServeStyledRejectsPrivateFilesBeforeGeneratingLinks(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, kind := range []string{"private policy", "private directory", "archive", "directory", "wrong entity"} {
+		t.Run(kind, func(t *testing.T) {
+			h := newTestHandler(nil, &stubDirectLink{redirectURL: "https://example.com/private"})
+			file := h.fileRepo.(*stubFileFinder).file
+			policy := h.policyRepo.(*stubPolicyFinder).policy
+			publicID := encodePublicID(t, file.ID)
+			switch kind {
+			case "private policy":
+				policy.Flag = ""
+			case "private directory":
+				file.ParentID.Int64 = 20
+			case "archive":
+				file.Name = "private.zip"
+			case "directory":
+				file.Type = model.FileTypeDir
+			case "wrong entity":
+				var err error
+				publicID, err = idgen.GeneratePublicID(file.ID, idgen.EntityTypeUser)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			router := gin.New()
+			router.GET("/api/image/*pathWithStyle", h.ServeStyled)
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/image/"+publicID, nil))
+			if rec.Code != http.StatusNotFound && rec.Code != http.StatusBadRequest {
+				t.Fatalf("private file escaped via image endpoint: status=%d location=%s", rec.Code, rec.Header().Get("Location"))
+			}
+		})
+	}
 }
 
 // --- 测试用例 ---

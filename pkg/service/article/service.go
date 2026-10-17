@@ -87,6 +87,7 @@ type Service interface {
 
 	// 多人共创功能：获取文章作者ID
 	GetArticleOwnerID(ctx context.Context, publicID string) (uint, error)
+	AuthorPolicy() (enabled bool, needReview bool)
 
 	// 导入导出功能
 	ExportArticles(ctx context.Context, articleIDs []string) (*ExportArticleData, error)
@@ -698,7 +699,8 @@ func (s *serviceImpl) ToAPIResponse(a *model.Article, useAbbrlinkAsID bool, incl
 	}
 
 	if includeHTML {
-		resp.ContentHTML = a.ContentHTML
+		// 历史存量内容也必须经过当前安全策略，不能只依赖写入时的净化。
+		resp.ContentHTML = appParser.SanitizeArticleHTML(a.ContentHTML, a.ContentMd)
 	}
 	return resp
 }
@@ -2010,7 +2012,16 @@ func (s *serviceImpl) GetPrimaryColorFromURL(ctx context.Context, imageURL strin
 	return color, nil
 }
 
-// GetArticleOwnerID 获取文章的作者ID（多人共创功能）
+// AuthorPolicy 获取普通作者的创作与审核策略；未配置多人共创时默认关闭。
+func (s *serviceImpl) AuthorPolicy() (enabled bool, needReview bool) {
+	if s.settingSvc == nil {
+		return false, false
+	}
+	return s.settingSvc.Get("article.multi_author.enable") == "true",
+		s.settingSvc.Get("article.multi_author.need_review") == "true"
+}
+
+// GetArticleOwnerID 获取文章的作者ID（多人共创功能）。
 func (s *serviceImpl) GetArticleOwnerID(ctx context.Context, publicID string) (uint, error) {
 	article, err := s.repo.GetByID(ctx, publicID)
 	if err != nil {

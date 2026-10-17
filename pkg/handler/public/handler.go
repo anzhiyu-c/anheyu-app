@@ -8,6 +8,7 @@
 package public_handler
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -89,7 +90,8 @@ func (h *PublicHandler) GetPublicAlbums(c *gin.Context) {
 		Sort:       sort,
 	})
 	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, "获取相册列表失败: "+err.Error())
+		log.Printf("获取公开相册列表失败: %v", err)
+		response.Fail(c, http.StatusInternalServerError, "获取相册列表失败")
 		return
 	}
 

@@ -32,10 +32,20 @@ import (
 )
 
 var (
-	ErrInvalidCredentials = errors.New("账号或密码错误")
-	ErrPasswordIncorrect  = errors.New("密码错误，请核对后登录。")
-	ErrAuthServiceBusy    = errors.New("登录服务暂时不可用，请稍后重试")
+	ErrInvalidCredentials   = errors.New("账号或密码错误")
+	ErrPasswordIncorrect    = errors.New("密码错误，请核对后登录。")
+	ErrAuthServiceBusy      = errors.New("登录服务暂时不可用，请稍后重试")
+	ErrRegistrationDisabled = errors.New("站点已关闭注册")
 )
+
+// CheckRegistrationEnabled 统一校验公开创建账号入口的注册策略。
+// 管理员创建账号与已有账号登录不使用此校验。
+func CheckRegistrationEnabled(settings setting.SettingService) error {
+	if settings == nil || settings.Get(constant.KeyEnableRegistration.String()) != "true" {
+		return ErrRegistrationDisabled
+	}
+	return nil
+}
 
 // AuthService 定义了所有认证授权相关的业务逻辑接口
 type AuthService interface {
@@ -151,16 +161,15 @@ func (s *authService) Login(ctx context.Context, email, password string) (*model
 	if user == nil {
 		return nil, ErrInvalidCredentials
 	}
+	if !security.CheckPasswordHash(password, user.PasswordHash) {
+		return nil, ErrInvalidCredentials
+	}
 
 	if user.Status == model.UserStatusInactive {
 		return nil, fmt.Errorf("您的账户尚未激活，请检查您的邮箱以完成激活流程")
 	}
 	if user.Status == model.UserStatusBanned {
 		return nil, fmt.Errorf("您的账户已被封禁，请联系管理员")
-	}
-
-	if !security.CheckPasswordHash(password, user.PasswordHash) {
-		return nil, ErrPasswordIncorrect
 	}
 
 	now := time.Now()
@@ -184,6 +193,9 @@ func isDatabaseTemporarilyUnavailable(err error) bool {
 // Register 实现了最终的用户注册逻辑
 // 它会为新用户创建根目录，并在首次注册时初始化系统内置的存储策略及其关联的虚拟目录。
 func (s *authService) Register(ctx context.Context, email, nickname, password string) (bool, error) {
+	if err := CheckRegistrationEnabled(s.settingSvc); err != nil {
+		return false, err
+	}
 	// email转为小写
 	email = strings.ToLower(strings.TrimSpace(email))
 	// nickname去除首尾空格

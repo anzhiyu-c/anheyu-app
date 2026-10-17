@@ -32,6 +32,7 @@ import (
 	"github.com/anzhiyu-c/anheyu-app/ent/userinstalledtheme"
 	frontend_runtime "github.com/anzhiyu-c/anheyu-app/internal/frontend"
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/repository"
+	"github.com/anzhiyu-c/anheyu-app/pkg/util"
 )
 
 const (
@@ -1240,7 +1241,14 @@ func (s *themeService) isStaticDirPath(dirPath string) bool {
 }
 
 // downloadAndExtractTheme 下载并解压主题
+var themeDownloadClient = util.NewPublicHTTPClient(2*time.Minute, true)
+
+const maxThemeDownloadBytes = 256 << 20
+
 func (s *themeService) downloadAndExtractTheme(downloadURL, themeDir string) error {
+	if err := util.ValidatePublicHTTPURL(downloadURL, true); err != nil {
+		return err
+	}
 	// 创建临时文件
 	tempFile, err := os.CreateTemp("", "theme_*.zip")
 	if err != nil {
@@ -1250,7 +1258,7 @@ func (s *themeService) downloadAndExtractTheme(downloadURL, themeDir string) err
 	defer tempFile.Close()
 
 	// 下载文件
-	resp, err := http.Get(downloadURL)
+	resp, err := themeDownloadClient.Get(downloadURL)
 	if err != nil {
 		return fmt.Errorf("下载失败: %w", err)
 	}
@@ -1261,9 +1269,15 @@ func (s *themeService) downloadAndExtractTheme(downloadURL, themeDir string) err
 	}
 
 	// 复制到临时文件
-	_, err = io.Copy(tempFile, resp.Body)
+	if resp.ContentLength > maxThemeDownloadBytes {
+		return fmt.Errorf("主题下载超过大小限制")
+	}
+	written, err := io.Copy(tempFile, io.LimitReader(resp.Body, maxThemeDownloadBytes+1))
 	if err != nil {
 		return fmt.Errorf("保存下载文件失败: %w", err)
+	}
+	if written > maxThemeDownloadBytes {
+		return fmt.Errorf("主题下载超过大小限制")
 	}
 
 	// 解压到主题目录

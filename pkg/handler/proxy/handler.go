@@ -8,17 +8,19 @@
 package proxy
 
 import (
-	"context"
+	"bufio"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 	"time"
 
+	"github.com/anzhiyu-c/anheyu-app/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,62 +34,32 @@ func NewHandler() *ProxyHandler {
 	return &ProxyHandler{}
 }
 
-var privateIPNets []*net.IPNet
+var proxyDownloadClient = util.NewPublicHTTPClient(60*time.Second, false)
 
-func init() {
-	cidrs := []string{
-		"10.0.0.0/8",
-		"172.16.0.0/12",
-		"192.168.0.0/16",
-		"127.0.0.0/8",
-		"169.254.0.0/16",
-		"::1/128",
-		"fc00::/7",
-		"fe80::/10",
+func proxyImageContentType(data []byte) string {
+	contentType := http.DetectContentType(data)
+	if strings.HasPrefix(contentType, "image/") {
+		return contentType
 	}
-	for _, cidr := range cidrs {
-		_, ipNet, err := net.ParseCIDR(cidr)
-		if err != nil {
-			panic(fmt.Sprintf("invalid CIDR in privateIPNets: %s", cidr))
-		}
-		privateIPNets = append(privateIPNets, ipNet)
+	// 标准库尚不识别 ISO-BMFF 图片；仅接受有完整 ftyp 头的图片品牌。
+	if len(data) < 16 || string(data[4:8]) != "ftyp" {
+		return ""
 	}
-}
-
-func isPrivateOrReservedIP(ip net.IP) bool {
-	for _, ipNet := range privateIPNets {
-		if ipNet.Contains(ip) {
-			return true
+	size := int64(binary.BigEndian.Uint32(data[:4]))
+	if size < 16 || size > int64(len(data)) || size%4 != 0 {
+		return ""
+	}
+	brands := append([]byte{}, data[8:12]...)
+	brands = append(brands, data[16:size]...)
+	for i := 0; i+4 <= len(brands); i += 4 {
+		switch string(brands[i : i+4]) {
+		case "avif", "avis":
+			return "image/avif"
+		case "heic", "heix", "hevc", "hevx":
+			return "image/heic"
 		}
 	}
-	return ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified()
-}
-
-// safeDialContext resolves DNS and connects to the target, rejecting private/reserved IPs
-// at the connection level to prevent DNS rebinding (TOCTOU) attacks.
-func safeDialContext(ctx context.Context, network, addr string) (net.Conn, error) {
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		return nil, err
-	}
-
-	ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
-	if err != nil {
-		return nil, fmt.Errorf("DNS解析失败: %w", err)
-	}
-	if len(ips) == 0 {
-		return nil, fmt.Errorf("DNS解析无结果: %s", host)
-	}
-
-	for _, ipAddr := range ips {
-		if isPrivateOrReservedIP(ipAddr.IP) {
-			return nil, fmt.Errorf("目标地址不允许访问")
-		}
-	}
-
-	// 直接连接到已解析的 IP，防止 DNS rebinding
-	dialer := &net.Dialer{Timeout: 10 * time.Second}
-	return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
+	return ""
 }
 
 func sanitizeFilenameForHeader(filename string) string {
@@ -118,32 +90,12 @@ func (h *ProxyHandler) HandleDownload(c *gin.Context) {
 		return
 	}
 
-	parsedURL, err := url.Parse(targetURL)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的URL格式"})
+	if err := util.ValidatePublicHTTPURL(targetURL, false); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不允许的下载地址"})
 		return
 	}
 
-	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "只支持http和https协议"})
-		return
-	}
-
-	transport := &http.Transport{
-		DialContext: safeDialContext,
-	}
-	client := &http.Client{
-		Timeout:   60 * time.Second,
-		Transport: transport,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			if len(via) >= 10 {
-				return fmt.Errorf("重定向次数过多")
-			}
-			return nil
-		},
-	}
-
-	req, err := http.NewRequest("GET", targetURL, nil)
+	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", targetURL, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建请求失败"})
 		return
@@ -155,7 +107,7 @@ func (h *ProxyHandler) HandleDownload(c *gin.Context) {
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Pragma", "no-cache")
 
-	resp, err := client.Do(req)
+	resp, err := proxyDownloadClient.Do(req)
 	if err != nil {
 		log.Printf("代理请求失败: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "请求目标资源失败"})
@@ -168,13 +120,42 @@ func (h *ProxyHandler) HandleDownload(c *gin.Context) {
 		return
 	}
 
-	contentType := resp.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/octet-stream"
+	if resp.ContentLength > maxProxyResponseBytes {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "图片超过大小限制"})
+		return
 	}
-
-	if !strings.HasPrefix(contentType, "image/") && contentType != "application/octet-stream" {
+	reader := bufio.NewReader(resp.Body)
+	peek, peekErr := reader.Peek(512)
+	if peekErr != nil && peekErr != io.EOF {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "读取图片失败"})
+		return
+	}
+	contentType := proxyImageContentType(peek)
+	if contentType == "" {
 		c.JSON(http.StatusBadGateway, gin.H{"error": "目标不是图片文件"})
+		return
+	}
+	// 先限制完整响应再发送，避免将超限的分块响应以成功状态截断返回。
+	temp, err := os.CreateTemp("", "anheyu-proxy-*")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "暂时无法下载图片"})
+		return
+	}
+	defer func() {
+		if err := temp.Close(); err != nil {
+			log.Printf("关闭代理临时文件失败: %v", err)
+		}
+		if err := os.Remove(temp.Name()); err != nil {
+			log.Printf("清理代理临时文件失败: %v", err)
+		}
+	}()
+	size, err := io.Copy(temp, io.LimitReader(reader, maxProxyResponseBytes+1))
+	if err != nil || size > maxProxyResponseBytes {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "图片下载失败或超过大小限制"})
+		return
+	}
+	if _, err := temp.Seek(0, io.SeekStart); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "读取图片失败"})
 		return
 	}
 
@@ -185,11 +166,6 @@ func (h *ProxyHandler) HandleDownload(c *gin.Context) {
 	c.Header("Cross-Origin-Resource-Policy", "cross-origin")
 	c.Header("Timing-Allow-Origin", "*")
 
-	contentLength := resp.Header.Get("Content-Length")
-	if contentLength != "" {
-		c.Header("Content-Length", contentLength)
-	}
-
 	filename := sanitizeFilenameForHeader(getFileName(targetURL))
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 	c.Header("Cache-Control", "no-cache")
@@ -197,30 +173,7 @@ func (h *ProxyHandler) HandleDownload(c *gin.Context) {
 	c.Header("Content-Encoding", "identity")
 	c.Header("X-Content-Type-Options", "nosniff")
 
-	limitedBody := io.LimitReader(resp.Body, maxProxyResponseBytes)
-	buffer := make([]byte, 32*1024)
-	flusher, ok := c.Writer.(http.Flusher)
-
-	for {
-		n, err := limitedBody.Read(buffer)
-		if n > 0 {
-			if _, writeErr := c.Writer.Write(buffer[:n]); writeErr != nil {
-				log.Printf("写入数据到客户端时发生错误: %v", writeErr)
-				return
-			}
-
-			if ok {
-				flusher.Flush()
-			}
-		}
-
-		if err != nil {
-			if err != io.EOF {
-				log.Printf("读取远程文件时发生错误: %v", err)
-			}
-			break
-		}
-	}
+	c.DataFromReader(http.StatusOK, size, contentType, temp, nil)
 }
 
 // HandleTest 测试代理下载功能

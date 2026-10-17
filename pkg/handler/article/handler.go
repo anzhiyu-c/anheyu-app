@@ -187,7 +187,9 @@ func (h *Handler) ListPublic(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, result, "获取列表成功")
+	publicResult := *result
+	publicResult.List = publicArticleList(result.List)
+	response.Success(c, &publicResult, "获取列表成功")
 }
 
 // ListArchives
@@ -245,7 +247,7 @@ func (h *Handler) GetRandom(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, article, "获取成功")
+	response.Success(c, publicArticleResponse(article), "获取成功")
 }
 
 // Create
@@ -286,6 +288,25 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 	isAdmin := isAdminByUserGroup(claims.UserGroupID)
+	ownerID, _, err := idgen.DecodePublicID(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusUnauthorized, "无效的用户凭证")
+		return
+	}
+	req.OwnerID = ownerID
+	if !isAdmin {
+		enabled, needReview := h.svc.AuthorPolicy()
+		if !enabled {
+			response.Fail(c, http.StatusForbidden, "多人共创功能未开启，普通用户暂不能发布文章")
+			return
+		}
+		req.ReviewStatus = "NONE"
+		if needReview {
+			req.Status = "DRAFT"
+			req.ReviewStatus = "PENDING"
+			req.ScheduledAt = nil
+		}
+	}
 	if !isAdmin && hasCustomJSConfig(req.ExtraConfig) {
 		response.Fail(c, http.StatusForbidden, "仅管理员可以设置单文章自定义JS")
 		return
@@ -342,7 +363,7 @@ func (h *Handler) ListHome(c *gin.Context) {
 		response.Fail(c, http.StatusInternalServerError, "获取首页文章列表失败: "+err.Error())
 		return
 	}
-	response.Success(c, articles, "获取列表成功")
+	response.Success(c, publicArticleList(articles), "获取列表成功")
 }
 
 // GetPublic
@@ -371,7 +392,9 @@ func (h *Handler) GetPublic(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, articleResponse, "获取成功")
+	publicResult := *articleResponse
+	publicResult.ArticleResponse = *publicArticleResponse(&articleResponse.ArticleResponse)
+	response.Success(c, &publicResult, "获取成功")
 }
 
 // GetByURL
@@ -407,7 +430,9 @@ func (h *Handler) GetByURL(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, articleResponse, "获取成功")
+	publicResult := *articleResponse
+	publicResult.ArticleResponse = *publicArticleResponse(&articleResponse.ArticleResponse)
+	response.Success(c, &publicResult, "获取成功")
 }
 
 // extractSlugFromURL 从页面 URL 中提取文章标识（ID 或 abbrlink）。
@@ -458,6 +483,9 @@ func (h *Handler) Get(c *gin.Context) {
 		return
 	}
 
+	if _, ok := RequireArticleAccess(c, id, h.svc.GetArticleOwnerID); !ok {
+		return
+	}
 	article, err := h.svc.Get(c.Request.Context(), id)
 	if err != nil {
 		response.Fail(c, http.StatusNotFound, "文章未找到")
@@ -489,6 +517,10 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 	log.Printf("[Handler.Update] 文章ID: %s", id)
+	claims, ok := RequireArticleAccess(c, id, h.svc.GetArticleOwnerID)
+	if !ok {
+		return
+	}
 
 	var req model.UpdateArticleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -502,12 +534,25 @@ func (h *Handler) Update(c *gin.Context) {
 		log.Printf("[Handler.Update] CustomUpdatedAt 值: %s", *req.CustomUpdatedAt)
 	}
 
-	claims, err := getClaims(c)
-	if err != nil {
-		response.Fail(c, http.StatusUnauthorized, err.Error())
-		return
-	}
 	isAdmin := isAdminByUserGroup(claims.UserGroupID)
+	if !isAdmin {
+		enabled, needReview := h.svc.AuthorPolicy()
+		if !enabled {
+			response.Fail(c, http.StatusForbidden, "多人共创功能未开启，普通用户暂不能编辑文章")
+			return
+		}
+		current, err := h.svc.Get(c.Request.Context(), id)
+		if err != nil {
+			response.Fail(c, http.StatusNotFound, "文章未找到")
+			return
+		}
+		// 审核状态由服务端决定；历史上进入审核的文章不能通过共享更新接口直接发布。
+		req.ReviewStatus = nil
+		if needReview || (current.ReviewStatus != "" && current.ReviewStatus != "NONE") {
+			draft, pending, unscheduled := "DRAFT", "PENDING", ""
+			req.Status, req.ReviewStatus, req.ScheduledAt = &draft, &pending, &unscheduled
+		}
+	}
 	if !isAdmin && hasCustomJSConfig(req.ExtraConfig) {
 		response.Fail(c, http.StatusForbidden, "仅管理员可以设置单文章自定义JS")
 		return
@@ -549,6 +594,9 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
+	if _, ok := RequireArticleAccess(c, id, h.svc.GetArticleOwnerID); !ok {
+		return
+	}
 	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
 		response.Fail(c, http.StatusInternalServerError, "删除文章失败: "+err.Error())
 		return
@@ -641,8 +689,12 @@ func getClaims(c *gin.Context) (*auth.CustomClaims, error) {
 		return nil, errors.New("无法获取用户信息，请确认是否已登录")
 	}
 	claims, ok := claimsValue.(*auth.CustomClaims)
-	if !ok {
+	if !ok || claims == nil {
 		return nil, errors.New("用户信息格式不正确")
+	}
+	userID, entityType, err := idgen.DecodePublicID(claims.UserID)
+	if err != nil || userID == 0 || entityType != idgen.EntityTypeUser {
+		return nil, errors.New("无效的用户凭证")
 	}
 	return claims, nil
 }

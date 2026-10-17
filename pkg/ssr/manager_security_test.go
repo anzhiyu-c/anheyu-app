@@ -4,8 +4,10 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -176,5 +178,32 @@ func TestSSRUninstallRejectsLinkedThemesRoot(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(outside, "theme-safe")); err != nil {
 		t.Fatalf("uninstall modified outside directory: %v", err)
+	}
+}
+
+func TestSSRArchiveRejectsExpandedSizeOverflow(t *testing.T) {
+	var archive bytes.Buffer
+	gz := gzip.NewWriter(&archive)
+	tw := tar.NewWriter(gz)
+	// 目录不含正文，但 tar.Reader 保留其声明的 Size。
+	// 若先累加再比较，1 + MaxInt64 会翻负，从而绕过解压总量上限。
+	for _, header := range []*tar.Header{
+		{Name: "theme-safe/seed/", Typeflag: tar.TypeDir, Mode: 0755, Size: 1, Format: tar.FormatGNU},
+		{Name: "theme-safe/overflow/", Typeflag: tar.TypeDir, Mode: 0755, Size: math.MaxInt64, Format: tar.FormatGNU},
+	} {
+		if err := tw.WriteHeader(header); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := gz.Close(); err != nil {
+		t.Fatal(err)
+	}
+	base := t.TempDir()
+	err := NewManager(base).extractTarGz(bytes.NewReader(archive.Bytes()), filepath.Join(base, "theme-safe"))
+	if err == nil || !strings.Contains(err.Error(), "解压限制") {
+		t.Fatalf("expanded size overflow was not rejected: %v", err)
 	}
 }

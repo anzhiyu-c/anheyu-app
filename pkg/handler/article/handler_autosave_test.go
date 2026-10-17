@@ -57,7 +57,7 @@ func newArticleHandlerTestContext(t *testing.T, method, target, body string) (*g
 	ctx, _ := gin.CreateTestContext(recorder)
 	ctx.Request = httptest.NewRequest(method, target, bytes.NewBufferString(body))
 	ctx.Request.Header.Set("Content-Type", "application/json")
-	ctx.Set(auth.ClaimsKey, &auth.CustomClaims{UserID: "test-user"})
+	ctx.Set(auth.ClaimsKey, articleTestClaims(t, 1, true))
 	return ctx, recorder
 }
 
@@ -139,8 +139,8 @@ func TestCreatePassesIdempotencyHeaderWithAuthenticatedUserScope(t *testing.T) {
 	if svc.options == nil {
 		t.Fatal("CreateWithOptions() was not called")
 	}
-	if svc.options.ActorUserID != "test-user" {
-		t.Fatalf("ActorUserID = %q, want %q", svc.options.ActorUserID, "test-user")
+	if svc.options.ActorUserID != articleTestClaims(t, 1, true).UserID {
+		t.Fatalf("ActorUserID = %q, want authenticated user", svc.options.ActorUserID)
 	}
 	if svc.options.IdempotencyKey != "autosave-key" || !svc.options.IdempotencyKeyPresent {
 		t.Fatalf("idempotency options = %+v, want the supplied header", *svc.options)

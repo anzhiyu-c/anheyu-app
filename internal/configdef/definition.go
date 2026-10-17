@@ -520,7 +520,7 @@ var AllSettings = []Definition{
 	{Key: constant.KeyGeetestCaptchaKey, Value: "", Comment: "极验验证 Key（私钥，后端验证使用，从极验后台获取）", IsPublic: false},
 
 	// --- 系统图形验证码配置 ---
-	{Key: constant.KeyImageCaptchaLength, Value: "4", Comment: "图形验证码字符长度 (默认4位)", IsPublic: true},
+	{Key: constant.KeyImageCaptchaLength, Value: "6", Comment: "图形验证码数字长度 (6-10位，默认6位)", IsPublic: true},
 	{Key: constant.KeyImageCaptchaExpire, Value: "300", Comment: "图形验证码过期时间（秒，默认300秒/5分钟）", IsPublic: true},
 
 	// --- 顶栏用户面板配置 ---

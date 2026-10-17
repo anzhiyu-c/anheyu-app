@@ -14,7 +14,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,6 +21,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/anzhiyu-c/anheyu-app/pkg/util"
 )
 
 // ThemeStatus SSR 主题状态
@@ -92,6 +93,8 @@ func validateThemeName(name string) error {
 	return nil
 }
 
+var ssrDownloadClient = util.NewPublicHTTPClient(2*time.Minute, true)
+
 // Install 下载并安装 SSR 主题
 func (m *Manager) Install(ctx context.Context, themeName, downloadURL string) error {
 	if err := validateThemeName(themeName); err != nil {
@@ -99,29 +102,8 @@ func (m *Manager) Install(ctx context.Context, themeName, downloadURL string) er
 	}
 
 	// 验证下载 URL 安全性，防止 SSRF
-	parsedURL, err := url.Parse(downloadURL)
-	if err != nil {
-		return fmt.Errorf("无效的下载URL: %w", err)
-	}
-	if parsedURL.Scheme != "https" && parsedURL.Scheme != "http" {
-		return fmt.Errorf("不支持的URL协议: %s", parsedURL.Scheme)
-	}
-	host := parsedURL.Hostname()
-	if host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "0.0.0.0" ||
-		strings.HasPrefix(host, "10.") || strings.HasPrefix(host, "192.168.") ||
-		strings.HasPrefix(host, "169.254.") || strings.HasPrefix(host, "fc00:") ||
-		strings.HasPrefix(host, "fd") || strings.HasPrefix(host, "fe80:") {
-		return fmt.Errorf("不允许从内网地址下载主题")
-	}
-	// 172.16.0.0/12 私有地址段精确匹配
-	if strings.HasPrefix(host, "172.") {
-		parts := strings.SplitN(host, ".", 3)
-		if len(parts) >= 2 {
-			var second int
-			if _, err := fmt.Sscanf(parts[1], "%d", &second); err == nil && second >= 16 && second <= 31 {
-				return fmt.Errorf("不允许从内网地址下载主题")
-			}
-		}
+	if err := util.ValidatePublicHTTPURL(downloadURL, true); err != nil {
+		return err
 	}
 
 	m.mu.Lock()
@@ -147,15 +129,14 @@ func (m *Manager) Install(ctx context.Context, themeName, downloadURL string) er
 	}
 
 	// 下载主题包
-	log.Printf("[SSR] 正在下载主题: %s, URL: %s", themeName, downloadURL)
+	log.Printf("[SSR] 正在下载主题: %s", themeName)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
 	if err != nil {
 		return fmt.Errorf("create request failed: %w", err)
 	}
 
-	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := ssrDownloadClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
@@ -164,9 +145,13 @@ func (m *Manager) Install(ctx context.Context, themeName, downloadURL string) er
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("download failed with status: %d", resp.StatusCode)
 	}
+	const maxDownloadBytes = 256 << 20
+	if resp.ContentLength > maxDownloadBytes {
+		return fmt.Errorf("主题下载超过大小限制")
+	}
 
 	// 解压到主题目录
-	if err := m.extractTarGz(resp.Body, themePath); err != nil {
+	if err := m.extractTarGz(io.LimitReader(resp.Body, maxDownloadBytes+1), themePath); err != nil {
 		if cleanupErr := themesRoot.RemoveAll(themeName); cleanupErr != nil {
 			return fmt.Errorf("extract failed: %w; cleanup failed: %v", err, cleanupErr)
 		}
@@ -233,7 +218,10 @@ func (m *Manager) extractTarGz(r io.Reader, destDir string) error {
 		}
 	}()
 
+	const maxExpandedBytes = 512 << 20
 	tr := tar.NewReader(gzr)
+	var expandedBytes int64
+	entryCount := 0
 
 	for {
 		header, err := tr.Next()
@@ -243,6 +231,11 @@ func (m *Manager) extractTarGz(r io.Reader, destDir string) error {
 		if err != nil {
 			return err
 		}
+		entryCount++
+		if header.Size < 0 || header.Size > maxExpandedBytes-expandedBytes || entryCount > 10000 {
+			return fmt.Errorf("主题归档超过解压限制")
+		}
+		expandedBytes += header.Size
 
 		// 先检查原始路径，避免去除包装目录后掩盖非法路径。
 		name := header.Name

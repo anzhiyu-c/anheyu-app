@@ -89,12 +89,12 @@ func serveThemeArchiveWithoutNetwork(t *testing.T, archive string) *int {
 		t.Fatal(err)
 	}
 	calls := new(int)
-	original := http.DefaultTransport
-	http.DefaultTransport = themeRoundTripper(func(request *http.Request) (*http.Response, error) {
+	original := themeDownloadClient.Transport
+	themeDownloadClient.Transport = themeRoundTripper(func(request *http.Request) (*http.Response, error) {
 		*calls++
 		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(data)), Header: make(http.Header), Request: request}, nil
 	})
-	t.Cleanup(func() { http.DefaultTransport = original })
+	t.Cleanup(func() { themeDownloadClient.Transport = original })
 	return calls
 }
 

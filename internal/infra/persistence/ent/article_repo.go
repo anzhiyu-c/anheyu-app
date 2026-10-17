@@ -232,11 +232,8 @@ func (r *articleRepo) CountByCategoryWithMultipleCategories(ctx context.Context,
 // 仅选择展示所需的列，避免加载 ContentMd/ContentHTML 等大字段。
 func (r *articleRepo) getAdjacentArticle(ctx context.Context, currentArticleID uint, createdAt time.Time, isPrev bool) (*model.Article, error) {
 	query := r.db.Article.Query().
-		Where(
-			article.IDNEQ(currentArticleID),
-			article.StatusEQ(article.StatusPUBLISHED),
-			article.DeletedAtIsNil(),
-		)
+		Where(publicArticlePredicates()...).
+		Where(article.IDNEQ(currentArticleID))
 
 	if isPrev {
 		query = query.Where(article.CreatedAtLT(createdAt)).
@@ -284,10 +281,7 @@ func (r *articleRepo) FindByID(ctx context.Context, id uint) (*model.Article, er
 func (r *articleRepo) GetArchiveSummary(ctx context.Context) ([]*model.ArchiveItem, error) {
 	var items []*model.ArchiveItem
 	err := r.db.Article.Query().
-		Where(
-			article.StatusEQ(article.StatusPUBLISHED),
-			article.DeletedAtIsNil(),
-		).
+		Where(publicArticlePredicates()...).
 		Modify(func(s *sql.Selector) {
 			var yearExprStr, monthExprStr string
 
@@ -362,10 +356,9 @@ func (r *articleRepo) FindRelatedArticles(ctx context.Context, articleModel *mod
 	}
 
 	entities, err := r.db.Article.Query().
+		Where(publicArticlePredicates()...).
 		Where(
 			article.IDNEQ(currentArticleDbID),
-			article.StatusEQ(article.StatusPUBLISHED),
-			article.DeletedAtIsNil(),
 			relationPredicate,
 		).
 		Select(
@@ -449,12 +442,7 @@ func (r *articleRepo) GetBySlugOrIDForPreview(ctx context.Context, slugOrID stri
 
 // GetSiteStats 高效地获取站点范围内的统计数据
 func (r *articleRepo) GetSiteStats(ctx context.Context) (*model.SiteStats, error) {
-	publishedAndNotDeleted := []predicate.Article{
-		article.StatusEQ(article.StatusPUBLISHED),
-		article.DeletedAtIsNil(),
-	}
-
-	totalPosts, err := r.db.Article.Query().Where(publishedAndNotDeleted...).Count(ctx)
+	totalPosts, err := r.db.Article.Query().Where(publicArticlePredicates()...).Count(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +452,7 @@ func (r *articleRepo) GetSiteStats(ctx context.Context) (*model.SiteStats, error
 		Sum int `json:"sum"`
 	}
 	err = r.db.Article.Query().
-		Where(publishedAndNotDeleted...).
+		Where(publicArticlePredicates()...).
 		Aggregate(ent.Sum(article.FieldWordCount)).
 		Scan(ctx, &v)
 
@@ -1152,16 +1140,12 @@ func (r *articleRepo) GetByID(ctx context.Context, publicID string) (*model.Arti
 func (r *articleRepo) GetRandom(ctx context.Context) (*model.Article, error) {
 	// 根据数据库类型选择随机函数
 	randFunc := "RAND()"
-	if r.dbType == "postgres" || r.dbType == "postgresql" || r.dbType == "pg" {
+	if r.dbType == "postgres" || r.dbType == "postgresql" || r.dbType == "pg" || r.dbType == "sqlite" || r.dbType == "sqlite3" {
 		randFunc = "RANDOM()"
 	}
 
 	entity, err := r.db.Article.Query().
-		Where(
-			article.StatusEQ(article.StatusPUBLISHED),
-			article.DeletedAtIsNil(),
-			article.IsTakedownEQ(false),
-		).
+		Where(publicArticlePredicates()...).
 		Order(func(s *sql.Selector) {
 			s.OrderBy(randFunc)
 		}).
