@@ -12,6 +12,12 @@ import (
 	"time"
 )
 
+const (
+	maxPageCacheEntries    = 512
+	maxPageCacheEntryBytes = 1 << 20
+	maxPageCacheBodyBytes  = 32 << 20
+)
+
 // cacheEntry holds a cached HTTP response.
 type cacheEntry struct {
 	body       []byte
@@ -23,8 +29,9 @@ type cacheEntry struct {
 // pageCache is a simple in-memory TTL cache for proxied page responses.
 // Only public GET requests to cacheable paths are stored.
 type pageCache struct {
-	mu    sync.RWMutex
-	items map[string]*cacheEntry
+	mu        sync.RWMutex
+	items     map[string]*cacheEntry
+	bodyBytes int
 }
 
 var sharedPageCache = &pageCache{
@@ -50,6 +57,7 @@ func ClearPageCache() {
 	sharedPageCache.mu.Lock()
 	defer sharedPageCache.mu.Unlock()
 	clear(sharedPageCache.items)
+	sharedPageCache.bodyBytes = 0
 }
 
 // cacheTTL returns the TTL for a given request path.
@@ -118,7 +126,10 @@ func (pc *pageCache) get(key string) *cacheEntry {
 	}
 	if time.Now().After(entry.expiresAt) {
 		pc.mu.Lock()
-		delete(pc.items, key)
+		// Another request may have replaced this entry while we waited for the lock.
+		if pc.items[key] == entry {
+			pc.remove(key)
+		}
 		pc.mu.Unlock()
 		return nil
 	}
@@ -127,33 +138,49 @@ func (pc *pageCache) get(key string) *cacheEntry {
 
 // set stores a response in the cache with a path-appropriate TTL.
 func (pc *pageCache) set(key string, body []byte, header http.Header, statusCode int) {
-	ttl := cacheTTL(key)
-	if ttl <= 0 {
+	path, _, _ := strings.Cut(key, "?")
+	ttl := cacheTTL(path)
+	if ttl <= 0 || len(body) > maxPageCacheEntryBytes {
 		return
 	}
-	// Clone the header to avoid retaining references to the original request
-	clonedHeader := header.Clone()
-
-	entry := &cacheEntry{
-		body:       make([]byte, len(body)),
-		header:     clonedHeader,
-		statusCode: statusCode,
-		expiresAt:  time.Now().Add(ttl),
-	}
-	copy(entry.body, body)
 
 	pc.mu.Lock()
-	// Evict old entries if cache grows too large (keep max 512 entries)
-	if len(pc.items) >= 512 {
+	defer pc.mu.Unlock()
+	pc.remove(key)
+	if len(pc.items) >= maxPageCacheEntries || pc.bodyBytes+len(body) > maxPageCacheBodyBytes {
 		now := time.Now()
 		for k, v := range pc.items {
 			if now.After(v.expiresAt) {
-				delete(pc.items, k)
+				pc.remove(k)
 			}
 		}
 	}
-	pc.items[key] = entry
-	pc.mu.Unlock()
+	// Expiry alone cannot bound a cache filled with many distinct live URLs.
+	for len(pc.items) >= maxPageCacheEntries || pc.bodyBytes+len(body) > maxPageCacheBodyBytes {
+		var oldestKey string
+		var oldest *cacheEntry
+		for k, entry := range pc.items {
+			if oldest == nil || entry.expiresAt.Before(oldest.expiresAt) {
+				oldestKey, oldest = k, entry
+			}
+		}
+		pc.remove(oldestKey)
+	}
+	pc.items[key] = &cacheEntry{
+		body:       bytes.Clone(body),
+		header:     header.Clone(),
+		statusCode: statusCode,
+		expiresAt:  time.Now().Add(ttl),
+	}
+	pc.bodyBytes += len(body)
+}
+
+// remove requires the write lock and keeps capacity accounting consistent.
+func (pc *pageCache) remove(key string) {
+	if entry, ok := pc.items[key]; ok {
+		pc.bodyBytes -= len(entry.body)
+		delete(pc.items, key)
+	}
 }
 
 // buildPageCacheKey builds a cache key from the full request URI.
@@ -165,13 +192,7 @@ func buildPageCacheKey(r *http.Request) string {
 // tryServeFromCache attempts to serve the request from the page cache.
 // Returns true if the response was served from cache.
 func tryServeFromCache(w http.ResponseWriter, r *http.Request) bool {
-	if r.Method != "GET" || r.Header.Get("RSC") != "" {
-		return false
-	}
-	if !isCacheablePath(r.URL.Path) {
-		return false
-	}
-	if hasAuthCookie(r) {
+	if !isCacheableRequest(r) {
 		return false
 	}
 
@@ -195,23 +216,57 @@ func tryServeFromCache(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
+func isCacheableRequest(r *http.Request) bool {
+	return r.Method == http.MethodGet && r.Header.Get("RSC") == "" &&
+		isCacheablePath(r.URL.Path) && !hasAuthCookie(r)
+}
+
+func isCacheableResponse(header http.Header, statusCode int) bool {
+	policy := strings.ToLower(header.Get("Cache-Control"))
+	return statusCode >= 200 && statusCode < 300 && header.Get("Set-Cookie") == "" &&
+		!strings.Contains(policy, "private") && !strings.Contains(policy, "no-store") &&
+		!strings.Contains(policy, "no-cache")
+}
+
 // cacheResponseWriter wraps http.ResponseWriter to capture the response body
 // for caching while still writing to the underlying writer.
 // It also implements http.Flusher (delegating to the underlying writer if possible)
 // for compatibility with httputil.ReverseProxy.
 type cacheResponseWriter struct {
 	http.ResponseWriter
-	body       *bytes.Buffer
-	statusCode int
+	body        *bytes.Buffer
+	statusCode  int
+	wroteHeader bool
 }
 
 func (w *cacheResponseWriter) Write(b []byte) (int, error) {
-	w.body.Write(b)
-	return w.ResponseWriter.Write(b)
+	if !w.wroteHeader {
+		w.WriteHeader(http.StatusOK)
+	}
+	n, err := w.ResponseWriter.Write(b)
+	if err != nil {
+		w.body = nil
+		return n, err
+	}
+	if w.body != nil {
+		if len(b) > maxPageCacheEntryBytes-w.body.Len() {
+			// Continue streaming to the client, but release the partial capture.
+			w.body = nil
+		} else if _, captureErr := w.body.Write(b[:n]); captureErr != nil {
+			return n, captureErr
+		}
+	}
+	return n, nil
 }
 
 func (w *cacheResponseWriter) WriteHeader(code int) {
-	w.statusCode = code
+	if code >= 200 && !w.wroteHeader {
+		w.statusCode = code
+		w.wroteHeader = true
+		if !isCacheableResponse(w.Header(), code) {
+			w.body = nil
+		}
+	}
 	w.ResponseWriter.WriteHeader(code)
 }
 
@@ -228,16 +283,17 @@ func (w *cacheResponseWriter) Flush() {
 func wrapForCaching(w http.ResponseWriter, r *http.Request) (*cacheResponseWriter, func()) {
 	crw := &cacheResponseWriter{
 		ResponseWriter: w,
-		body:           &bytes.Buffer{},
 		statusCode:     http.StatusOK,
+	}
+	if isCacheableRequest(r) {
+		crw.body = &bytes.Buffer{}
 	}
 	return crw, func() {
 		// Only cache successful GET responses for cacheable paths
-		if r.Method != "GET" || !isCacheablePath(r.URL.Path) || hasAuthCookie(r) || r.Header.Get("RSC") != "" {
+		if crw.body == nil || !isCacheableRequest(r) {
 			return
 		}
-		policy := strings.ToLower(crw.Header().Get("Cache-Control"))
-		if strings.Contains(policy, "private") || strings.Contains(policy, "no-store") || strings.Contains(policy, "no-cache") || crw.Header().Get("Set-Cookie") != "" {
+		if !isCacheableResponse(crw.Header(), crw.statusCode) {
 			return
 		}
 		if crw.statusCode >= 200 && crw.statusCode < 300 {

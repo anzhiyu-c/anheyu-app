@@ -83,6 +83,11 @@ func (e *NativeGoEngine) Process(ctx context.Context, src io.Reader, style model
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
+	// 显式不支持的输出格式直接交给 AutoEngine 降级，避免先解码、缩放和加水印。
+	// 空格式和 original 仍需读取输入格式后判断。
+	if style.Format != "" && style.Format != "original" && !isOutputSupported(normalizeImageFormat(style.Format)) {
+		return "", ErrFormatUnsupported
+	}
 
 	// 1. 将 src 读入内存（后续需要多次 seek：读 EXIF + 解码）
 	buf, err := io.ReadAll(src)

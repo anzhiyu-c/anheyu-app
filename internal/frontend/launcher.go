@@ -7,7 +7,7 @@ package frontend
 import (
 	"fmt"
 	"log"
-	"net/http"
+	"net"
 	"net/url"
 	"os"
 	"os/exec"
@@ -328,13 +328,12 @@ func (l *Launcher) IsRunning() bool {
 }
 
 func (l *Launcher) waitForReady(cmd *exec.Cmd) {
-	healthURL := fmt.Sprintf("http://127.0.0.1:%d/", l.port)
-	client := &http.Client{Timeout: 3 * time.Second}
+	address := fmt.Sprintf("127.0.0.1:%d", l.port)
 	start := time.Now()
 
 	for {
 		if time.Since(start) > HealthCheckTimeout {
-			log.Printf("[Frontend] ⚠️ Next.js 健康检查超时（已等待 %.0f 秒）", HealthCheckTimeout.Seconds())
+			log.Printf("[Frontend] Next.js 监听探测超时（已等待 %.0f 秒）", HealthCheckTimeout.Seconds())
 			return
 		}
 
@@ -342,20 +341,16 @@ func (l *Launcher) waitForReady(cmd *exec.Cmd) {
 		running := l.cmd == cmd && l.cmd != nil && l.cmd.Process != nil
 		l.mu.RUnlock()
 		if !running {
-			log.Println("[Frontend] 进程已退出，停止健康检查")
+			log.Println("[Frontend] 进程已退出，停止监听探测")
 			return
 		}
 
-		resp, err := client.Get(healthURL)
+		conn, err := net.DialTimeout("tcp", address, 3*time.Second)
 		if err == nil {
-			if closeErr := resp.Body.Close(); closeErr != nil {
-				log.Printf("[Frontend] close health response: %v", closeErr)
+			if closeErr := conn.Close(); closeErr != nil {
+				log.Printf("[Frontend] close readiness connection: %v", closeErr)
 			}
-			if resp.StatusCode >= 500 {
-				time.Sleep(HealthCheckInterval)
-				continue
-			}
-			log.Printf("[Frontend] ✅ Next.js 前端已就绪 (等待了 %.1f 秒)", time.Since(start).Seconds())
+			log.Printf("[Frontend] Next.js 前端监听已就绪 (等待了 %.1f 秒)", time.Since(start).Seconds())
 			return
 		}
 

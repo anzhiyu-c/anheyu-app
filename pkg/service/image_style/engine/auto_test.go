@@ -8,6 +8,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"image"
+	"image/color"
 	"io"
 	"os/exec"
 	"testing"
@@ -163,6 +165,43 @@ func TestAutoEngine_FallbackOnFormatUnsupported_WebpToJpeg(t *testing.T) {
 	}
 	if fallback.calls[0].Format != "jpg" {
 		t.Errorf("webp → jpg，实际 %s", fallback.calls[0].Format)
+	}
+}
+
+func TestAutoEngine_NativeFallback_TransformsOnce(t *testing.T) {
+	src := makeSolidJPEG(t, 80, 60, color.RGBA{10, 20, 30, 255})
+	for _, format := range []string{"webp", "avif", "heic", "heif"} {
+		t.Run(format, func(t *testing.T) {
+			watermarker := &spyWatermarker{paint: &color.RGBA{255, 0, 0, 255}}
+			auto := NewAutoEngine(VipsCapability{}, WithAutoWatermarker(watermarker))
+			style := model.ImageStyleConfig{
+				Format:    format,
+				Quality:   80,
+				Resize:    model.ImageResizeConfig{Mode: "cover", Width: 40, Height: 30},
+				Watermark: &model.WatermarkConfig{Type: "text", Text: "watermark"},
+			}
+			var out bytes.Buffer
+			mime, err := auto.Process(context.Background(), bytes.NewReader(src), style, &out)
+			if err != nil {
+				t.Fatalf("Process: %v", err)
+			}
+			if mime != "image/jpeg" {
+				t.Errorf("mime = %q, want image/jpeg", mime)
+			}
+			cfg, decodedFormat, err := image.DecodeConfig(bytes.NewReader(out.Bytes()))
+			if err != nil {
+				t.Fatalf("解码输出失败: %v", err)
+			}
+			if decodedFormat != "jpeg" || cfg.Width != 40 || cfg.Height != 30 {
+				t.Errorf("降级输出 = %s %dx%d, want jpeg 40x30", decodedFormat, cfg.Width, cfg.Height)
+			}
+			if watermarker.called != 1 {
+				t.Errorf("降级应只做一次水印，实际 %d 次", watermarker.called)
+			}
+			if watermarker.lastWidth != 40 || watermarker.lastHeight != 30 || watermarker.lastCfg != style.Watermark {
+				t.Errorf("降级水印应保留配置并在缩放后处理，实际 %+v", watermarker)
+			}
+		})
 	}
 }
 

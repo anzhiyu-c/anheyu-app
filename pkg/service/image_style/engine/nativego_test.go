@@ -183,6 +183,73 @@ func TestNativeGoEngine_OriginalFormat_KeepsInputType(t *testing.T) {
 	}
 }
 
+func TestNativeGoEngine_InputDependentFormat_KeepsInputType(t *testing.T) {
+	for _, format := range []string{"", "original"} {
+		for _, input := range []struct {
+			name string
+			mime string
+			data []byte
+		}{
+			{"jpeg", "image/jpeg", makeSolidJPEG(t, 40, 20, color.RGBA{10, 20, 30, 255})},
+			{"png", "image/png", makeSolidPNG(t, 40, 20, color.RGBA{10, 20, 30, 255})},
+		} {
+			t.Run(format+"/"+input.name, func(t *testing.T) {
+				var out bytes.Buffer
+				mime, err := NewNativeGoEngine().Process(context.Background(), bytes.NewReader(input.data),
+					model.ImageStyleConfig{Format: format, Quality: 80}, &out)
+				if err != nil {
+					t.Fatalf("Process: %v", err)
+				}
+				if mime != input.mime {
+					t.Errorf("mime = %q, want %q", mime, input.mime)
+				}
+				cfg, decodedFormat, err := image.DecodeConfig(bytes.NewReader(out.Bytes()))
+				if err != nil {
+					t.Fatalf("解码输出失败: %v", err)
+				}
+				if decodedFormat != input.name || cfg.Width != 40 || cfg.Height != 20 {
+					t.Errorf("输出 = %s %dx%d, want %s 40x20", decodedFormat, cfg.Width, cfg.Height, input.name)
+				}
+			})
+		}
+	}
+}
+
+func TestNativeGoEngine_UnsupportedOutputFormat_DoesNotConsumeSource(t *testing.T) {
+	data := makeSolidJPEG(t, 40, 20, color.RGBA{10, 20, 30, 255})
+	for _, format := range []string{"webp", "avif", "heic", "heif", "gif"} {
+		t.Run(format, func(t *testing.T) {
+			src := bytes.NewReader(data)
+			var out bytes.Buffer
+			_, err := NewNativeGoEngine().Process(context.Background(), src,
+				model.ImageStyleConfig{Format: format}, &out)
+			if !errors.Is(err, ErrFormatUnsupported) {
+				t.Fatalf("err = %v, want ErrFormatUnsupported", err)
+			}
+			if src.Len() != len(data) {
+				t.Errorf("不支持格式不应消费源数据，实际读取 %d 字节", len(data)-src.Len())
+			}
+			if out.Len() != 0 {
+				t.Errorf("不支持格式不应写输出，实际 %d 字节", out.Len())
+			}
+		})
+	}
+}
+
+func TestNativeGoEngine_CancelledBeforeProcess_TakesPrecedenceOverFormat(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	src := bytes.NewReader([]byte("unread source"))
+	var out bytes.Buffer
+	_, err := NewNativeGoEngine().Process(ctx, src, model.ImageStyleConfig{Format: "webp"}, &out)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want context.Canceled", err)
+	}
+	if src.Len() != len("unread source") || out.Len() != 0 {
+		t.Error("已取消任务不应读源数据或写输出")
+	}
+}
+
 func TestNativeGoEngine_UnsupportedOutputFormat_ReturnsErr(t *testing.T) {
 	e := NewNativeGoEngine()
 	src := makeSolidJPEG(t, 100, 100, color.RGBA{0, 0, 0, 255})
