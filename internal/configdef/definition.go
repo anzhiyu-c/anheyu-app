@@ -232,6 +232,7 @@ var AllSettings = []Definition{
 	{Key: constant.KeyCommentLimitPerMinute, Value: "5", Comment: "单个IP每分钟允许提交的评论数", IsPublic: false},
 	{Key: constant.KeyCommentLimitLength, Value: "10000", Comment: "单条评论最大字数", IsPublic: true},
 	{Key: constant.KeyCommentForbiddenWords, Value: "习近平,空包,毛泽东,代发", Comment: "违禁词列表，逗号分隔，匹配到的评论将进入待审", IsPublic: false},
+	{Key: constant.KeyCommentNicknameForbiddenWords, Value: "", Comment: "昵称违禁词列表，换行或中英文逗号分隔，昵称包含任一词项时拒绝评论，不区分大小写", IsPublic: false},
 	{Key: constant.KeyCommentAIDetectEnable, Value: "false", Comment: "是否启用AI违禁词检测", IsPublic: false},
 	{Key: constant.KeyCommentAIDetectAPIURL, Value: "https://v1.nsuuu.com/api/AiDetect", Comment: "AI违禁词检测API地址", IsPublic: false},
 	{Key: constant.KeyCommentAIDetectAction, Value: "pending", Comment: "检测到违禁词时的处理方式: pending(待审), reject(拒绝)", IsPublic: false},

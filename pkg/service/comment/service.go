@@ -229,6 +229,10 @@ func (s *Service) ListLatest(ctx context.Context, page, pageSize int) (*dto.List
 }
 
 func (s *Service) Create(ctx context.Context, req *dto.CreateRequest, ip, ua, referer string, claims *auth.CustomClaims) (*dto.Response, error) {
+	if containsForbiddenNicknameWord(req.Nickname, s.settingSvc.Get(constant.KeyCommentNicknameForbiddenWords.String())) {
+		return nil, ErrForbiddenNickname
+	}
+
 	limitStr := s.settingSvc.Get(constant.KeyCommentLimitPerMinute.String())
 	limit, err := strconv.Atoi(limitStr)
 	if err == nil && limit > 0 {

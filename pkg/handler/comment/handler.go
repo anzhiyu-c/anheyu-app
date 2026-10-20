@@ -294,7 +294,9 @@ func (h *Handler) Create(c *gin.Context) {
 
 	commentDTO, err := h.svc.Create(c.Request.Context(), &req, ip, ua, referer, claims)
 	if err != nil {
-		if errors.Is(err, constant.ErrAdminEmailUsedByGuest) {
+		if errors.Is(err, comment.ErrForbiddenNickname) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+		} else if errors.Is(err, constant.ErrAdminEmailUsedByGuest) {
 			response.Fail(c, http.StatusForbidden, err.Error())
 		} else {
 			response.Fail(c, http.StatusInternalServerError, "创建评论失败: "+err.Error())

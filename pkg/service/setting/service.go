@@ -210,7 +210,7 @@ func unflatten(flatConfig map[string]string) map[string]interface{} {
 		switch constant.SettingKey(key) {
 		case constant.KeyFrontDeskSiteOwnerName, constant.KeyFrontDeskSiteOwnerEmail,
 			constant.KeyFooterOwnerName, constant.KeyAppName, constant.KeySubTitle,
-			constant.KeySiteDescription, constant.KeySiteKeywords:
+			constant.KeySiteDescription, constant.KeySiteKeywords, constant.KeyCommentNicknameForbiddenWords:
 			setNestedValue(nested, key, originalValue)
 			continue
 		}
