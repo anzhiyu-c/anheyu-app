@@ -330,37 +330,32 @@ func (s *ThumbnailService) getPolicyAndProviderForFile(ctx context.Context, file
 }
 
 func (s *ThumbnailService) getOriginalFile(ctx context.Context, file *model.File, policy *model.StoragePolicy, provider storage.IStorageProvider) (path string, cleanup func(), err error) {
-	switch policy.Type {
-	case constant.PolicyTypeLocal:
-		absolutePath := file.PrimaryEntity.Source.String
-		if _, statErr := os.Stat(absolutePath); statErr != nil {
-			return "", nil, fmt.Errorf("本地物理文件 '%s' 检查失败: %w", absolutePath, statErr)
-		}
-		return absolutePath, nil, nil
-	default:
-		log.Printf("[ThumbnailService] 检测到云存储文件 (策略: %s)，将下载到临时文件...", policy.Name)
-		fileStream, err := provider.Get(ctx, policy, file.PrimaryEntity.Source.String)
-		if err != nil {
-			return "", nil, fmt.Errorf("从云存储获取文件流失败: %w", err)
-		}
-		defer fileStream.Close()
-		tempFile, err := os.CreateTemp("", "anheyu-thumb-download-*")
-		if err != nil {
-			return "", nil, fmt.Errorf("无法创建用于下载的临时文件: %w", err)
-		}
-		if _, err := io.Copy(tempFile, fileStream); err != nil {
-			tempFile.Close()
-			os.Remove(tempFile.Name())
-			return "", nil, fmt.Errorf("下载云文件到临时文件失败: %w", err)
-		}
-		tempFile.Close()
-		log.Printf("[ThumbnailService] 文件已成功下载到临时路径: %s", tempFile.Name())
-		cleanupFunc := func() {
-			log.Printf("[ThumbnailService] 清理临时文件: %s", tempFile.Name())
-			os.Remove(tempFile.Name())
-		}
-		return tempFile.Name(), cleanupFunc, nil
+	// 本地文件也通过驱动读取并生成私有副本，不能把数据库路径交给生成器重新打开。
+	fileStream, err := provider.Get(ctx, policy, file.PrimaryEntity.Source.String)
+	if err != nil {
+		return "", nil, fmt.Errorf("从存储获取文件流失败: %w", err)
 	}
+	defer func() {
+		if err := fileStream.Close(); err != nil {
+			log.Printf("[ThumbnailService] 关闭源文件流失败: %v", err)
+		}
+	}()
+	tempFile, err := os.CreateTemp("", "anheyu-thumb-download-*")
+	if err != nil {
+		return "", nil, fmt.Errorf("无法创建缩略图源临时文件: %w", err)
+	}
+	cleanupFunc := func() {
+		if err := os.Remove(tempFile.Name()); err != nil && !os.IsNotExist(err) {
+			log.Printf("[ThumbnailService] 清理源临时文件失败: %v", err)
+		}
+	}
+	_, copyErr := io.Copy(tempFile, fileStream)
+	closeErr := tempFile.Close()
+	if err := errors.Join(copyErr, closeErr); err != nil {
+		cleanupFunc()
+		return "", nil, fmt.Errorf("复制缩略图源文件失败: %w", err)
+	}
+	return tempFile.Name(), cleanupFunc, nil
 }
 
 func (s *ThumbnailService) updateMetaOnSuccess(fileID uint, source string, isDirectServe bool, format string) {

@@ -69,7 +69,7 @@ func NewBackupService(backupDir string, importExportSvc ImportExportService) Bac
 
 // NewBackupServiceWithLimit 创建一个新的系统设置备份服务实例，可指定最大备份数量
 func NewBackupServiceWithLimit(backupDir string, importExportSvc ImportExportService, maxBackupCount int) BackupService {
-	if err := os.MkdirAll(backupDir, 0755); err != nil {
+	if err := os.MkdirAll(backupDir, 0700); err != nil {
 		log.Printf("警告: 创建备份目录失败: %v", err)
 	}
 	if maxBackupCount < 0 {
@@ -94,7 +94,7 @@ func (s *backupService) CreateBackup(ctx context.Context, description string, is
 	backupFilename := backupFilePrefix + timestamp + backupFileSuffix
 	backupPath := filepath.Join(s.backupDir, backupFilename)
 
-	if err := os.WriteFile(backupPath, data, 0644); err != nil {
+	if err := os.WriteFile(backupPath, data, 0600); err != nil {
 		return nil, fmt.Errorf("写入备份文件失败: %w", err)
 	}
 
@@ -282,7 +282,7 @@ func (s *backupService) saveMetadata(filename string, metadata *BackupInfo) erro
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(s.getMetadataPath(filename), data, 0644)
+	return os.WriteFile(s.getMetadataPath(filename), data, 0600)
 }
 
 func (s *backupService) loadMetadata(filename string) *BackupInfo {

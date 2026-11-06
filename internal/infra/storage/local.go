@@ -4,6 +4,7 @@ package storage
 import (
 	"context"
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
@@ -13,10 +14,12 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -37,52 +40,104 @@ func NewLocalProvider(secret string) IStorageProvider {
 	}
 }
 
-// copyFile 复制文件从 src 到 dst，用于跨文件系统的文件移动
-func copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
-	if err != nil {
-		return fmt.Errorf("无法打开源文件: %w", err)
+// localStorageError 保留错误类型，但不向调用方暴露真实物理路径。
+func localStorageError(operation string, err error) error {
+	var pathErr *os.PathError
+	var linkErr *os.LinkError
+	if errors.As(err, &pathErr) {
+		err = pathErr.Err
+	} else if errors.As(err, &linkErr) {
+		err = linkErr.Err
 	}
-	defer sourceFile.Close()
-
-	destFile, err := os.Create(dst)
-	if err != nil {
-		return fmt.Errorf("无法创建目标文件: %w", err)
-	}
-	defer destFile.Close()
-
-	if _, err := io.Copy(destFile, sourceFile); err != nil {
-		return fmt.Errorf("复制文件内容失败: %w", err)
-	}
-
-	// 确保数据写入磁盘
-	if err := destFile.Sync(); err != nil {
-		return fmt.Errorf("同步文件到磁盘失败: %w", err)
-	}
-
-	return nil
+	return fmt.Errorf("%s: %w", operation, err)
 }
 
-// validateLocalPath 验证解析后的路径是否在基础路径内，防止路径穿越
-func validateLocalPath(basePath, resolvedPath string) error {
-	cleanBase := filepath.Clean(basePath)
-	cleanResolved := filepath.Clean(resolvedPath)
-	if !strings.HasPrefix(cleanResolved, cleanBase+string(os.PathSeparator)) && cleanResolved != cleanBase {
-		return fmt.Errorf("路径穿越检测: %s 不在 %s 内", cleanResolved, cleanBase)
+func closeLocalResource(resource io.Closer) {
+	if err := resource.Close(); err != nil {
+		log.Printf("警告: %v", localStorageError("关闭本地存储资源失败", err))
 	}
-	return nil
 }
 
-// LocalPhysicalPathFromVirtual 将策略挂载点下的完整虚拟路径（可含文件名）解析为物理路径，已 Clean 且通过路径穿越校验。
-// 会去掉挂载点相对段的前导 '/'，避免 Unix 上 filepath.Join(base, "/x") 丢弃 base、误写到根目录的问题。
+func isLocalUploadTemporary(name string) bool {
+	const prefix = ".anheyu-upload-"
+	const suffix = ".tmp"
+	if !strings.HasPrefix(name, prefix) || !strings.HasSuffix(name, suffix) {
+		return false
+	}
+	token := strings.TrimSuffix(strings.TrimPrefix(name, prefix), suffix)
+	// crypto/rand.Text 使用至少 26 位 RFC 4648 base32 字符。
+	if len(token) < 26 {
+		return false
+	}
+	for _, char := range token {
+		if (char < 'A' || char > 'Z') && (char < '2' || char > '7') {
+			return false
+		}
+	}
+	return true
+}
+
+// localSourceRelativePath 保留历史 source 相对于工作目录的语义，不能将它直接拼到 BasePath。
+// 词法校验只负责路径映射；实际访问必须继续通过 os.Root，才能阻止符号链接逃逸。
+func localSourceRelativePath(policy *model.StoragePolicy, source string) (string, error) {
+	if policy == nil || policy.BasePath == "" || source == "" {
+		return "", errors.New("本地存储路径不能为空")
+	}
+	base, err := filepath.Abs(policy.BasePath)
+	if err != nil {
+		return "", localStorageError("无法解析存储根目录", err)
+	}
+	absoluteSource, err := filepath.Abs(source)
+	if err != nil {
+		return "", localStorageError("无法解析本地文件路径", err)
+	}
+	relative, err := filepath.Rel(base, absoluteSource)
+	if err != nil || !filepath.IsLocal(relative) {
+		return "", errors.New("本地文件路径超出存储根目录")
+	}
+	return relative, nil
+}
+
+func openLocalRoot(policy *model.StoragePolicy, create bool) (*os.Root, error) {
+	if policy == nil || policy.BasePath == "" {
+		return nil, errors.New("本地存储根目录不能为空")
+	}
+	if create {
+		// BasePath 来自存储策略；仅创建受信任的根目录，子路径必须使用 Root 操作。
+		if err := os.MkdirAll(policy.BasePath, os.ModePerm); err != nil {
+			return nil, localStorageError("无法创建存储根目录", err)
+		}
+	}
+	root, err := os.OpenRoot(policy.BasePath)
+	if err != nil {
+		return nil, localStorageError("无法打开存储根目录", err)
+	}
+	return root, nil
+}
+
+// LocalPhysicalPathFromVirtual 将完整虚拟路径映射到策略挂载点内。
+// 返回值仅用于 source 记录和路径映射，文件系统访问仍须通过 os.Root。
 func LocalPhysicalPathFromVirtual(policy *model.StoragePolicy, virtualPath string) (string, error) {
-	rel := strings.TrimPrefix(virtualPath, policy.VirtualPath)
-	rel = strings.TrimPrefix(rel, "/")
-	physical := filepath.Join(policy.BasePath, rel)
-	if err := validateLocalPath(policy.BasePath, physical); err != nil {
-		return "", err
+	if policy == nil || policy.BasePath == "" {
+		return "", errors.New("本地存储根目录不能为空")
 	}
-	return filepath.Clean(physical), nil
+	for _, value := range []string{policy.VirtualPath, virtualPath} {
+		if !strings.HasPrefix(value, "/") || strings.ContainsAny(value, "\\\x00") {
+			return "", errors.New("本地存储虚拟路径无效")
+		}
+		for _, segment := range strings.Split(value, "/") {
+			if segment == ".." {
+				return "", errors.New("本地存储虚拟路径不能包含父目录")
+			}
+		}
+	}
+	mount := path.Clean(policy.VirtualPath)
+	cleanVirtual := path.Clean(virtualPath)
+	if mount != "/" && cleanVirtual != mount && !strings.HasPrefix(cleanVirtual, mount+"/") {
+		return "", errors.New("虚拟路径不属于当前存储挂载点")
+	}
+	relative := strings.TrimPrefix(strings.TrimPrefix(cleanVirtual, mount), "/")
+	return filepath.Join(policy.BasePath, filepath.FromSlash(relative)), nil
 }
 
 // LocalEntitySourcePath 返回本地策略下应写入 file_storage_entity.source 的路径：与 Upload 落盘一致，并尽量转为绝对路径以减少历史数据中的「相对路径 + 绝对 BasePath」混用。
@@ -96,7 +151,7 @@ func LocalEntitySourcePath(policy *model.StoragePolicy, virtualPath string) (str
 	}
 	abs, err := filepath.Abs(physical)
 	if err != nil {
-		return physical, nil
+		return "", localStorageError("无法解析本地文件路径", err)
 	}
 	return filepath.Clean(abs), nil
 }
@@ -108,23 +163,35 @@ func (p *LocalProvider) List(ctx context.Context, policy *model.StoragePolicy, v
 		return nil, err
 	}
 
-	log.Printf("[LocalProvider.List-DEBUG] Attempting to read directory at physical path: '%s'", physicalPath)
-
-	entries, err := os.ReadDir(physicalPath)
+	relative, err := localSourceRelativePath(policy, physicalPath)
+	if err != nil {
+		return nil, err
+	}
+	root, err := openLocalRoot(policy, false)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return []FileInfo{}, nil
+		}
+		return nil, err
+	}
+	defer closeLocalResource(root)
+	entries, err := fs.ReadDir(root.FS(), filepath.ToSlash(relative))
 	if err != nil {
 		// 如果目录不存在，返回一个空列表和 nil 错误，这符合 List 的语义
 		if os.IsNotExist(err) {
 			return []FileInfo{}, nil
 		}
-		return nil, fmt.Errorf("无法读取本地目录 '%s': %w", physicalPath, err)
+		return nil, localStorageError("无法读取本地目录", err)
 	}
 
 	result := make([]FileInfo, 0, len(entries))
 	for _, entry := range entries {
-		info, err := entry.Info()
-		if err != nil {
-			log.Printf("警告: 无法获取文件 '%s' 的信息: %v", entry.Name(), err)
+		if isLocalUploadTemporary(entry.Name()) {
 			continue
+		}
+		info, err := root.Lstat(filepath.Join(relative, entry.Name()))
+		if err != nil {
+			return nil, localStorageError("无法读取本地目录项", err)
 		}
 		result = append(result, FileInfo{
 			Name:    info.Name(),
@@ -139,18 +206,34 @@ func (p *LocalProvider) List(ctx context.Context, policy *model.StoragePolicy, v
 
 // Get 实现了从本机磁盘获取文件读取器的逻辑。
 func (p *LocalProvider) Get(ctx context.Context, policy *model.StoragePolicy, source string) (io.ReadCloser, error) {
-	// 数据库中存储的是绝对路径，因此 `source` 参数本身就是要打开的完整路径。
-	// 不需要使用 policy.BasePath 进行拼接。
-	// policy 参数在这里是为了满足接口统一性，但在此实现中可以不使用。
-
-	log.Printf("[LocalProvider.Get-DEBUG] 收到 Get 请求，将直接使用 source 作为绝对路径: '%s'", source)
-
-	file, err := os.Open(source)
+	relative, err := localSourceRelativePath(policy, source)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("物理文件不存在: %s", source)
-		}
-		return nil, fmt.Errorf("无法打开物理文件 '%s': %w", source, err)
+		return nil, err
+	}
+	root, err := openLocalRoot(policy, false)
+	if err != nil {
+		return nil, err
+	}
+	defer closeLocalResource(root)
+	info, err := root.Stat(relative)
+	if err != nil {
+		return nil, localStorageError("无法检查本地文件", err)
+	}
+	if !info.Mode().IsRegular() {
+		return nil, errors.New("本地存储仅支持读取普通文件")
+	}
+	file, err := root.Open(relative)
+	if err != nil {
+		return nil, localStorageError("无法打开本地文件", err)
+	}
+	info, err = file.Stat()
+	if err != nil {
+		closeLocalResource(file)
+		return nil, localStorageError("无法检查已打开的本地文件", err)
+	}
+	if !info.Mode().IsRegular() {
+		closeLocalResource(file)
+		return nil, errors.New("本地存储仅支持读取普通文件")
 	}
 	return file, nil
 }
@@ -183,17 +266,14 @@ func (p *LocalProvider) GetDownloadURL(ctx context.Context, policy *model.Storag
 
 // Stream 实现了从本机磁盘流式读取文件并将其内容写入给定的 io.Writer。
 func (p *LocalProvider) Stream(ctx context.Context, policy *model.StoragePolicy, source string, writer io.Writer) error {
-	file, err := os.Open(source)
+	file, err := p.Get(ctx, policy, source)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("物理文件不存在: %s", source)
-		}
-		return fmt.Errorf("无法打开物理文件 '%s': %w", source, err)
+		return err
 	}
-	defer file.Close()
+	defer closeLocalResource(file)
 	_, err = io.Copy(writer, file)
 	if err != nil {
-		return fmt.Errorf("流式传输文件内容时发生错误: %w", err)
+		return localStorageError("流式传输文件内容时发生错误", err)
 	}
 	return nil
 }
@@ -204,38 +284,73 @@ func (p *LocalProvider) CreateDirectory(ctx context.Context, policy *model.Stora
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(physicalPath, os.ModePerm); err != nil {
-		return fmt.Errorf("无法创建物理目录 '%s': %w", physicalPath, err)
+	relative, err := localSourceRelativePath(policy, physicalPath)
+	if err != nil {
+		return err
+	}
+	root, err := openLocalRoot(policy, true)
+	if err != nil {
+		return err
+	}
+	defer closeLocalResource(root)
+	if err := root.MkdirAll(relative, os.ModePerm); err != nil {
+		return localStorageError("无法创建本地目录", err)
 	}
 	return nil
 }
 
 // Upload 实现了将文件流保存到本机磁盘的逻辑。
 func (p *LocalProvider) Upload(ctx context.Context, file io.Reader, policy *model.StoragePolicy, virtualPath string) (*UploadResult, error) {
-	processingTempDir := "data/temp"
-	if err := os.MkdirAll(processingTempDir, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("无法创建用于处理的临时目录 '%s': %w", processingTempDir, err)
+	finalPath, err := LocalEntitySourcePath(policy, virtualPath)
+	if err != nil {
+		return nil, err
+	}
+	relative, err := localSourceRelativePath(policy, finalPath)
+	if err != nil {
+		return nil, err
+	}
+	if relative == "." {
+		return nil, errors.New("不能将文件上传到存储根目录")
+	}
+	root, err := openLocalRoot(policy, true)
+	if err != nil {
+		return nil, err
+	}
+	defer closeLocalResource(root)
+	if err := root.MkdirAll(filepath.Dir(relative), os.ModePerm); err != nil {
+		return nil, localStorageError("无法创建挂载子目录", err)
 	}
 
-	tempFile, err := os.CreateTemp(processingTempDir, "anheyu-app-processing-*.tmp")
+	// 临时文件和最终文件都通过同一个 Root 操作，避免符号链接竞态及跨文件系统移动。
+	tempName := filepath.Join(filepath.Dir(relative), ".anheyu-upload-"+rand.Text()+".tmp")
+	tempFile, err := root.OpenFile(tempName, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
-		return nil, fmt.Errorf("无法在 '%s' 目录创建临时文件: %w", processingTempDir, err)
+		return nil, localStorageError("无法创建上传临时文件", err)
 	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
+	defer func() {
+		if err := root.Remove(tempName); err != nil && !os.IsNotExist(err) {
+			log.Printf("警告: %v", localStorageError("清理上传临时文件失败", err))
+		}
+	}()
+	tempClosed := false
+	defer func() {
+		if !tempClosed {
+			closeLocalResource(tempFile)
+		}
+	}()
 
 	size, err := io.Copy(tempFile, file)
 	if err != nil {
-		return nil, fmt.Errorf("写入处理临时文件失败: %w", err)
+		return nil, localStorageError("写入处理临时文件失败", err)
 	}
 
 	if _, err := tempFile.Seek(0, io.SeekStart); err != nil {
-		return nil, fmt.Errorf("无法重置临时文件指针以检测MIME类型: %w", err)
+		return nil, localStorageError("无法重置临时文件指针以检测MIME类型", err)
 	}
 	buffer := make([]byte, 512)
 	n, err := tempFile.Read(buffer)
 	if err != nil && err != io.EOF {
-		return nil, fmt.Errorf("读取文件头以检测MIME类型失败: %w", err)
+		return nil, localStorageError("读取文件头以检测MIME类型失败", err)
 	}
 	mimeType := http.DetectContentType(buffer[:n])
 
@@ -247,7 +362,7 @@ func (p *LocalProvider) Upload(ctx context.Context, file io.Reader, policy *mode
 	}
 
 	if _, err := tempFile.Seek(0, io.SeekStart); err != nil {
-		return nil, fmt.Errorf("无法重置临时文件指针以检测图片尺寸: %w", err)
+		return nil, localStorageError("无法重置临时文件指针以检测图片尺寸", err)
 	}
 	imgConfig, _, err := image.DecodeConfig(tempFile)
 	var dimension string
@@ -255,28 +370,13 @@ func (p *LocalProvider) Upload(ctx context.Context, file io.Reader, policy *mode
 		dimension = fmt.Sprintf("%dx%d", imgConfig.Width, imgConfig.Height)
 	}
 
-	finalPath, err := LocalEntitySourcePath(policy, virtualPath)
-	if err != nil {
-		return nil, err
+	if err := tempFile.Close(); err != nil {
+		tempClosed = true
+		return nil, localStorageError("关闭上传临时文件失败", err)
 	}
-	finalDir := filepath.Dir(finalPath)
-	if err := os.MkdirAll(finalDir, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("无法创建挂载子目录 '%s': %w", finalDir, err)
-	}
-
-	// 关闭文件句柄，准备移动
-	tempFileName := tempFile.Name()
-	tempFile.Close()
-
-	// 尝试使用 os.Rename (高效)，如果失败则使用 copy + delete (兼容跨文件系统)
-	if err := os.Rename(tempFileName, finalPath); err != nil {
-		// os.Rename 失败，可能是跨文件系统，使用 copy + delete 方式
-		if err := copyFile(tempFileName, finalPath); err != nil {
-			os.Remove(tempFileName) // 清理临时文件
-			return nil, fmt.Errorf("复制文件到最终存储位置 '%s' 失败: %w", finalPath, err)
-		}
-		// 复制成功，删除临时文件
-		os.Remove(tempFileName)
+	tempClosed = true
+	if err := root.Rename(tempName, relative); err != nil {
+		return nil, localStorageError("移动文件到最终存储位置失败", err)
 	}
 
 	result := &UploadResult{
@@ -290,29 +390,46 @@ func (p *LocalProvider) Upload(ctx context.Context, file io.Reader, policy *mode
 
 // Delete 实现了删除本机上一个或多个物理文件或目录的逻辑。
 func (p *LocalProvider) Delete(ctx context.Context, policy *model.StoragePolicy, sources []string) error {
+	relatives := make([]string, 0, len(sources))
 	for _, source := range sources {
-		info, err := os.Stat(source)
+		relative, err := localSourceRelativePath(policy, source)
+		if err != nil {
+			return err
+		}
+		if relative == "." {
+			return errors.New("不能删除存储根目录")
+		}
+		relatives = append(relatives, relative)
+	}
+	root, err := openLocalRoot(policy, false)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	defer closeLocalResource(root)
+	for _, relative := range relatives {
+		info, err := root.Stat(relative)
 		if err != nil {
 			if os.IsNotExist(err) {
 				// 文件或目录已经不存在，静默处理
 				continue
 			}
-			log.Printf("警告: 无法获取 '%s' 的信息，跳过删除: %v\n", source, err)
-			continue
+			return localStorageError("无法检查待删除本地资源", err)
 		}
 
 		var removeErr error
 		if info.IsDir() {
 			// 如果是目录，使用 RemoveAll 保证能删除（即使里面有意外残留文件）
-			removeErr = os.RemoveAll(source)
+			removeErr = root.RemoveAll(relative)
 		} else {
 			// 如果是文件，使用 Remove
-			removeErr = os.Remove(source)
+			removeErr = root.Remove(relative)
 		}
 
 		if removeErr != nil {
-			// 只记录错误，不中断整个批量删除过程
-			log.Printf("警告: 删除本地资源 '%s' 失败: %v\n", source, removeErr)
+			return localStorageError("删除本地资源失败", removeErr)
 		}
 	}
 	return nil
@@ -324,11 +441,29 @@ func (p *LocalProvider) DeleteDirectory(ctx context.Context, policy *model.Stora
 	if err != nil {
 		return err
 	}
-	err = os.Remove(physicalPath)
+	relative, err := localSourceRelativePath(policy, physicalPath)
+	if err != nil {
+		return err
+	}
+	if relative == "." {
+		return errors.New("不能删除存储根目录")
+	}
+	root, err := openLocalRoot(policy, false)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	defer closeLocalResource(root)
+	err = root.Remove(relative)
 	if os.IsNotExist(err) {
 		return nil
 	}
-	return err
+	if err != nil {
+		return localStorageError("删除本地目录失败", err)
+	}
+	return nil
 }
 
 // Rename 重命名本地文件系统上的文件或目录。
@@ -341,38 +476,64 @@ func (p *LocalProvider) Rename(ctx context.Context, policy *model.StoragePolicy,
 	if err != nil {
 		return err
 	}
-	if err := validateLocalPath(policy.BasePath, oldAbsPath); err != nil {
+	oldRelative, err := localSourceRelativePath(policy, oldAbsPath)
+	if err != nil {
 		return err
 	}
-	if err := validateLocalPath(policy.BasePath, newAbsPath); err != nil {
+	newRelative, err := localSourceRelativePath(policy, newAbsPath)
+	if err != nil {
 		return err
 	}
-
-	destDir := filepath.Dir(newAbsPath)
-	if err := os.MkdirAll(destDir, os.ModePerm); err != nil {
-		return fmt.Errorf("无法创建目标目录 '%s': %w", destDir, err)
+	if oldRelative == "." || newRelative == "." {
+		return errors.New("不能移动存储根目录")
+	}
+	root, err := openLocalRoot(policy, false)
+	if err != nil {
+		return err
+	}
+	defer closeLocalResource(root)
+	if _, err := root.Stat(oldRelative); err != nil {
+		if os.IsNotExist(err) {
+			return constant.ErrNotFound
+		}
+		return localStorageError("无法检查待移动本地资源", err)
+	}
+	if err := root.MkdirAll(filepath.Dir(newRelative), os.ModePerm); err != nil {
+		return localStorageError("无法创建目标目录", err)
 	}
 
-	err = os.Rename(oldAbsPath, newAbsPath)
+	err = root.Rename(oldRelative, newRelative)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("%w: %s", constant.ErrNotFound, err.Error())
+			return constant.ErrNotFound
 		}
-		return fmt.Errorf("使用 os.Rename 从 '%s' 到 '%s' 失败: %w", oldAbsPath, newAbsPath, err)
+		return localStorageError("移动本地资源失败", err)
 	}
 	return nil
 }
 
 // IsExist 检查本地文件系统中指定路径的文件或目录是否存在。
 func (p *LocalProvider) IsExist(ctx context.Context, policy *model.StoragePolicy, source string) (bool, error) {
-	_, err := os.Stat(source)
+	relative, err := localSourceRelativePath(policy, source)
+	if err != nil {
+		return false, err
+	}
+	root, err := openLocalRoot(policy, false)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+		return false, err
+	}
+	defer closeLocalResource(root)
+	_, err = root.Stat(relative)
 	if err == nil {
 		return true, nil
 	}
 	if os.IsNotExist(err) {
 		return false, nil
 	}
-	return false, err
+	return false, localStorageError("无法检查本地资源", err)
 }
 
 // GetThumbnail 实现了 IStorageProvider 接口。

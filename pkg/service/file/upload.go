@@ -2,12 +2,14 @@ package file
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -32,10 +34,111 @@ import (
 // 定义常量以提高代码可维护性
 const (
 	uploadSessionCachePrefix = "upload:session:"
+	clientUploadCachePrefix  = "upload:client:"
 	defaultUploadChunkSize   = 5 * 1024 * 1024 // 5MB
 	uploadSessionExpiration  = 24 * time.Hour
 	defaultUploadTempDir     = "./data/temp/uploads"
 )
+
+// clientUploadAuthorization binds finalization to a URL issued for this owner and target.
+// The key is derived server-side so existing clients do not need a new request field.
+type clientUploadAuthorization struct {
+	OwnerID   uint      `json:"owner_id"`
+	PolicyID  uint      `json:"policy_id"`
+	Path      string    `json:"path"`
+	ObjectKey string    `json:"object_key"`
+	Size      int64     `json:"size"`
+	Overwrite bool      `json:"overwrite"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+func clientUploadKey(ownerID, policyID uint, path string) string {
+	return fmt.Sprintf("%s%x", clientUploadCachePrefix, sha256.Sum256([]byte(fmt.Sprintf("%d:%d:%s", ownerID, policyID, path))))
+}
+
+func supportsClientUpload(policy *model.StoragePolicy) bool {
+	if policy.Settings.GetString(constant.UploadMethodSettingKey, constant.UploadMethodServer) != constant.UploadMethodClient {
+		return false
+	}
+	switch policy.Type {
+	case constant.PolicyTypeOneDrive, constant.PolicyTypeTencentCOS, constant.PolicyTypeAliOSS, constant.PolicyTypeS3, constant.PolicyTypeQiniu:
+		return true
+	default:
+		return false
+	}
+}
+
+// parseUploadURI rejects ambiguous paths before filepath.Dir or a provider can clean them.
+func parseUploadURI(raw string) (*uri.ParsedURI, error) {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "anzhiyu" || u.Host != "my" || u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || u.Opaque != "" {
+		return nil, fmt.Errorf("%w: 无效的上传 URI", constant.ErrBadRequest)
+	}
+	if err := validateUploadPath(u.Path); err != nil {
+		return nil, err
+	}
+	return &uri.ParsedURI{FSType: "my", Path: u.Path}, nil
+}
+
+func validateUploadPath(path string) error {
+	for {
+		if !strings.HasPrefix(path, "/") || strings.ContainsAny(path, "\\\x00?#") {
+			return fmt.Errorf("%w: 上传路径包含非法字符", constant.ErrBadRequest)
+		}
+		for _, segment := range strings.Split(strings.TrimPrefix(path, "/"), "/") {
+			if segment == "" || segment == "." || segment == ".." {
+				return fmt.Errorf("%w: 上传路径包含非法目录段", constant.ErrBadRequest)
+			}
+		}
+		decoded, err := url.PathUnescape(path)
+		if err != nil || decoded == path {
+			return nil
+		}
+		// Providers may decode an object path again; reject encoded traversal as well.
+		path = decoded
+	}
+}
+
+func validateUploadPolicyPath(policy *model.StoragePolicy, path string) error {
+	if policy != nil && policy.VirtualPath == "/" && strings.HasPrefix(path, "/") && path != "/" {
+		return nil
+	}
+	if policy == nil || validateUploadPath(policy.VirtualPath) != nil || !strings.HasPrefix(path, policy.VirtualPath+"/") {
+		return fmt.Errorf("%w: 目标路径不属于指定存储策略", constant.ErrForbidden)
+	}
+	return nil
+}
+
+func authorizeUploadMount(ctx context.Context, ownerID uint, policy *model.StoragePolicy, repos repository.Repositories) error {
+	// 默认本地根策略没有用户隔离，并可能包含其他策略的物理目录，只允许真实管理员使用。
+	if ownerID != 0 && policy.Type == constant.PolicyTypeLocal && policy.VirtualPath == "/" && policy.NodeID == nil {
+		user, err := repos.User.FindByID(ctx, ownerID)
+		if err != nil {
+			if errors.Is(err, constant.ErrNotFound) {
+				return fmt.Errorf("%w: 共享本地根策略仅管理员可用", constant.ErrForbidden)
+			}
+			return fmt.Errorf("校验本地根策略权限失败: %w", err)
+		}
+		if user == nil || user.ID != ownerID || user.UserGroupID != 1 {
+			return fmt.Errorf("%w: 共享本地根策略仅管理员可用", constant.ErrForbidden)
+		}
+		return nil
+	}
+	if ownerID == 0 || policy.NodeID == nil {
+		return fmt.Errorf("%w: 无权访问存储策略挂载目录", constant.ErrForbidden)
+	}
+	mount, err := repos.File.FindByPath(ctx, ownerID, policy.VirtualPath)
+	if err != nil {
+		if errors.Is(err, constant.ErrNotFound) {
+			return fmt.Errorf("%w: 无权访问存储策略挂载目录", constant.ErrForbidden)
+		}
+		return fmt.Errorf("查找存储策略挂载目录失败: %w", err)
+	}
+	if mount == nil || mount.ID != *policy.NodeID || mount.OwnerID != ownerID || mount.Type != model.FileTypeDir {
+		return fmt.Errorf("%w: 无权访问存储策略挂载目录", constant.ErrForbidden)
+	}
+	return nil
+}
 
 // IUploadService 定义了所有与文件上传相关的业务逻辑接口。
 type IUploadService interface {
@@ -139,11 +242,15 @@ func (s *uploadService) CleanupAbandonedUploads(ctx context.Context) (int, error
 // CreateUploadSession 在上传流程开始时，负责进行前置校验、确保目标目录存在，并创建一个临时的物理实体记录。
 func (s *uploadService) CreateUploadSession(ctx context.Context, ownerID uint, req *model.CreateUploadRequest) (*model.UploadSessionData, error) {
 	// 步骤 1: 基本校验
-	if strings.HasSuffix(req.URI, "/") {
-		return nil, errors.New("无法为目录创建上传会话，请提供完整的文件路径")
+	if req == nil || req.Size < 0 {
+		return nil, fmt.Errorf("%w: 无效的上传请求", constant.ErrBadRequest)
+	}
+	parsedURI, err := parseUploadURI(req.URI)
+	if err != nil {
+		return nil, err
 	}
 
-	fileName := filepath.Base(req.URI)
+	fileName := filepath.Base(parsedURI.Path)
 	fileExt := strings.ToLower(strings.TrimPrefix(filepath.Ext(fileName), "."))
 
 	// 步骤 2: 从全局设置服务获取允许的扩展名并校验
@@ -170,32 +277,26 @@ func (s *uploadService) CreateUploadSession(ctx context.Context, ownerID uint, r
 		}
 		return nil, fmt.Errorf("获取存储策略失败: %w", err)
 	}
+	if policy == nil {
+		return nil, constant.ErrNotFound
+	}
 	if policy.MaxSize > 0 && req.Size > policy.MaxSize {
 		return nil, fmt.Errorf("文件大小超出策略限制")
 	}
 
-	// 步骤 4: 路径解析
-	parsedURI, err := uri.Parse(req.URI)
-	if err != nil {
-		return nil, fmt.Errorf("解析目标URI失败: %w", err)
+	// 步骤 4: 确保路径位于选定策略的挂载点内。
+	if err := validateUploadPolicyPath(policy, parsedURI.Path); err != nil {
+		return nil, err
 	}
 
 	// 步骤 5: 根据策略决定上传方式并执行相应逻辑
-	uploadMethod := policy.Settings.GetString(constant.UploadMethodSettingKey, constant.UploadMethodServer)
-
-	// 支持客户端直传的存储类型列表
-	clientUploadSupportedTypes := map[constant.StoragePolicyType]bool{
-		constant.PolicyTypeOneDrive:   true,
-		constant.PolicyTypeTencentCOS: true,
-		constant.PolicyTypeAliOSS:     true,
-		constant.PolicyTypeS3:         true,
-		constant.PolicyTypeQiniu:      true,
-	}
-
 	// --- 客户端直传逻辑 (OneDrive, 腾讯云COS, 阿里云OSS, AWS S3) ---
-	if uploadMethod == constant.UploadMethodClient && clientUploadSupportedTypes[policy.Type] {
+	if supportsClientUpload(policy) {
 		// 在获取直传链接前，同样需要检查路径和冲突，确保这是一个合法的上传位置
 		err = s.txManager.Do(ctx, func(repos repository.Repositories) error {
+			if err := authorizeUploadMount(ctx, ownerID, policy, repos); err != nil {
+				return err
+			}
 			parentPath := filepath.Dir(parsedURI.Path)
 			parentFolder, err := s.findOrCreatePath(ctx, ownerID, parentPath, repos.File)
 			if err != nil {
@@ -232,6 +333,22 @@ func (s *uploadService) CreateUploadSession(ctx context.Context, ownerID uint, r
 		if err != nil {
 			return nil, fmt.Errorf("创建客户端直传链接失败: %w", err)
 		}
+		authorization := clientUploadAuthorization{
+			OwnerID: ownerID, PolicyID: policy.ID, Path: parsedURI.Path,
+			ObjectKey: buildObjectKey(policy, parsedURI.Path), Size: req.Size,
+			Overwrite: req.Overwrite, ExpiresAt: presignedResult.ExpirationDateTime,
+		}
+		ttl := time.Until(authorization.ExpiresAt)
+		if ttl <= 0 {
+			return nil, errors.New("客户端直传链接已过期")
+		}
+		authorizationJSON, err := json.Marshal(authorization)
+		if err != nil {
+			return nil, fmt.Errorf("序列化直传授权失败: %w", err)
+		}
+		if err := s.cacheSvc.Set(ctx, clientUploadKey(ownerID, policy.ID, parsedURI.Path), string(authorizationJSON), ttl); err != nil {
+			return nil, fmt.Errorf("保存直传授权失败: %w", err)
+		}
 
 		return &model.UploadSessionData{
 			Expires:      presignedResult.ExpirationDateTime.Unix(),
@@ -251,6 +368,9 @@ func (s *uploadService) CreateUploadSession(ctx context.Context, ownerID uint, r
 	var sessionID string
 	var tempEntityID uint
 	err = s.txManager.Do(ctx, func(repos repository.Repositories) error {
+		if err := authorizeUploadMount(ctx, ownerID, policy, repos); err != nil {
+			return err
+		}
 		parentPath := filepath.Dir(parsedURI.Path)
 		parentFolder, err := s.findOrCreatePath(ctx, ownerID, parentPath, repos.File)
 		if err != nil {
@@ -448,6 +568,24 @@ func (s *uploadService) UploadChunk(ctx context.Context, ownerID uint, sessionID
 
 // completeFileUpload 在所有文件分片上传成功后，执行文件的最终定稿操作。
 func (s *uploadService) completeFileUpload(ctx context.Context, session *model.UploadSession) error {
+	// 缓存会话可能来自升级前或权限变更前，不能沿用创建阶段的信任。
+	parsedURI, err := parseUploadURI(session.URI)
+	if err != nil {
+		return err
+	}
+	policy, err := s.policySvc.GetPolicyByID(ctx, session.PolicyID)
+	if err != nil {
+		return fmt.Errorf("无法在完成阶段获取存储策略: %w", err)
+	}
+	if err := validateUploadPolicyPath(policy, parsedURI.Path); err != nil {
+		return err
+	}
+	if err := s.txManager.Do(ctx, func(repos repository.Repositories) error {
+		return authorizeUploadMount(ctx, session.OwnerID, policy, repos)
+	}); err != nil {
+		return err
+	}
+
 	// 1. 合并分片文件
 	sessionTempDir := filepath.Join(s.uploadTempDir, session.SessionID)
 	mergedFilePath := filepath.Join(sessionTempDir, "merged_file")
@@ -474,10 +612,6 @@ func (s *uploadService) completeFileUpload(ctx context.Context, session *model.U
 	defer s.cleanupTempFiles(session.SessionID)
 
 	// 2. 上传到最终存储
-	policy, err := s.policySvc.GetPolicyByID(ctx, session.PolicyID)
-	if err != nil {
-		return fmt.Errorf("无法在完成阶段获取存储策略: %w", err)
-	}
 	provider, ok := s.storageProviders[policy.Type]
 	if !ok {
 		return fmt.Errorf("找不到类型为 '%s' 的存储提供者", policy.Type)
@@ -489,7 +623,6 @@ func (s *uploadService) completeFileUpload(ctx context.Context, session *model.U
 	}
 	defer fileToUpload.Close()
 
-	parsedURI, _ := uri.Parse(session.URI)
 	uploadResult, err := provider.Upload(ctx, fileToUpload, policy, parsedURI.Path)
 	if err != nil {
 		return fmt.Errorf("存储提供者上传失败: %w", err)
@@ -674,10 +807,12 @@ func (s *uploadService) GetUploadSessionStatus(ctx context.Context, ownerID uint
 // FinalizeClientUpload 处理客户端直传完成后的回调。
 // 在云端文件已上传成功后，此方法负责在数据库中创建对应的文件记录。
 func (s *uploadService) FinalizeClientUpload(ctx context.Context, ownerID uint, req *model.FinalizeUploadRequest) (*model.File, error) {
-	log.Printf("[FinalizeClientUpload] 开始处理 - URI: %s, PolicyID: %s, Size: %d", req.URI, req.PolicyID, req.Size)
+	if req == nil || req.Size < 0 {
+		return nil, fmt.Errorf("%w: 无效的上传请求", constant.ErrBadRequest)
+	}
 
 	// 步骤 1: 解析路径
-	parsedURI, err := uri.Parse(req.URI)
+	parsedURI, err := parseUploadURI(req.URI)
 	if err != nil {
 		return nil, fmt.Errorf("解析目标URI失败: %w", err)
 	}
@@ -691,15 +826,40 @@ func (s *uploadService) FinalizeClientUpload(ctx context.Context, ownerID uint, 
 		}
 		return nil, fmt.Errorf("获取存储策略失败: %w", err)
 	}
+	if policy == nil || !supportsClientUpload(policy) {
+		return nil, fmt.Errorf("%w: 此存储策略不允许客户端直传完成回调", constant.ErrForbidden)
+	}
+	if err := validateUploadPolicyPath(policy, parsedURI.Path); err != nil {
+		return nil, err
+	}
+	if policy.MaxSize > 0 && req.Size > policy.MaxSize {
+		return nil, fmt.Errorf("%w: 文件大小超出策略限制", constant.ErrBadRequest)
+	}
+	if err := s.txManager.Do(ctx, func(repos repository.Repositories) error {
+		return authorizeUploadMount(ctx, ownerID, policy, repos)
+	}); err != nil {
+		return nil, err
+	}
+
+	objectKey := buildObjectKey(policy, parsedURI.Path)
+	authorizationKey := clientUploadKey(ownerID, policy.ID, parsedURI.Path)
+	authorizationJSON, err := s.cacheSvc.Get(ctx, authorizationKey)
+	if err != nil {
+		return nil, fmt.Errorf("读取直传授权失败: %w", err)
+	}
+	var authorization clientUploadAuthorization
+	if err := json.Unmarshal([]byte(authorizationJSON), &authorization); err != nil ||
+		authorization.OwnerID != ownerID || authorization.PolicyID != policy.ID ||
+		authorization.Path != parsedURI.Path || authorization.ObjectKey != objectKey ||
+		authorization.Size != req.Size || !time.Now().Before(authorization.ExpiresAt) {
+		return nil, fmt.Errorf("%w: 直传授权不存在、已过期或与请求不匹配", constant.ErrForbidden)
+	}
 
 	// 步骤 3: 获取存储驱动并验证文件是否存在
 	provider, err := s.getProviderForPolicy(policy)
 	if err != nil {
 		return nil, err
 	}
-
-	// 构建云端对象键
-	objectKey := buildObjectKey(policy, parsedURI.Path)
 
 	// 检查文件是否存在于云存储中
 	exists, err := provider.IsExist(ctx, policy, objectKey)
@@ -714,11 +874,30 @@ func (s *uploadService) FinalizeClientUpload(ctx context.Context, ownerID uint, 
 	// 步骤 4: 在数据库事务中创建记录
 	var createdFile *model.File
 	err = s.txManager.Do(ctx, func(repos repository.Repositories) error {
+		if err := authorizeUploadMount(ctx, ownerID, policy, repos); err != nil {
+			return err
+		}
 		// 确保父目录存在
 		parentPath := filepath.Dir(parsedURI.Path)
 		parentFolder, err := s.findOrCreatePath(ctx, ownerID, parentPath, repos.File)
 		if err != nil {
 			return fmt.Errorf("创建或查找父目录'%s'失败: %w", parentPath, err)
+		}
+		if !authorization.Overwrite {
+			if _, err := repos.File.FindByParentIDAndName(ctx, parentFolder.ID, fileName); err == nil {
+				return fmt.Errorf("%w: 文件 '%s' 已存在", constant.ErrConflict, fileName)
+			} else if !errors.Is(err, constant.ErrNotFound) {
+				return err
+			}
+		}
+		// Consume once before writes. On transaction failure a new upload session is required;
+		// restoring the key would allow a stale request to overwrite a newer authorization.
+		consumed, err := utility.CompareAndDeleteCache(ctx, s.cacheSvc, authorizationKey, authorizationJSON)
+		if err != nil {
+			return fmt.Errorf("消费直传授权失败: %w", err)
+		}
+		if !consumed {
+			return fmt.Errorf("%w: 直传授权已失效，请重新创建上传会话", constant.ErrForbidden)
 		}
 
 		// 创建物理实体记录

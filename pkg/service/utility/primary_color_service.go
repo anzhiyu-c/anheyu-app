@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -273,28 +272,34 @@ func (s *PrimaryColorService) getColorFromLocalFile(ctx context.Context, file *m
 		return ""
 	}
 
-	basePath := policy.BasePath
-	candidates := localPrimaryColorPathCandidates(basePath, sourceRaw)
+	provider, ok := s.storageProviders[constant.PolicyTypeLocal]
+	if !ok {
+		return ""
+	}
+	candidates := localPrimaryColorPathCandidates(policy.BasePath, sourceRaw)
 
 	var lastErr error
 	for _, fullPath := range candidates {
-		f, err := os.Open(fullPath)
+		// 兼容历史候选路径，但每个候选仍必须通过本地驱动的根目录边界。
+		f, err := provider.Get(ctx, policy, fullPath)
 		if err != nil {
 			lastErr = err
 			continue
 		}
 		color, err := s.colorSvc.GetPrimaryColor(f)
-		_ = f.Close()
+		if closeErr := f.Close(); closeErr != nil {
+			log.Printf("[主色调服务] 关闭本地文件失败: %v", closeErr)
+		}
 		if err != nil {
 			lastErr = err
 			continue
 		}
-		log.Printf("[主色调服务] 成功从本地文件提取主色调: %s (path=%s)", color, fullPath)
+		log.Printf("[主色调服务] 成功从本地文件提取主色调: %s", color)
 		return color
 	}
 
 	if lastErr != nil {
-		log.Printf("[主色调服务] 打开/读取本地文件失败（已尝试 %v）: %v，返回空字符串", candidates, lastErr)
+		log.Printf("[主色调服务] 打开/读取本地文件失败: %v，返回空字符串", lastErr)
 	} else {
 		log.Printf("[主色调服务] 无可用本地文件路径候选，返回空字符串")
 	}

@@ -11,7 +11,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 
+	"github.com/anzhiyu-c/anheyu-app/pkg/constant"
 	"github.com/anzhiyu-c/anheyu-app/pkg/domain/repository"
 	"github.com/anzhiyu-c/anheyu-app/pkg/service/setting"
 )
@@ -26,8 +28,8 @@ type ImportExportService interface {
 
 // exportPayload 扩展导出格式：系统设置 + 支付配置（由 Pro 实现扩展时使用）
 type exportPayload struct {
-	Settings       map[string]string             `json:"settings,omitempty"`
-	PaymentConfigs []PaymentConfigExportItem    `json:"payment_configs,omitempty"`
+	Settings       map[string]string         `json:"settings,omitempty"`
+	PaymentConfigs []PaymentConfigExportItem `json:"payment_configs,omitempty"`
 }
 
 // importExportService 是 ImportExportService 接口的实现
@@ -58,6 +60,7 @@ func (s *importExportService) ExportConfig(ctx context.Context) ([]byte, error) 
 	for _, setting := range settings {
 		configMap[setting.ConfigKey] = setting.Value
 	}
+	excludeRuntimeSigningKeys(configMap)
 
 	if s.extension != nil && *s.extension != nil {
 		paymentConfigs, err := (*s.extension).ExportPayment(ctx)
@@ -141,6 +144,8 @@ func (s *importExportService) ImportConfig(ctx context.Context, content io.Reade
 		}
 	}
 
+	// 旧备份也不能恢复旧签名身份；保留当前实例正在使用的签名密钥。
+	excludeRuntimeSigningKeys(settingsMap)
 	if len(settingsMap) == 0 && len(paymentItems) == 0 {
 		return fmt.Errorf("配置文件中没有有效的配置项")
 	}
@@ -165,6 +170,17 @@ func (s *importExportService) ImportConfig(ctx context.Context, content io.Reade
 	}
 
 	return nil
+}
+
+// 运行期签名密钥不属于可迁移配置。其他配置（包括 Pro 支付数据）保持原有语义。
+func excludeRuntimeSigningKeys(settings map[string]string) {
+	for key := range settings {
+		normalized := strings.TrimSpace(key)
+		if strings.EqualFold(normalized, constant.KeyJWTSecret.String()) ||
+			strings.EqualFold(normalized, constant.KeyLocalFileSigningSecret.String()) {
+			delete(settings, key)
+		}
+	}
 }
 
 func paymentExportItemFromMap(m map[string]interface{}) PaymentConfigExportItem {

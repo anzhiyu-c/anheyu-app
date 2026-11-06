@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -649,12 +650,33 @@ func (s *serviceImpl) ServeSignedContent(ctx context.Context, token string, writ
 
 	// 3. 根据存储策略类型选择不同的服务方式
 	if policy.Type == constant.PolicyTypeLocal {
-		// 对于本地文件，使用 http.ServeFile 来获得全部高级功能
-		// (范围请求, 缓存验证, Content-Type, etc.)
-		absolutePath := entity.Source.String
-
-		// http.ServeFile 会自己处理所有响应写入，包括错误情况。
-		http.ServeFile(writer, request, absolutePath)
+		// 通过存储驱动打开受根目录约束的文件句柄，避免签名预览绕过路径防线。
+		provider, err := s.GetProviderForPolicy(policy)
+		if err != nil {
+			return err
+		}
+		reader, err := provider.Get(ctx, policy, entity.Source.String)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := reader.Close(); err != nil {
+				log.Printf("关闭本地预览文件失败: %v", err)
+			}
+		}()
+		localFile, ok := reader.(*os.File)
+		if !ok {
+			return errors.New("本地存储未返回可定位的文件")
+		}
+		info, err := localFile.Stat()
+		if err != nil {
+			return errors.New("读取本地文件信息失败")
+		}
+		if !info.Mode().IsRegular() {
+			return constant.ErrForbidden
+		}
+		// ServeContent 在已验证的句柄上保留 Range、缓存和 MIME 支持，不重新打开路径。
+		http.ServeContent(writer, request, file.Name, info.ModTime(), localFile)
 		return nil
 	} else {
 		// 对于云存储，继续使用 provider.Stream，它通常会执行重定向。

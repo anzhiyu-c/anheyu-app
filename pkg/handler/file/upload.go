@@ -51,6 +51,10 @@ func (h *FileHandler) CreateUploadSession(c *gin.Context) {
 			response.Fail(c, http.StatusConflict, "创建失败: "+err.Error())
 		} else if errors.Is(err, constant.ErrNotFound) {
 			response.Fail(c, http.StatusNotFound, "创建失败: "+err.Error())
+		} else if errors.Is(err, constant.ErrBadRequest) {
+			response.Fail(c, http.StatusBadRequest, "创建失败: "+err.Error())
+		} else if errors.Is(err, constant.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "创建失败: "+err.Error())
 		} else {
 			response.Fail(c, http.StatusInternalServerError, "创建失败: "+err.Error())
 		}
@@ -239,7 +243,13 @@ func (h *FileHandler) FinalizeClientUpload(c *gin.Context) {
 
 	file, err := h.uploadSvc.FinalizeClientUpload(c.Request.Context(), ownerID, &req)
 	if err != nil {
-		if errors.Is(err, constant.ErrNotFound) {
+		if errors.Is(err, constant.ErrBadRequest) {
+			response.Fail(c, http.StatusBadRequest, "创建失败: "+err.Error())
+		} else if errors.Is(err, constant.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "创建失败: "+err.Error())
+		} else if errors.Is(err, constant.ErrConflict) {
+			response.Fail(c, http.StatusConflict, "创建失败: "+err.Error())
+		} else if errors.Is(err, constant.ErrNotFound) {
 			response.Fail(c, http.StatusNotFound, "创建失败: "+err.Error())
 		} else {
 			response.Fail(c, http.StatusInternalServerError, "创建文件记录失败: "+err.Error())
