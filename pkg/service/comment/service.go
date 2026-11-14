@@ -293,7 +293,7 @@ func (s *Service) Create(ctx context.Context, req *dto.CreateRequest, ip, ua, re
 	}
 
 	// 从 Markdown 内容生成 HTML
-	safeHTML, err := s.parserSvc.ToHTML(ctx, req.Content)
+	safeHTML, err := s.parserSvc.ToCommentHTML(ctx, req.Content)
 	if err != nil {
 		return nil, fmt.Errorf("markdown内容解析失败: %w", err)
 	}
@@ -984,11 +984,11 @@ func (s *Service) toResponseDTO(ctx context.Context, c *model.Comment, parent *m
 	publicID, _ := idgen.GeneratePublicID(c.ID, idgen.EntityTypeComment)
 
 	// 统一使用解析后的HTML，确保表情包正确显示
-	parsedHTML, err := s.parserSvc.ToHTML(ctx, c.Content)
+	parsedHTML, err := s.parserSvc.ToCommentHTML(ctx, c.Content)
 	var renderedContentHTML string
 	if err != nil {
 		log.Printf("【WARN】解析评论 %s 的表情包失败: %v", publicID, err)
-		renderedContentHTML = s.parserSvc.SanitizeHTML(c.ContentHTML)
+		renderedContentHTML = s.parserSvc.SanitizeCommentHTML(c.ContentHTML)
 	} else {
 		renderedContentHTML = parsedHTML
 	}
@@ -1271,7 +1271,7 @@ func (s *Service) UpdateContent(ctx context.Context, publicID string, newContent
 	}
 
 	// 解析 Markdown 为 HTML（处理表情包和内部图片链接）
-	contentHTML, err := s.parserSvc.ToHTML(ctx, newContent)
+	contentHTML, err := s.parserSvc.ToCommentHTML(ctx, newContent)
 	if err != nil {
 		return nil, fmt.Errorf("解析评论内容失败: %w", err)
 	}
@@ -1303,7 +1303,7 @@ func (s *Service) UpdateCommentInfo(ctx context.Context, publicID string, req *d
 			return nil, errors.New("评论内容长度必须在 1-1000 字符之间")
 		}
 		// 解析 Markdown 为 HTML
-		contentHTML, err := s.parserSvc.ToHTML(ctx, content)
+		contentHTML, err := s.parserSvc.ToCommentHTML(ctx, content)
 		if err != nil {
 			return nil, fmt.Errorf("解析评论内容失败: %w", err)
 		}

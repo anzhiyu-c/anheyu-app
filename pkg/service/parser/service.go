@@ -62,8 +62,11 @@ type Service struct {
 	sanitizeCache *LRUCache // HTML -> SafeHTML 缓存
 }
 
-// htmlPolicy 初始化后只读，在文章、历史与评论输出边界复用同一安全策略。
+// htmlPolicy 初始化后只读，供文章和历史内容使用。
 var htmlPolicy = newHTMLPolicy()
+
+// commentHTMLPolicy 用于评论。评论允许基础排版，但不允许 style 属性，避免用固定定位覆盖页面。
+var commentHTMLPolicy = newCommentHTMLPolicy()
 
 func newHTMLPolicy() *bluemonday.Policy {
 	policy := bluemonday.UGCPolicy()
@@ -155,6 +158,13 @@ func newHTMLPolicy() *bluemonday.Policy {
 	policy.AllowAttrs("src", "width", "height", "scrolling", "seamless", "class", "id", "title", "frameborder", "allowfullscreen", "sandbox").OnElements("iframe")
 
 	policy.AllowAttrs("id").OnElements("div", "h1", "h2", "h3", "h4", "h5", "h6", "button", "a", "img", "span", "code", "pre", "table", "thead", "tbody", "tr", "th", "td", "font", "details", "summary", "svg", "blockquote", "video", "iframe")
+	return policy
+}
+
+// newCommentHTMLPolicy 生成评论专用策略。文章保留 style 用于图表和排版，评论不放行 style。
+func newCommentHTMLPolicy() *bluemonday.Policy {
+	policy := bluemonday.UGCPolicy()
+	policy.AllowURLSchemes("anzhiyu")
 	return policy
 }
 
@@ -291,15 +301,26 @@ func (s *Service) updateEmojiData(ctx context.Context, emojiURL string) {
 // ToHTML 将包含表情包和Markdown的文本转换为安全的HTML。
 // 使用缓存机制避免重复解析相同内容，显著提升性能。
 func (s *Service) ToHTML(ctx context.Context, content string) (string, error) {
-	// 计算内容的缓存键
-	cacheKey := computeCacheKey(content)
+	return s.renderHTML(content, s.policy, "")
+}
 
-	// 尝试从缓存获取
+// ToCommentHTML 将评论 Markdown 转为安全 HTML，并去掉可用于覆盖页面的样式。
+func (s *Service) ToCommentHTML(ctx context.Context, content string) (string, error) {
+	return s.renderHTML(content, commentHTMLPolicy, "comment\n")
+}
+
+// SanitizeCommentHTML 用评论策略过滤已经生成的 HTML。
+func (s *Service) SanitizeCommentHTML(htmlContent string) string {
+	return commentHTMLPolicy.Sanitize(htmlContent)
+}
+
+func (s *Service) renderHTML(content string, policy *bluemonday.Policy, cachePrefix string) (string, error) {
+	cacheKey := cachePrefix + computeCacheKey(content)
+
 	if cached, hit := s.htmlCache.Get(cacheKey); hit {
 		return cached, nil
 	}
 
-	// 缓存未命中，执行解析
 	placeholders := make(map[string]string)
 	replacedContent := s.mermaidRegex.ReplaceAllStringFunc(content, func(match string) string {
 		placeholder := "MERMAID_PLACEHOLDER_" + uuid.New().String()
@@ -319,21 +340,18 @@ func (s *Service) ToHTML(ctx context.Context, content string) (string, error) {
 		return "", err
 	}
 
-	safeHTML := s.policy.Sanitize(buf.String())
+	safeHTML := policy.Sanitize(buf.String())
 
-	// 使用 strings.NewReplacer 进行批量替换，性能更优
 	finalHTML := safeHTML
 	if len(placeholders) > 0 {
 		replacerPairs := make([]string, 0, len(placeholders)*2)
 		for placeholder, originalMermaid := range placeholders {
-			// Mermaid 仅跳过 Markdown 转换，不能跳过安全过滤。
-			replacerPairs = append(replacerPairs, placeholder, s.policy.Sanitize(originalMermaid))
+			replacerPairs = append(replacerPairs, placeholder, policy.Sanitize(originalMermaid))
 		}
 		batchReplacer := strings.NewReplacer(replacerPairs...)
 		finalHTML = batchReplacer.Replace(safeHTML)
 	}
 
-	// 存入缓存
 	s.htmlCache.Set(cacheKey, finalHTML)
 
 	return finalHTML, nil

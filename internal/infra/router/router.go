@@ -267,9 +267,9 @@ func (r *Router) registerCommentRoutes(api *gin.RouterGroup) {
 		commentsPublic.GET("/ip-location", r.commentHandler.GetIPLocation) // 获取IP定位信息（用于天气组件）
 
 		commentsPublic.POST("", r.mw.JWTAuthOptional(), r.commentHandler.Create)
-		commentsPublic.POST("/upload", r.mw.JWTAuthOptional(), r.commentHandler.UploadCommentImage)
-		commentsPublic.POST("/:id/like", r.commentHandler.LikeComment)
-		commentsPublic.POST("/:id/unlike", r.commentHandler.UnlikeComment)
+		commentsPublic.POST("/upload", r.mw.JWTAuthOptional(), middleware.CommentUploadRateLimit(), r.commentHandler.UploadCommentImage)
+		commentsPublic.POST("/:id/like", middleware.CommentLikeRateLimit(), r.commentHandler.LikeComment)
+		commentsPublic.POST("/:id/unlike", middleware.CommentLikeRateLimit(), r.commentHandler.UnlikeComment)
 	}
 
 	// 天气组件专用路径（与评论 IP 定位共用实现，前端请求 /api/public/weather/ip-location）
@@ -507,7 +507,7 @@ func (r *Router) registerPublicRoutes(api *gin.RouterGroup) {
 	{
 		public.GET("/albums", r.publicHandler.GetPublicAlbums)
 		public.GET("/album-categories", r.publicHandler.GetPublicAlbumCategories)
-		public.PUT("/stat/:id", r.publicHandler.UpdateAlbumStat)
+		public.PUT("/stat/:id", middleware.PublicWriteRateLimit(), r.publicHandler.UpdateAlbumStat)
 		public.GET("/site-config", r.settingHandler.GetSiteConfig)
 		public.GET("/site-config/version", r.settingHandler.GetConfigVersion)
 
@@ -518,7 +518,6 @@ func (r *Router) registerPublicRoutes(api *gin.RouterGroup) {
 		// 订阅相关路由
 		public.POST("/subscribe", middleware.CustomRateLimit(3, 3), r.subscriberHandler.Subscribe)
 		public.POST("/subscribe/code", middleware.CustomRateLimit(3, 3), r.subscriberHandler.SendVerificationCode)
-		public.POST("/unsubscribe", r.subscriberHandler.Unsubscribe)
 		public.GET("/unsubscribe/:token", r.subscriberHandler.UnsubscribeByToken)
 	}
 }
@@ -633,9 +632,6 @@ func (r *Router) registerLinkRoutes(api *gin.RouterGroup) {
 		// 获取随机友链: GET /api/public/links/random
 		linksPublic.GET("/random", r.linkHandler.GetRandomLinks)
 
-		// 获取所有友链申请列表: GET /api/public/links/applications
-		linksPublic.GET("/applications", r.linkHandler.ListAllApplications)
-
 		// 检查友链URL是否存在: GET /api/public/links/check-exists
 		linksPublic.GET("/check-exists", r.linkHandler.CheckLinkExists)
 	}
@@ -652,6 +648,7 @@ func (r *Router) registerLinkRoutes(api *gin.RouterGroup) {
 		// 友链管理
 		linksAdmin.POST("", r.linkHandler.AdminCreateLink)                         // POST /api/links
 		linksAdmin.GET("", r.linkHandler.ListLinks)                                // GET /api/links
+		linksAdmin.GET("/applications", r.linkHandler.ListAllApplications)         // GET /api/links/applications
 		linksAdmin.DELETE("/batch-delete", r.linkHandler.AdminBatchDeleteLinks)    // DELETE /api/links/batch-delete
 		linksAdmin.PUT("/:id", r.linkHandler.AdminUpdateLink)                      // PUT /api/links/:id
 		linksAdmin.DELETE("/:id", r.linkHandler.AdminDeleteLink)                   // DELETE /api/links/:id
@@ -684,7 +681,7 @@ func (r *Router) registerStatisticsRoutes(api *gin.RouterGroup) {
 		statisticsPublic.GET("/basic", r.statisticsHandler.GetBasicStatistics)
 
 		// 记录访问: POST /api/public/statistics/visit
-		statisticsPublic.POST("/visit", r.statisticsHandler.RecordVisit)
+		statisticsPublic.POST("/visit", middleware.PublicWriteRateLimit(), r.statisticsHandler.RecordVisit)
 	}
 
 	// --- 后台管理接口 ---

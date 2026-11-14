@@ -205,7 +205,7 @@ func (s *emailService) SendCommentNotification(newComment *model.Comment, parent
 	var newCommentHTML string
 	if s.parserSvc != nil {
 		var err error
-		newCommentHTML, err = s.parserSvc.ToHTML(ctx, newComment.Content)
+		newCommentHTML, err = s.parserSvc.ToCommentHTML(ctx, newComment.Content)
 		if err != nil {
 			log.Printf("[WARNING] 解析新评论内容失败，将使用原始内容: %v", err)
 			newCommentHTML = newComment.Content
@@ -339,7 +339,7 @@ func (s *emailService) SendCommentNotification(newComment *model.Comment, parent
 		var parentCommentHTML string
 		if s.parserSvc != nil {
 			var err error
-			parentCommentHTML, err = s.parserSvc.ToHTML(ctx, parentComment.Content)
+			parentCommentHTML, err = s.parserSvc.ToCommentHTML(ctx, parentComment.Content)
 			if err != nil {
 				log.Printf("[WARNING] 解析父评论内容失败，将使用原始内容: %v", err)
 				parentCommentHTML = parentComment.Content

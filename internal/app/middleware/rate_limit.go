@@ -140,6 +140,36 @@ func (i *ipRateLimiter) cleanupStaleEntries() {
 // 限制同一真实 IP 在 10 分钟内最多提交 3 次，且不允许突发绕过。
 var linkApplyLimiter = newSlidingWindowIPRateLimiter(3, 10*time.Minute, time.Now)
 
+var commentLikeLimiter = newSlidingWindowIPRateLimiter(30, 10*time.Minute, time.Now)
+var commentUploadLimiter = newSlidingWindowIPRateLimiter(10, 10*time.Minute, time.Now)
+var publicWriteLimiter = newSlidingWindowIPRateLimiter(60, time.Minute, time.Now)
+
+// CommentLikeRateLimit 限制同一 IP 的评论点赞频率。
+func CommentLikeRateLimit() gin.HandlerFunc {
+	return ipWindowLimit(commentLikeLimiter, "操作过于频繁，请稍后再试")
+}
+
+// CommentUploadRateLimit 限制同一 IP 的评论图片上传频率。
+func CommentUploadRateLimit() gin.HandlerFunc {
+	return ipWindowLimit(commentUploadLimiter, "上传过于频繁，请10分钟后再试")
+}
+
+// PublicWriteRateLimit 限制公开写接口的调用频率。
+func PublicWriteRateLimit() gin.HandlerFunc {
+	return ipWindowLimit(publicWriteLimiter, "请求过于频繁，请稍后再试")
+}
+
+func ipWindowLimit(limiter *slidingWindowIPRateLimiter, message string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !limiter.allow(getClientIP(c)) {
+			response.Fail(c, http.StatusTooManyRequests, message)
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 // LinkApplyRateLimit 友链申请频率限制中间件
 // 限制每个IP地址的友链申请频率
 func LinkApplyRateLimit() gin.HandlerFunc {

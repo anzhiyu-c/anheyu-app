@@ -72,11 +72,26 @@ func extractIPFromHeader(value string) string {
 		return ""
 	}
 	parts := strings.Split(value, ",")
-	candidate := strings.TrimSpace(parts[0])
-	if net.ParseIP(candidate) != nil {
+	// 从右向左取第一个不属于可信代理的地址。
+	// 代理会把真实来源追加在末尾，最左侧的地址可以由客户端伪造。
+	for i := len(parts) - 1; i >= 0; i-- {
+		candidate := strings.TrimSpace(parts[i])
+		ip := net.ParseIP(candidate)
+		if ip == nil || isTrustedProxyIP(ip) {
+			continue
+		}
 		return candidate
 	}
 	return ""
+}
+
+func isTrustedProxyIP(ip net.IP) bool {
+	for _, ipNet := range trustedProxyNets {
+		if ipNet.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }
 
 // GetRealClientIP 获取客户端真实IP地址
