@@ -253,6 +253,9 @@ func (p *AliOSSProvider) Get(ctx context.Context, policy *model.StoragePolicy, s
 	return body, nil
 }
 
+// aliOSSListMaxKeys 是阿里云OSS单次列举允许的最大条数；服务端默认只返回 100 条，大目录会产生大量分页请求。
+const aliOSSListMaxKeys = 1000
+
 // List 列出阿里云OSS存储桶中的对象
 func (p *AliOSSProvider) List(ctx context.Context, policy *model.StoragePolicy, virtualPath string) ([]FileInfo, error) {
 	log.Printf("[阿里云OSS] List方法调用 - 策略名称: %s, virtualPath: %s", policy.Name, virtualPath)
@@ -271,7 +274,7 @@ func (p *AliOSSProvider) List(ctx context.Context, policy *model.StoragePolicy, 
 	marker := ""
 	seenMarkers := make(map[string]struct{})
 	for {
-		result, err := bucket.ListObjects(oss.Prefix(prefix), oss.Delimiter("/"), oss.Marker(marker), oss.WithContext(ctx))
+		result, err := bucket.ListObjects(oss.Prefix(prefix), oss.Delimiter("/"), oss.Marker(marker), oss.MaxKeys(aliOSSListMaxKeys), oss.WithContext(ctx))
 		if err != nil {
 			if len(seenMarkers) > 0 {
 				return nil, fmt.Errorf("%w: 列出阿里云OSS后续页失败: %w", ErrIncompleteListing, err)

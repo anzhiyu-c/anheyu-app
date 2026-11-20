@@ -302,3 +302,26 @@ func TestCloudListAllowsCompleteEmptyDirectory(t *testing.T) {
 		})
 	}
 }
+
+func TestAliOSSListRequestsMaxPageSize(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		page := requests.Add(1)
+		if got := r.URL.Query().Get("max-keys"); got != "1000" {
+			t.Errorf("page %d max-keys = %q, want 1000", page, got)
+		}
+		if page == 1 {
+			writeCloudListPage(t, w, r, true, "page-2", []string{"first.txt"}, nil)
+			return
+		}
+		writeCloudListPage(t, w, r, false, "", []string{"last.txt"}, nil)
+	}))
+	defer server.Close()
+	got, err := (&AliOSSProvider{}).List(context.Background(), cloudListPolicy(server.URL, ""), "/mount")
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(got) != 2 || requests.Load() != 2 {
+		t.Fatalf("List = %+v after %d requests, want 2 items after 2 requests", got, requests.Load())
+	}
+}
