@@ -49,3 +49,26 @@ func containsSubstring(s, sub string) bool {
 	}
 	return false
 }
+
+func TestMaskSensitiveSettingsHandlesUnflattenedProfiles(t *testing.T) {
+	// GetByKeys 经过 unflatten 后，ai_profiles 是 []interface{} 而不是字符串。
+	settings := map[string]interface{}{
+		aiProfilesSettingKey: []interface{}{
+			map[string]interface{}{"id": "primary", "name": "Primary", "provider": "openai", "enabled": true, "api_key": "sk-live-secret"},
+		},
+	}
+
+	maskSensitiveSettings(settings)
+
+	profiles, ok := settings[aiProfilesSettingKey].([]interface{})
+	if !ok || len(profiles) != 1 {
+		t.Fatalf("expected masked profiles array, got %#v", settings[aiProfilesSettingKey])
+	}
+	profile := profiles[0].(map[string]interface{})
+	if _, exists := profile["api_key"]; exists {
+		t.Fatalf("masked profile leaked api_key: %#v", profile)
+	}
+	if profile["has_api_key"] != true || profile["api_key_masked"] != "************cret" {
+		t.Fatalf("unexpected masked profile: %#v", profile)
+	}
+}

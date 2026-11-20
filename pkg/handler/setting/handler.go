@@ -319,13 +319,32 @@ func maskSensitiveSettings(settings map[string]interface{}) {
 	if !ok {
 		return
 	}
-	value, ok := raw.(string)
-	if !ok {
+	// GetByKeys 会把 JSON 字符串反序列化为对象/数组，这里需要同时处理两种形态。
+	value, isString := raw.(string)
+	if !isString {
+		data, err := json.Marshal(raw)
+		if err != nil {
+			delete(settings, aiProfilesSettingKey)
+			return
+		}
+		value = string(data)
+	}
+	masked := maskAIProfilesSetting(value)
+	if masked == "" {
+		// 无法安全掩码时不返回该字段，避免泄露明文密钥。
+		delete(settings, aiProfilesSettingKey)
 		return
 	}
-	if masked := maskAIProfilesSetting(value); masked != "" {
+	if isString {
 		settings[aiProfilesSettingKey] = masked
+		return
 	}
+	var maskedValue interface{}
+	if err := json.Unmarshal([]byte(masked), &maskedValue); err != nil {
+		delete(settings, aiProfilesSettingKey)
+		return
+	}
+	settings[aiProfilesSettingKey] = maskedValue
 }
 
 func (h *SettingHandler) prepareSensitiveSettingsForUpdate(settings map[string]string) {
