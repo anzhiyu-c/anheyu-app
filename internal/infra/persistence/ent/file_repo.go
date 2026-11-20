@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -524,6 +525,27 @@ func (r *entFileRepository) Restore(ctx context.Context, fileID uint) error {
 	return err
 }
 
+// rebindPlaceholders 将原生 SQL 中的 ? 占位符转换为当前方言格式。
+// 直接通过 *sql.DB 执行的语句不会经过 Ent 的方言适配，PostgreSQL 需要 $1, $2, ...。
+func (r *entFileRepository) rebindPlaceholders(query string) string {
+	if r.dbType != "postgres" {
+		return query
+	}
+	var builder strings.Builder
+	builder.Grow(len(query) + 8)
+	index := 0
+	for _, ch := range query {
+		if ch == '?' {
+			index++
+			builder.WriteString("$")
+			builder.WriteString(strconv.Itoa(index))
+			continue
+		}
+		builder.WriteRune(ch)
+	}
+	return builder.String()
+}
+
 func (r *entFileRepository) IsDescendant(ctx context.Context, ancestorID, potentialDescendantID uint) (bool, error) {
 	rawQuery := `
 		WITH RECURSIVE descendants (id) AS (
@@ -534,7 +556,7 @@ func (r *entFileRepository) IsDescendant(ctx context.Context, ancestorID, potent
 		SELECT EXISTS (SELECT 1 FROM descendants WHERE id = ?);
 	`
 	var exists bool
-	err := r.db.QueryRowContext(ctx, rawQuery, ancestorID, potentialDescendantID).Scan(&exists)
+	err := r.db.QueryRowContext(ctx, r.rebindPlaceholders(rawQuery), ancestorID, potentialDescendantID).Scan(&exists)
 	return exists, err
 }
 
@@ -548,7 +570,7 @@ func (r *entFileRepository) GetDescendantFileInfo(ctx context.Context, folderID 
 		)
 		SELECT size, primary_entity_id FROM descendant_files WHERE type = 1;
 	`
-	rows, err := r.db.QueryContext(ctx, rawQuery, folderID)
+	rows, err := r.db.QueryContext(ctx, r.rebindPlaceholders(rawQuery), folderID)
 	if err != nil {
 		return nil, err
 	}
