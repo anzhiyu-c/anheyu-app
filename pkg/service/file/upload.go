@@ -110,9 +110,18 @@ func validateUploadPolicyPath(policy *model.StoragePolicy, path string) error {
 }
 
 func authorizeUploadMount(ctx context.Context, ownerID uint, policy *model.StoragePolicy, repos repository.Repositories) error {
+	return authorizeStorageMount(ctx, ownerID, policy, repos.User, repos.File)
+}
+
+// authorizeStorageMount 判断 ownerID 能否读写 policy 对应的物理存储。
+// 上传、目录同步以及重命名、移动、删除、内容更新等物理操作都必须使用同一套规则。
+func authorizeStorageMount(ctx context.Context, ownerID uint, policy *model.StoragePolicy, userRepo repository.UserRepository, fileRepo repository.FileRepository) error {
+	if policy == nil {
+		return fmt.Errorf("%w: 存储策略不能为空", constant.ErrForbidden)
+	}
 	// 默认本地根策略没有用户隔离，并可能包含其他策略的物理目录，只允许真实管理员使用。
 	if ownerID != 0 && policy.Type == constant.PolicyTypeLocal && policy.VirtualPath == "/" && policy.NodeID == nil {
-		user, err := repos.User.FindByID(ctx, ownerID)
+		user, err := userRepo.FindByID(ctx, ownerID)
 		if err != nil {
 			if errors.Is(err, constant.ErrNotFound) {
 				return fmt.Errorf("%w: 共享本地根策略仅管理员可用", constant.ErrForbidden)
@@ -127,7 +136,7 @@ func authorizeUploadMount(ctx context.Context, ownerID uint, policy *model.Stora
 	if ownerID == 0 || policy.NodeID == nil {
 		return fmt.Errorf("%w: 无权访问存储策略挂载目录", constant.ErrForbidden)
 	}
-	mount, err := repos.File.FindByPath(ctx, ownerID, policy.VirtualPath)
+	mount, err := fileRepo.FindByPath(ctx, ownerID, policy.VirtualPath)
 	if err != nil {
 		if errors.Is(err, constant.ErrNotFound) {
 			return fmt.Errorf("%w: 无权访问存储策略挂载目录", constant.ErrForbidden)

@@ -58,7 +58,7 @@ func (s *serviceImpl) QueryByURI(ctx context.Context, ownerID, viewerID uint, pa
 	}()
 
 	// 调用同步服务。syncSvc 内部会根据策略类型选择正确的 provider (local, onedrive, etc.)
-	syncErr := s.syncSvc.SyncDirectory(ctx, ownerID, policy, parsedURI.Path)
+	syncErr := s.syncDirectoryIfAuthorized(ctx, ownerID, policy, parsedURI.Path)
 	if syncErr != nil {
 		// 即便同步失败，也只记录警告，并继续尝试从数据库提供可能过时的数据，保证服务的可用性。
 		log.Printf("【严重警告】在查询文件列表时，同步目录 '%s' 失败: %v", parsedURI.Path, syncErr)
@@ -108,23 +108,22 @@ func (s *serviceImpl) QueryByURI(ctx context.Context, ownerID, viewerID uint, pa
 		}
 	}
 
-	var parentID uint = 0
-	if parentFolder != nil {
-		parentID = parentFolder.ID
-	}
-
 	// --- 3. 从数据库获取数据 ---
-	// 使用一个独立的变量存储从数据库返回的结果，以便后续分页逻辑不受内存合并的影响
-	dbChildren, err := s.fileRepo.ListByParentIDWithCursor(
-		ctx,
-		parentID,
-		orderBy,             // 使用经过验证的、安全的 orderBy
-		direction,           // 使用经过验证的、安全的 direction
-		effectivePageSize+1, // 请求N+1条记录以判断是否有下一页
-		token,
-	)
-	if err != nil {
-		return nil, err
+	// 使用一个独立的变量存储从数据库返回的结果，以便后续分页逻辑不受内存合并的影响。
+	// 目录记录不存在时直接返回空列表：按 parent_id 为空查询会列出所有用户的根目录。
+	dbChildren := []*model.File{}
+	if parentFolder != nil {
+		dbChildren, err = s.fileRepo.ListByParentIDWithCursor(
+			ctx,
+			parentFolder.ID,
+			orderBy,             // 使用经过验证的、安全的 orderBy
+			direction,           // 使用经过验证的、安全的 direction
+			effectivePageSize+1, // 请求N+1条记录以判断是否有下一页
+			token,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// 为从数据库获取的每个文件填充其元数据

@@ -155,6 +155,8 @@ func (h *FileHandler) CreateEmptyFile(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, constant.ErrConflict) {
 			response.Fail(c, http.StatusConflict, "创建失败: "+err.Error())
+		} else if errors.Is(err, constant.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "创建失败: "+err.Error())
 		} else {
 			response.Fail(c, http.StatusInternalServerError, "创建失败: "+err.Error())
 		}

@@ -22,6 +22,8 @@ import (
 // FileService 定义了所有与文件和目录相关的核心业务逻辑。
 // 它是连接上层 handler 和底层 repository 的桥梁，负责处理权限、业务规则和多个数据源的协调。
 type FileService interface {
+	// PurgeUnauthorizedStorageRecords 清理非管理员文件树中无权访问其物理存储的历史记录，只删数据库记录。
+	PurgeUnauthorizedStorageRecords(ctx context.Context) (int, error)
 	// QueryByURI 根据给定的虚拟文件系统URI查询文件列表。
 	QueryByURI(ctx context.Context, ownerID, viewerID uint, parsedURI *uri.ParsedURI) (*model.FileListResponse, error)
 	// CreateEmptyFile 在指定的虚拟路径下创建一个空文件或目录。
