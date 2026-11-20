@@ -70,6 +70,10 @@ func (p *UpyunProvider) objectURL(policy *model.StoragePolicy, objectKey string)
 }
 
 func (p *UpyunProvider) request(ctx context.Context, method string, policy *model.StoragePolicy, objectKey string, body io.Reader) (*http.Response, error) {
+	return p.requestWithHeaders(ctx, method, policy, objectKey, body, nil)
+}
+
+func (p *UpyunProvider) requestWithHeaders(ctx context.Context, method string, policy *model.StoragePolicy, objectKey string, body io.Reader, headers http.Header) (*http.Response, error) {
 	requestURL, err := p.objectURL(policy, objectKey)
 	if err != nil {
 		return nil, err
@@ -80,6 +84,11 @@ func (p *UpyunProvider) request(ctx context.Context, method string, policy *mode
 	}
 	if policy.AccessKey == "" || policy.SecretKey == "" {
 		return nil, errors.New("又拍云策略缺少操作员或密码")
+	}
+	for key, values := range headers {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
 	}
 	req.SetBasicAuth(policy.AccessKey, policy.SecretKey)
 	return p.client.Do(req)
@@ -258,35 +267,90 @@ func (p *UpyunProvider) Get(ctx context.Context, policy *model.StoragePolicy, so
 type upyunListItem struct {
 	Name         string `json:"name"`
 	Type         string `json:"type"`
-	Size         int64  `json:"size"`
+	Length       int64  `json:"length"`
 	LastModified any    `json:"last_modified"`
 }
 
-func (p *UpyunProvider) List(ctx context.Context, policy *model.StoragePolicy, virtualPath string) ([]FileInfo, error) {
-	objectKey := strings.TrimSuffix(p.buildObjectKey(policy, virtualPath), "/")
-	resp, err := p.request(ctx, http.MethodGet, policy, objectKey, nil)
-	if err != nil {
-		return nil, fmt.Errorf("列出又拍云目录失败: %w", err)
-	}
-	defer closeBody(resp)
-	if err := ensureStatus(resp, http.StatusOK); err != nil {
-		return nil, err
-	}
+type upyunListResponse struct {
+	Files []upyunListItem `json:"files"`
+	Iter  string          `json:"iter"`
+}
 
-	var items []upyunListItem
-	if err := json.NewDecoder(resp.Body).Decode(&items); err != nil {
-		return nil, fmt.Errorf("解析又拍云目录列表失败: %w", err)
+func (p *UpyunProvider) List(ctx context.Context, policy *model.StoragePolicy, virtualPath string) (files []FileInfo, retErr error) {
+	completedPages := 0
+	defer func() {
+		if retErr != nil && completedPages > 0 && !errors.Is(retErr, ErrIncompleteListing) {
+			retErr = fmt.Errorf("%w: %w", ErrIncompleteListing, retErr)
+		}
+	}()
+
+	objectKey := strings.TrimSuffix(p.buildObjectKey(policy, virtualPath), "/")
+	iter := ""
+	visited := make(map[string]struct{})
+	var results []FileInfo
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		headers := http.Header{"Accept": {"application/json"}, "X-List-Limit": {"1000"}}
+		if iter != "" {
+			headers.Set("X-List-Iter", iter)
+		}
+		resp, err := p.requestWithHeaders(ctx, http.MethodGet, policy, objectKey, nil, headers)
+		if err != nil {
+			return nil, fmt.Errorf("列出又拍云目录失败: %w", err)
+		}
+		body, readErr := io.ReadAll(resp.Body)
+		closeErr := resp.Body.Close()
+		if readErr != nil {
+			return nil, fmt.Errorf("%w: 读取又拍云目录列表失败: %w", ErrIncompleteListing, readErr)
+		}
+		if closeErr != nil {
+			return nil, fmt.Errorf("%w: 关闭又拍云目录响应失败: %w", ErrIncompleteListing, closeErr)
+		}
+		if err := ensureStatus(resp, http.StatusOK); err != nil {
+			return nil, err
+		}
+
+		var listResp upyunListResponse
+		if err := json.Unmarshal(body, &listResp); err != nil {
+			return nil, fmt.Errorf("%w: 解析又拍云目录列表失败: %w", ErrIncompleteListing, err)
+		}
+		if listResp.Files == nil {
+			return nil, fmt.Errorf("%w: 又拍云目录列表缺少 files 数组", ErrIncompleteListing)
+		}
+		completedPages++
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		for _, item := range listResp.Files {
+			results = append(results, FileInfo{
+				Name:    item.Name,
+				Size:    item.Length,
+				IsDir:   strings.EqualFold(item.Type, "folder") || strings.EqualFold(item.Type, "F"),
+				ModTime: parseUpyunModTime(item.LastModified),
+			})
+		}
+		nextIter := listResp.Iter
+		headerIter := resp.Header.Get("X-Upyun-List-Iter")
+		if nextIter == "" {
+			nextIter = headerIter
+		} else if headerIter != "" && nextIter != headerIter {
+			return nil, fmt.Errorf("%w: 又拍云目录分页游标不一致", ErrIncompleteListing)
+		}
+		// 又拍云用固定结束标识表示完整清单，不能把缺失游标当作结束。
+		if nextIter == "g2gCZAAEbmV4dGQAA2VvZg" {
+			return results, nil
+		}
+		if nextIter == "" {
+			return nil, fmt.Errorf("%w: 又拍云目录分页游标缺失", ErrIncompleteListing)
+		}
+		if _, exists := visited[nextIter]; exists {
+			return nil, fmt.Errorf("%w: 又拍云目录分页游标重复", ErrIncompleteListing)
+		}
+		visited[nextIter] = struct{}{}
+		iter = nextIter
 	}
-	results := make([]FileInfo, 0, len(items))
-	for _, item := range items {
-		results = append(results, FileInfo{
-			Name:    item.Name,
-			Size:    item.Size,
-			IsDir:   strings.EqualFold(item.Type, "folder") || strings.EqualFold(item.Type, "F"),
-			ModTime: parseUpyunModTime(item.LastModified),
-		})
-	}
-	return results, nil
 }
 
 func parseUpyunModTime(value any) time.Time {

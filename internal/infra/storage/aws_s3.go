@@ -339,77 +339,96 @@ func (p *AWSS3Provider) List(ctx context.Context, policy *model.StoragePolicy, v
 		prefix += "/"
 	}
 
-	output, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+	input := &s3.ListObjectsV2Input{
 		Bucket:    aws.String(policy.BucketName),
 		Prefix:    aws.String(prefix),
 		Delimiter: aws.String("/"),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("列出AWS S3对象失败: %w", err)
 	}
-
 	var fileInfos []FileInfo
-
-	// 处理文件对象
-	for _, obj := range output.Contents {
-		if obj.Key == nil {
-			continue
+	seenTokens := make(map[string]struct{})
+	for {
+		output, err := client.ListObjectsV2(ctx, input)
+		if err != nil {
+			if len(seenTokens) > 0 {
+				return nil, fmt.Errorf("%w: 列出AWS S3后续页失败: %w", ErrIncompleteListing, err)
+			}
+			return nil, fmt.Errorf("列出AWS S3对象失败: %w", err)
 		}
 
-		// 跳过目录本身
-		if strings.HasSuffix(*obj.Key, "/") {
-			continue
+		// 处理文件对象
+		for _, obj := range output.Contents {
+			if obj.Key == nil {
+				continue
+			}
+
+			// 跳过目录本身
+			if strings.HasSuffix(*obj.Key, "/") {
+				continue
+			}
+
+			// 移除前缀，获取相对路径
+			name := strings.TrimPrefix(*obj.Key, prefix)
+			if name == "" {
+				continue
+			}
+
+			// 只显示直接子文件，不显示子目录中的文件
+			if strings.Contains(name, "/") {
+				continue
+			}
+
+			var fileSize int64 = 0
+			if obj.Size != nil {
+				fileSize = *obj.Size
+			}
+
+			var modTime time.Time
+			if obj.LastModified != nil {
+				modTime = *obj.LastModified
+			}
+
+			fileInfo := FileInfo{
+				Name:    name,
+				Size:    fileSize,
+				ModTime: modTime,
+				IsDir:   false,
+			}
+			fileInfos = append(fileInfos, fileInfo)
 		}
 
-		// 移除前缀，获取相对路径
-		name := strings.TrimPrefix(*obj.Key, prefix)
-		if name == "" {
-			continue
+		// 处理公共前缀（目录）
+		for _, commonPrefix := range output.CommonPrefixes {
+			if commonPrefix.Prefix == nil {
+				continue
+			}
+
+			// 移除前缀和尾随的斜杠，获取目录名
+			dirName := strings.TrimSuffix(strings.TrimPrefix(*commonPrefix.Prefix, prefix), "/")
+			if dirName == "" {
+				continue
+			}
+
+			fileInfo := FileInfo{
+				Name:    dirName,
+				Size:    0,
+				ModTime: time.Time{}, // 目录没有修改时间
+				IsDir:   true,
+			}
+			fileInfos = append(fileInfos, fileInfo)
 		}
 
-		// 只显示直接子文件，不显示子目录中的文件
-		if strings.Contains(name, "/") {
-			continue
+		if !aws.ToBool(output.IsTruncated) {
+			break
 		}
-
-		var fileSize int64 = 0
-		if obj.Size != nil {
-			fileSize = *obj.Size
+		nextToken := aws.ToString(output.NextContinuationToken)
+		if nextToken == "" {
+			return nil, fmt.Errorf("%w: AWS S3分页响应缺少继续令牌", ErrIncompleteListing)
 		}
-
-		var modTime time.Time
-		if obj.LastModified != nil {
-			modTime = *obj.LastModified
+		if _, seen := seenTokens[nextToken]; seen {
+			return nil, fmt.Errorf("%w: AWS S3分页令牌重复", ErrIncompleteListing)
 		}
-
-		fileInfo := FileInfo{
-			Name:    name,
-			Size:    fileSize,
-			ModTime: modTime,
-			IsDir:   false,
-		}
-		fileInfos = append(fileInfos, fileInfo)
-	}
-
-	// 处理公共前缀（目录）
-	for _, commonPrefix := range output.CommonPrefixes {
-		if commonPrefix.Prefix == nil {
-			continue
-		}
-
-		// 移除前缀和尾随的斜杠，获取目录名
-		dirName := strings.TrimSuffix(strings.TrimPrefix(*commonPrefix.Prefix, prefix), "/")
-		if dirName == "" {
-			continue
-		}
-
-		fileInfo := FileInfo{
-			Name:    dirName,
-			Size:    0,
-			ModTime: time.Time{}, // 目录没有修改时间
-			IsDir:   true,
-		}
-		fileInfos = append(fileInfos, fileInfo)
+		seenTokens[nextToken] = struct{}{}
+		input.ContinuationToken = aws.String(nextToken)
 	}
 
 	log.Printf("[AWS S3] List完成 - 返回 %d 个项目", len(fileInfos))

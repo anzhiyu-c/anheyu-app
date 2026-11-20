@@ -120,7 +120,8 @@ type graphError struct {
 	Message string `json:"message"`
 }
 type graphListResponse struct {
-	Value []graphDriveItem `json:"value"`
+	Value    []graphDriveItem `json:"value"`
+	NextLink string           `json:"@odata.nextLink"`
 }
 type graphDriveItem struct {
 	ID              string           `json:"id"` // 用于 Rename 操作
@@ -442,7 +443,15 @@ func (p *OneDriveProvider) GetDownloadURL(ctx context.Context, policy *model.Sto
 }
 
 // List 列出指定虚拟路径下的所有文件和目录。
-func (p *OneDriveProvider) List(ctx context.Context, policy *model.StoragePolicy, virtualPath string) ([]FileInfo, error) {
+func (p *OneDriveProvider) List(ctx context.Context, policy *model.StoragePolicy, virtualPath string) (files []FileInfo, retErr error) {
+	completedPages := 0
+	defer func() {
+		// 后续页的 404 不能被同步服务当作初始目录不存在而自动创建。
+		if retErr != nil && completedPages > 0 && !errors.Is(retErr, ErrIncompleteListing) {
+			retErr = fmt.Errorf("%w: %w", ErrIncompleteListing, retErr)
+		}
+	}()
+
 	client, err := p.getClient(ctx, policy)
 	if err != nil {
 		return nil, err
@@ -468,39 +477,95 @@ func (p *OneDriveProvider) List(ctx context.Context, policy *model.StoragePolicy
 		listURL = fmt.Sprintf("%s%s:/children?%s", driveBaseURL, apiPath, sel)
 	}
 
-	resp, err := client.Get(listURL)
+	origin, err := url.Parse(listURL)
 	if err != nil {
-		return nil, fmt.Errorf("请求 OneDrive 列表失败: %w", err)
+		return nil, fmt.Errorf("解析 OneDrive 列表 URL 失败: %w", err)
 	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK {
-		var errResp graphErrorResponse
-		json.Unmarshal(body, &errResp)
-		if resp.StatusCode == http.StatusNotFound {
-			log.Printf("【STORAGE-OneDrive DEBUG】List 请求失败，URL: %s", listURL)
+	sameOrigin := func(target *url.URL) bool {
+		return target.User == nil && target.Fragment == "" &&
+			(target.Scheme == "https" || target.Scheme == "http") &&
+			strings.EqualFold(target.Scheme, origin.Scheme) && strings.EqualFold(target.Host, origin.Host)
+	}
+	// OAuth transport 会为每次请求附加凭据，重定向也必须保持在原始来源。
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if !sameOrigin(req.URL) {
+			return fmt.Errorf("%w: OneDrive 列表重定向来源无效", ErrIncompleteListing)
 		}
-		return nil, fmt.Errorf("获取 OneDrive 列表失败, 状态码: %d, 错误: %s", resp.StatusCode, errResp.Error.Message)
+		if len(via) >= 10 {
+			return fmt.Errorf("%w: OneDrive 列表重定向次数过多", ErrIncompleteListing)
+		}
+		return nil
 	}
 
-	var listResp graphListResponse
-	if err := json.Unmarshal(body, &listResp); err != nil {
-		return nil, fmt.Errorf("解析 OneDrive 列表响应失败: %w", err)
-	}
+	visited := map[string]struct{}{listURL: {}}
+	var result []FileInfo
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, listURL, nil)
+		if err != nil {
+			return nil, fmt.Errorf("创建 OneDrive 列表请求失败: %w", err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("请求 OneDrive 列表失败: %w", err)
+		}
+		body, readErr := io.ReadAll(resp.Body)
+		closeErr := resp.Body.Close()
+		if readErr != nil {
+			return nil, fmt.Errorf("%w: 读取 OneDrive 列表响应失败: %w", ErrIncompleteListing, readErr)
+		}
+		if closeErr != nil {
+			return nil, fmt.Errorf("%w: 关闭 OneDrive 列表响应失败: %w", ErrIncompleteListing, closeErr)
+		}
+		if resp.StatusCode != http.StatusOK {
+			message := http.StatusText(resp.StatusCode)
+			var errResp graphErrorResponse
+			if err := json.Unmarshal(body, &errResp); err == nil && errResp.Error.Message != "" {
+				message = errResp.Error.Message
+			}
+			return nil, fmt.Errorf("获取 OneDrive 列表失败, 状态码: %d, 错误: %s", resp.StatusCode, message)
+		}
 
-	result := make([]FileInfo, 0, len(listResp.Value))
-	for _, item := range listResp.Value {
-		isDir := item.Folder != nil
-		modTime, _ := time.Parse(time.RFC3339, item.LastModified)
-		result = append(result, FileInfo{
-			Name:    item.Name,
-			Size:    item.Size,
-			IsDir:   isDir,
-			ModTime: modTime,
-		})
+		var listResp graphListResponse
+		if err := json.Unmarshal(body, &listResp); err != nil {
+			return nil, fmt.Errorf("%w: 解析 OneDrive 列表响应失败: %w", ErrIncompleteListing, err)
+		}
+		if listResp.Value == nil {
+			return nil, fmt.Errorf("%w: OneDrive 列表缺少 value 数组", ErrIncompleteListing)
+		}
+		completedPages++
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
+		for _, item := range listResp.Value {
+			modTime, err := time.Parse(time.RFC3339, item.LastModified)
+			if err != nil {
+				// 部分目录没有修改时间，保持原有零值语义。
+				modTime = time.Time{}
+			}
+			result = append(result, FileInfo{
+				Name:    item.Name,
+				Size:    item.Size,
+				IsDir:   item.Folder != nil,
+				ModTime: modTime,
+			})
+		}
+		if listResp.NextLink == "" {
+			return result, nil
+		}
+		nextURL, err := url.Parse(listResp.NextLink)
+		if err != nil || !sameOrigin(nextURL) {
+			return nil, fmt.Errorf("%w: OneDrive nextLink 来源或格式无效", ErrIncompleteListing)
+		}
+		if _, exists := visited[listResp.NextLink]; exists {
+			return nil, fmt.Errorf("%w: OneDrive nextLink 重复", ErrIncompleteListing)
+		}
+		visited[listResp.NextLink] = struct{}{}
+		listURL = listResp.NextLink
 	}
-	return result, nil
 }
 
 // DeleteDirectory 删除一个空目录或非空目录。
