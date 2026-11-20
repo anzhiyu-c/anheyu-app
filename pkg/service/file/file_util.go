@@ -175,6 +175,7 @@ func (s *serviceImpl) GetFullVirtualPathWithRepo(ctx context.Context, file *mode
 //   - txMetadataRepo: 事务性的 MetadataRepository
 //   - txPolicyRepo: 事务性的 StoragePolicyRepository
 //   - txDirectLinkRepo: 事务性的 DirectLinkRepository
+//   - txUserRepo: 事务性的 UserRepository，用于校验是否有权删除物理存储；无权时只删除记录
 //
 // 返回: error - 如果操作过程中出现任何错误，则返回错误
 func (s *serviceImpl) HardDeleteRecursively(
@@ -187,6 +188,7 @@ func (s *serviceImpl) HardDeleteRecursively(
 	txMetadataRepo repository.MetadataRepository,
 	txPolicyRepo repository.StoragePolicyRepository,
 	txDirectLinkRepo repository.DirectLinkRepository,
+	txUserRepo repository.UserRepository,
 ) error {
 	// 1. 查找要删除的项目
 	item, err := txFileRepo.FindByIDUnscoped(ctx, fileID)
@@ -225,7 +227,7 @@ func (s *serviceImpl) HardDeleteRecursively(
 		}
 		for _, child := range children {
 			// 递归调用，并传入 txPolicyRepo
-			if err := s.HardDeleteRecursively(ctx, ownerID, child.File.ID, txFileRepo, txEntityRepo, txFileEntityRepo, txMetadataRepo, txPolicyRepo, txDirectLinkRepo); err != nil {
+			if err := s.HardDeleteRecursively(ctx, ownerID, child.File.ID, txFileRepo, txEntityRepo, txFileEntityRepo, txMetadataRepo, txPolicyRepo, txDirectLinkRepo, txUserRepo); err != nil {
 				return err // 如果任何子项删除失败，则中止并回滚
 			}
 		}
@@ -238,6 +240,10 @@ func (s *serviceImpl) HardDeleteRecursively(
 			policy, policyErr := s.vfsSvc.FindPolicyForPath(ctx, fullVirtualPath)
 			if policyErr != nil {
 				log.Printf("【DELETE WARN】找不到文件夹 '%s' 的存储策略，将跳过物理目录删除: %v", fullVirtualPath, policyErr)
+			} else if allowed, authErr := canTouchPhysicalStorage(ctx, ownerID, policy, txUserRepo, txFileRepo); authErr != nil {
+				return authErr
+			} else if !allowed {
+				log.Printf("【DELETE SKIP】用户 %d 无权访问策略 '%s' 的物理存储，仅删除记录，保留物理目录 '%s'", ownerID, policy.Name, fullVirtualPath)
 			} else {
 				provider, providerErr := s.GetProviderForPolicy(policy)
 				if providerErr != nil {
@@ -280,6 +286,10 @@ func (s *serviceImpl) HardDeleteRecursively(
 				policy, policyErr := s.policySvc.GetPolicyByDatabaseID(ctx, entity.PolicyID)
 				if policyErr != nil {
 					log.Printf("【DELETE WARN】找不到实体 %d 的存储策略，无法删除物理文件: %v", entityID, policyErr)
+				} else if allowed, authErr := canTouchPhysicalStorage(ctx, ownerID, policy, txUserRepo, txFileRepo); authErr != nil {
+					return authErr
+				} else if !allowed {
+					log.Printf("【DELETE SKIP】用户 %d 无权访问策略 '%s' 的物理存储，仅删除记录，保留实体 %d 的物理文件", ownerID, policy.Name, entityID)
 				} else {
 					provider, providerErr := s.GetProviderForPolicy(policy)
 					if providerErr != nil {
@@ -332,7 +342,7 @@ func (s *serviceImpl) BuildFolderTreeRecursively(ctx context.Context, ownerID ui
 	if err != nil {
 		fmt.Printf("警告(buildFolderTree): 无法为路径 '%s' 定位存储策略: %v\n", fullVirtualPath, err)
 	} else if policy.Type == constant.PolicyTypeLocal {
-		err := s.syncSvc.SyncDirectory(ctx, ownerID, policy, fullVirtualPath)
+		err := s.syncDirectoryIfAuthorized(ctx, ownerID, policy, fullVirtualPath)
 		if err != nil {
 			fmt.Printf("错误(buildFolderTree): 同步物理目录 '%s' 失败: %v\n", fullVirtualPath, err)
 		}

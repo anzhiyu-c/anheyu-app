@@ -356,6 +356,18 @@ func NewAppWithOptions(content embed.FS, opts AppOptions) (*App, func(), error) 
 	vfsSvc := volume.NewVFSService(storagePolicySvc, cacheSvc, fileRepo, entityRepo, settingSvc, storageProviders)
 	extractionSvc := file_info.NewExtractionService(fileRepo, settingSvc, metadataSvc, vfsSvc)
 	fileSvc := file_service.NewService(fileRepo, storagePolicyRepo, txManager, entityRepo, fileEntityRepo, userGroupRepo, metadataSvc, extractionSvc, cacheSvc, storagePolicySvc, settingSvc, syncSvc, vfsSvc, storageProviders, eventBus, pathLocker)
+
+	// 清理历史上被同步进普通用户文件树的共享存储记录（只删数据库记录，不删物理文件）。
+	go func() {
+		removed, err := fileSvc.PurgeUnauthorizedStorageRecords(context.Background())
+		if err != nil {
+			log.Printf("⚠️ 清理越权文件记录失败: %v", err)
+			return
+		}
+		if removed > 0 {
+			log.Printf("✅ 已清理 %d 条越权文件记录", removed)
+		}
+	}()
 	uploadSvc := file_service.NewUploadService(txManager, eventBus, entityRepo, metadataSvc, cacheSvc, storagePolicySvc, settingSvc, storageProviders)
 	directLinkSvc := direct_link.NewDirectLinkService(directLinkRepo, fileRepo, userGroupRepo, settingSvc, storagePolicyRepo)
 

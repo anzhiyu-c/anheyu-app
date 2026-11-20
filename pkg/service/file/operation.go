@@ -320,6 +320,9 @@ func (s *serviceImpl) MoveItems(ctx context.Context, ownerID uint, sourcePublicI
 				if newPolicy == nil || policy.ID != newPolicy.ID {
 					return fmt.Errorf("不支持跨存储策略移动")
 				}
+				if err := authorizeUploadMount(ctx, ownerID, policy, repos); err != nil {
+					return err
+				}
 				provider, err := s.GetProviderForPolicy(policy)
 				if err != nil {
 					return fmt.Errorf("获取存储驱动失败: %w", err)
@@ -356,7 +359,7 @@ func (s *serviceImpl) DeleteItems(ctx context.Context, ownerID uint, publicIDs [
 			}
 
 			// 调用新的 HardDeleteRecursively，并传入所有需要的 repo
-			err = s.HardDeleteRecursively(ctx, ownerID, dbID, repos.File, repos.Entity, repos.FileEntity, repos.Metadata, repos.StoragePolicy, repos.DirectLink)
+			err = s.HardDeleteRecursively(ctx, ownerID, dbID, repos.File, repos.Entity, repos.FileEntity, repos.Metadata, repos.StoragePolicy, repos.DirectLink, repos.User)
 			if err != nil {
 				return fmt.Errorf("删除项目 '%s' (ID: %d) 失败: %w", publicID, dbID, err)
 			}
@@ -417,6 +420,9 @@ func (s *serviceImpl) RenameItem(ctx context.Context, ownerID uint, req *model.R
 		policy, err := s.vfsSvc.FindPolicyForPath(ctx, oldVirtualPath)
 		if err != nil {
 			return fmt.Errorf("为路径 '%s' 定位存储策略失败: %w", oldVirtualPath, err)
+		}
+		if err := authorizeUploadMount(ctx, ownerID, policy, repos); err != nil {
+			return err
 		}
 
 		provider, err := s.GetProviderForPolicy(policy)
@@ -496,6 +502,9 @@ func (s *serviceImpl) CreateEmptyFile(ctx context.Context, ownerID uint, req *mo
 		// 获取存储策略和提供者
 		policy, _ := s.vfsSvc.FindPolicyForPath(ctx, parsedURI.Path)
 		if policy != nil {
+			if err := authorizeUploadMount(ctx, ownerID, policy, repos); err != nil {
+				return err
+			}
 			provider, err := s.GetProviderForPolicy(policy)
 			if err != nil {
 				log.Printf("警告: 获取provider失败，无法创建物理文件/目录: %v", err)
@@ -584,6 +593,9 @@ func (s *serviceImpl) UpdateFileContentByIDAndURI(ctx context.Context, viewerPub
 	policy, err := s.vfsSvc.FindPolicyForPath(ctx, currentVirtualPath)
 	if err != nil {
 		return nil, fmt.Errorf("找不到路径 %s 的存储策略: %w", currentVirtualPath, err)
+	}
+	if err := s.authorizeStorageAccess(ctx, file.OwnerID, policy); err != nil {
+		return nil, err
 	}
 
 	provider, err := s.GetProviderForPolicy(policy)
