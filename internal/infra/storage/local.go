@@ -467,12 +467,24 @@ func (p *LocalProvider) DeleteDirectory(ctx context.Context, policy *model.Stora
 }
 
 // Rename 重命名本地文件系统上的文件或目录。
-func (p *LocalProvider) Rename(ctx context.Context, policy *model.StoragePolicy, oldVirtualPath, newVirtualPath string) error {
-	oldAbsPath, err := LocalPhysicalPathFromVirtual(policy, oldVirtualPath)
+// localVirtualPathFromMountRelative 将相对于策略挂载点的路径还原为完整虚拟路径。
+// 与云存储驱动一致，Rename 收到的是 GetRelativePathsForMove 产出的相对路径；
+// 这里不做 Clean，保留 ".." 等片段交给 LocalPhysicalPathFromVirtual 校验。
+func localVirtualPathFromMountRelative(policy *model.StoragePolicy, relativePath string) string {
+	mount := strings.TrimSuffix(policy.VirtualPath, "/")
+	return mount + "/" + strings.TrimPrefix(relativePath, "/")
+}
+
+// Rename 的路径参数是相对于策略挂载点的路径（与其他存储驱动的约定一致）。
+func (p *LocalProvider) Rename(ctx context.Context, policy *model.StoragePolicy, oldRelativePath, newRelativePath string) error {
+	if policy == nil {
+		return errors.New("本地存储策略不能为空")
+	}
+	oldAbsPath, err := LocalPhysicalPathFromVirtual(policy, localVirtualPathFromMountRelative(policy, oldRelativePath))
 	if err != nil {
 		return err
 	}
-	newAbsPath, err := LocalPhysicalPathFromVirtual(policy, newVirtualPath)
+	newAbsPath, err := LocalPhysicalPathFromVirtual(policy, localVirtualPathFromMountRelative(policy, newRelativePath))
 	if err != nil {
 		return err
 	}

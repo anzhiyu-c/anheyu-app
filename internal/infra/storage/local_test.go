@@ -208,9 +208,9 @@ func TestLocalProviderMutationsRejectSymlinkParents(t *testing.T) {
 			case "mkdir":
 				err = provider.CreateDirectory(context.Background(), policy, "/local/escape/new-directory")
 			case "rename-from":
-				err = provider.Rename(context.Background(), policy, "/local/escape/file.txt", "/local/moved.txt")
+				err = provider.Rename(context.Background(), policy, "/escape/file.txt", "/moved.txt")
 			case "rename-to":
-				err = provider.Rename(context.Background(), policy, "/local/file.txt", "/local/escape/file.txt")
+				err = provider.Rename(context.Background(), policy, "/file.txt", "/escape/file.txt")
 			case "delete-directory":
 				err = provider.DeleteDirectory(context.Background(), policy, "/local/escape/empty")
 			}
@@ -243,7 +243,7 @@ func TestLocalProviderFileLifecycle(t *testing.T) {
 	if result.Source != filepath.Join(workspace, "storage", "nested", "file.txt") || result.Size != 13 {
 		t.Fatalf("unexpected upload result: %+v", result)
 	}
-	if err := provider.Rename(ctx, policy, "/local/nested/file.txt", "/local/moved/file.txt"); err != nil {
+	if err := provider.Rename(ctx, policy, "/nested/file.txt", "/moved/file.txt"); err != nil {
 		t.Fatalf("Rename: %v", err)
 	}
 	files, err := provider.List(ctx, policy, "/local/moved")
@@ -348,5 +348,49 @@ func TestLocalProviderErrorsDoNotExposePhysicalPaths(t *testing.T) {
 		if err == nil || strings.Contains(err.Error(), base) || strings.Contains(err.Error(), source) {
 			t.Errorf("error should be sanitized: %v", err)
 		}
+	}
+}
+
+// Rename 接收的是相对于挂载点的路径（由 GetRelativePathsForMove 产出）。
+// 根挂载点 "/" 去掉前缀后不带前导斜杠，曾被误判为「本地存储虚拟路径无效」。
+func TestLocalProviderRenameAcceptsMountRelativePaths(t *testing.T) {
+	ctx := context.Background()
+	provider := NewLocalProvider("test-secret")
+	for _, tc := range []struct {
+		name        string
+		virtualPath string
+		uploadPath  string
+		oldPath     string
+		newPath     string
+		listPath    string
+	}{
+		{name: "root mount", virtualPath: "/", uploadPath: "/docs/a.txt", oldPath: "docs/a.txt", newPath: "docs/b.txt", listPath: "/docs"},
+		{name: "nested mount", virtualPath: "/local", uploadPath: "/local/docs/a.txt", oldPath: "/docs/a.txt", newPath: "/moved/a.txt", listPath: "/local/moved"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			policy := &model.StoragePolicy{BasePath: t.TempDir(), VirtualPath: tc.virtualPath}
+			if _, err := provider.Upload(ctx, strings.NewReader("data"), policy, tc.uploadPath); err != nil {
+				t.Fatalf("Upload: %v", err)
+			}
+			if err := provider.Rename(ctx, policy, tc.oldPath, tc.newPath); err != nil {
+				t.Fatalf("Rename: %v", err)
+			}
+			files, err := provider.List(ctx, policy, tc.listPath)
+			if err != nil || len(files) != 1 {
+				t.Fatalf("List files=%+v error=%v", files, err)
+			}
+		})
+	}
+}
+
+func TestLocalProviderRenameRejectsParentTraversal(t *testing.T) {
+	ctx := context.Background()
+	provider := NewLocalProvider("test-secret")
+	policy := &model.StoragePolicy{BasePath: t.TempDir(), VirtualPath: "/local"}
+	if _, err := provider.Upload(ctx, strings.NewReader("data"), policy, "/local/a.txt"); err != nil {
+		t.Fatalf("Upload: %v", err)
+	}
+	if err := provider.Rename(ctx, policy, "/a.txt", "/../a.txt"); err == nil {
+		t.Fatal("Rename accepted a parent traversal path")
 	}
 }

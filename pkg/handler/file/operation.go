@@ -251,6 +251,7 @@ func (h *FileHandler) RenameItem(c *gin.Context) {
 		} else if errors.Is(err, constant.ErrNotFound) {
 			response.Fail(c, http.StatusNotFound, "重命名失败：要操作的项目不存在")
 		} else {
+			log.Printf("[Handler-ERROR] RenameItem failed for ID '%s': %v", req.ID, err)
 			response.Fail(c, http.StatusInternalServerError, "重命名失败，发生未知错误")
 		}
 		return
