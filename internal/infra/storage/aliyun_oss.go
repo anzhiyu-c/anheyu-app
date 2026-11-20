@@ -253,6 +253,9 @@ func (p *AliOSSProvider) Get(ctx context.Context, policy *model.StoragePolicy, s
 	return body, nil
 }
 
+// aliOSSListMaxKeys 是阿里云OSS单次列举允许的最大条数；服务端默认只返回 100 条，大目录会产生大量分页请求。
+const aliOSSListMaxKeys = 1000
+
 // List 列出阿里云OSS存储桶中的对象
 func (p *AliOSSProvider) List(ctx context.Context, policy *model.StoragePolicy, virtualPath string) ([]FileInfo, error) {
 	log.Printf("[阿里云OSS] List方法调用 - 策略名称: %s, virtualPath: %s", policy.Name, virtualPath)
@@ -267,55 +270,73 @@ func (p *AliOSSProvider) List(ctx context.Context, policy *model.StoragePolicy, 
 		prefix += "/"
 	}
 
-	result, err := bucket.ListObjects(oss.Prefix(prefix), oss.Delimiter("/"))
-	if err != nil {
-		return nil, fmt.Errorf("列出阿里云OSS对象失败: %w", err)
-	}
-
 	var fileInfos []FileInfo
-
-	// 处理文件对象
-	for _, obj := range result.Objects {
-		// 跳过目录本身
-		if strings.HasSuffix(obj.Key, "/") {
-			continue
+	marker := ""
+	seenMarkers := make(map[string]struct{})
+	for {
+		result, err := bucket.ListObjects(oss.Prefix(prefix), oss.Delimiter("/"), oss.Marker(marker), oss.MaxKeys(aliOSSListMaxKeys), oss.WithContext(ctx))
+		if err != nil {
+			if len(seenMarkers) > 0 {
+				return nil, fmt.Errorf("%w: 列出阿里云OSS后续页失败: %w", ErrIncompleteListing, err)
+			}
+			return nil, fmt.Errorf("列出阿里云OSS对象失败: %w", err)
 		}
 
-		// 移除前缀，获取相对路径
-		name := strings.TrimPrefix(obj.Key, prefix)
-		if name == "" {
-			continue
+		// 处理文件对象
+		for _, obj := range result.Objects {
+			// 跳过目录本身
+			if strings.HasSuffix(obj.Key, "/") {
+				continue
+			}
+
+			// 移除前缀，获取相对路径
+			name := strings.TrimPrefix(obj.Key, prefix)
+			if name == "" {
+				continue
+			}
+
+			// 只显示直接子文件，不显示子目录中的文件
+			if strings.Contains(name, "/") {
+				continue
+			}
+
+			fileInfo := FileInfo{
+				Name:    name,
+				Size:    obj.Size,
+				ModTime: obj.LastModified,
+				IsDir:   false,
+			}
+			fileInfos = append(fileInfos, fileInfo)
 		}
 
-		// 只显示直接子文件，不显示子目录中的文件
-		if strings.Contains(name, "/") {
-			continue
+		// 处理公共前缀（目录）
+		for _, commonPrefix := range result.CommonPrefixes {
+			// 移除前缀和尾随的斜杠，获取目录名
+			dirName := strings.TrimSuffix(strings.TrimPrefix(commonPrefix, prefix), "/")
+			if dirName == "" {
+				continue
+			}
+
+			fileInfo := FileInfo{
+				Name:    dirName,
+				Size:    0,
+				ModTime: time.Time{}, // 目录没有修改时间
+				IsDir:   true,
+			}
+			fileInfos = append(fileInfos, fileInfo)
 		}
 
-		fileInfo := FileInfo{
-			Name:    name,
-			Size:    obj.Size,
-			ModTime: obj.LastModified,
-			IsDir:   false,
+		if !result.IsTruncated {
+			break
 		}
-		fileInfos = append(fileInfos, fileInfo)
-	}
-
-	// 处理公共前缀（目录）
-	for _, commonPrefix := range result.CommonPrefixes {
-		// 移除前缀和尾随的斜杠，获取目录名
-		dirName := strings.TrimSuffix(strings.TrimPrefix(commonPrefix, prefix), "/")
-		if dirName == "" {
-			continue
+		if result.NextMarker == "" {
+			return nil, fmt.Errorf("%w: 阿里云OSS分页响应缺少继续标记", ErrIncompleteListing)
 		}
-
-		fileInfo := FileInfo{
-			Name:    dirName,
-			Size:    0,
-			ModTime: time.Time{}, // 目录没有修改时间
-			IsDir:   true,
+		if _, seen := seenMarkers[result.NextMarker]; seen {
+			return nil, fmt.Errorf("%w: 阿里云OSS分页标记重复", ErrIncompleteListing)
 		}
-		fileInfos = append(fileInfos, fileInfo)
+		seenMarkers[result.NextMarker] = struct{}{}
+		marker = result.NextMarker
 	}
 
 	log.Printf("[阿里云OSS] List完成 - 返回 %d 个项目", len(fileInfos))

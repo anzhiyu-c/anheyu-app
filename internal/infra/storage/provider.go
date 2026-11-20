@@ -43,6 +43,9 @@ type DownloadURLOptions struct {
 // 定义一个错误，用于表示某个功能不被当前 Provider 支持
 var ErrFeatureNotSupported = errors.New("feature not supported by this provider")
 
+// ErrIncompleteListing 表示目录列举中途失败或分页游标异常，不能用于同步对账。
+var ErrIncompleteListing = errors.New("storage listing is incomplete")
+
 // ThumbnailResult 封装了获取缩略图的结果
 type ThumbnailResult struct {
 	ContentType string
@@ -76,7 +79,8 @@ type IStorageProvider interface {
 	IsExist(ctx context.Context, policy *model.StoragePolicy, source string) (bool, error)
 	// Get 返回一个可读的文件流，用于服务内部的文件处理，如元数据提取。
 	Get(ctx context.Context, policy *model.StoragePolicy, source string) (io.ReadCloser, error)
-	// List 列出指定虚拟路径下的所有文件和目录。
+	// List 列出指定虚拟路径下所有直属文件和目录，必须读取完整分页后才可成功返回。
+	// 列举失败必须返回 nil 和错误，不能返回部分清单；ErrIncompleteListing 用于区分分页异常与初始目录不存在。
 	List(ctx context.Context, policy *model.StoragePolicy, virtualPath string) ([]FileInfo, error)
 	// GetThumbnail 获取指定文件的缩略图。
 	GetThumbnail(ctx context.Context, policy *model.StoragePolicy, source string, size string) (*ThumbnailResult, error)

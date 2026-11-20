@@ -114,6 +114,11 @@ func (s *syncService) SyncDirectory(ctx context.Context, ownerID uint, policy *m
 
 	storageItems, err := provider.List(ctx, policy, virtualPath)
 	if err != nil {
+		// 后续页失败不代表根目录不存在，不能自动创建后用重试结果进行对账。
+		if errors.Is(err, storage.ErrIncompleteListing) {
+			log.Printf("警告: 存储目录 '%s' 的清单不完整，跳过本次同步: %v", virtualPath, err)
+			return nil
+		}
 		isRootPath := virtualPath == policy.VirtualPath
 		isNotFoundError := strings.Contains(err.Error(), "404") && strings.Contains(strings.ToLower(err.Error()), "item does not exist")
 		if isRootPath && isNotFoundError {

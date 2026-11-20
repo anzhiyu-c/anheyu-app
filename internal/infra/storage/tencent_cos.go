@@ -285,49 +285,66 @@ func (p *TencentCOSProvider) List(ctx context.Context, policy *model.StoragePoli
 		Delimiter: "/", // 只列出直接子对象，不递归
 	}
 
-	result, _, err := client.Bucket.Get(ctx, opt)
-	if err != nil {
-		return nil, fmt.Errorf("列出腾讯云COS对象失败: %w", err)
-	}
-
 	var fileInfos []FileInfo
-
-	// 处理"目录"（CommonPrefixes）
-	for _, commonPrefix := range result.CommonPrefixes {
-		name := strings.TrimSuffix(strings.TrimPrefix(commonPrefix, prefix), "/")
-		if name != "" {
-			fileInfos = append(fileInfos, FileInfo{
-				Name:  name,
-				Size:  0,
-				IsDir: true,
-			})
-		}
-	}
-
-	// 处理文件
-	for _, content := range result.Contents {
-		// 跳过"目录"对象（以/结尾的对象）
-		if strings.HasSuffix(content.Key, "/") {
-			continue
+	seenMarkers := make(map[string]struct{})
+	for {
+		result, _, err := client.Bucket.Get(ctx, opt)
+		if err != nil {
+			if len(seenMarkers) > 0 {
+				return nil, fmt.Errorf("%w: 列出腾讯云COS后续页失败: %w", ErrIncompleteListing, err)
+			}
+			return nil, fmt.Errorf("列出腾讯云COS对象失败: %w", err)
 		}
 
-		name := strings.TrimPrefix(content.Key, prefix)
-		if name != "" && !strings.Contains(name, "/") {
-			// 解析最后修改时间
-			var modTime time.Time
-			if content.LastModified != "" {
-				if t, parseErr := time.Parse("2006-01-02T15:04:05.000Z", content.LastModified); parseErr == nil {
-					modTime = t
-				}
+		// 处理"目录"（CommonPrefixes）
+		for _, commonPrefix := range result.CommonPrefixes {
+			name := strings.TrimSuffix(strings.TrimPrefix(commonPrefix, prefix), "/")
+			if name != "" {
+				fileInfos = append(fileInfos, FileInfo{
+					Name:  name,
+					Size:  0,
+					IsDir: true,
+				})
+			}
+		}
+
+		// 处理文件
+		for _, content := range result.Contents {
+			// 跳过"目录"对象（以/结尾的对象）
+			if strings.HasSuffix(content.Key, "/") {
+				continue
 			}
 
-			fileInfos = append(fileInfos, FileInfo{
-				Name:    name,
-				Size:    int64(content.Size),
-				IsDir:   false,
-				ModTime: modTime,
-			})
+			name := strings.TrimPrefix(content.Key, prefix)
+			if name != "" && !strings.Contains(name, "/") {
+				// 解析最后修改时间
+				var modTime time.Time
+				if content.LastModified != "" {
+					if t, parseErr := time.Parse("2006-01-02T15:04:05.000Z", content.LastModified); parseErr == nil {
+						modTime = t
+					}
+				}
+
+				fileInfos = append(fileInfos, FileInfo{
+					Name:    name,
+					Size:    int64(content.Size),
+					IsDir:   false,
+					ModTime: modTime,
+				})
+			}
 		}
+
+		if !result.IsTruncated {
+			break
+		}
+		if result.NextMarker == "" {
+			return nil, fmt.Errorf("%w: 腾讯云COS分页响应缺少继续标记", ErrIncompleteListing)
+		}
+		if _, seen := seenMarkers[result.NextMarker]; seen {
+			return nil, fmt.Errorf("%w: 腾讯云COS分页标记重复", ErrIncompleteListing)
+		}
+		seenMarkers[result.NextMarker] = struct{}{}
+		opt.Marker = result.NextMarker
 	}
 
 	return fileInfos, nil
